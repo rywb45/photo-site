@@ -10,6 +10,14 @@ fs.rmSync(dist,{recursive:true,force:true});
 fs.mkdirSync(dist,{recursive:true});
 fs.mkdirSync(distPhotos,{recursive:true});
 for(const f of fs.readdirSync(src)) fs.copyFileSync(path.join(src,f),path.join(dist,f));
+const sigCandidates = ["signature.png", "signature.jpg", "signature.jpeg", "signature.webp"];
+for (const s of sigCandidates) {
+  const sigPath = path.join(photos, s);
+  if (fs.existsSync(sigPath)) {
+    fs.copyFileSync(sigPath, path.join(distPhotos, s));
+    break;
+  }
+}
 let files=fs.readdirSync(photos).filter(f=>exts.has(path.extname(f).toLowerCase())).filter(f=>!/^signature\./i.test(f)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"}));
 for(const f of files) fs.copyFileSync(path.join(photos,f),path.join(distPhotos,f));
 fs.writeFileSync(path.join(dist,"photos.json"),JSON.stringify(files,null,2));
