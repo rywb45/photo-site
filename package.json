@@ -1,0 +1,8 @@
+{
+  "name": "photo-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build/generatePhotos.mjs"
+  }
+}
