@@ -6,23 +6,34 @@ on:
     branches: ["main"]
     paths:
       - "photos/**"
-      - "tools/generate-photos-json.js"
+      - "tools/**"
+      - "build/**"
       - "package.json"
 
 permissions:
   contents: write
 
+concurrency:
+  group: generate-photos-json
+  cancel-in-progress: true
+
 jobs:
   gen:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - run: npm run gen
+      - name: Generate photos.json
+        run: npm run gen
 
       - name: Commit photos.json if changed
         run: |
@@ -30,8 +41,14 @@ jobs:
             echo "No changes to photos.json"
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add photos.json
           git commit -m "Auto-update photos.json"
+
+          # Rebase onto latest main (avoids "fetch first" / non-fast-forward)
+          git pull --rebase origin main
+
           git push
