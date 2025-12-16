@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Photos</title>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <header class="header">
+      <h1>Photos</h1>
+      <img
+        class="signature"
+        src="photos/signature.png"
+        alt="Signature"
+      />
+    </header>
+
+    <div class="wrap">
+      <div id="grid"></div>
+    </div>
+
+    <div id="lightbox" class="lightbox">
+      <button id="lbClose" class="lb-btn lb-close" aria-label="Close"></button>
+      <button id="lbPrev" class="lb-btn lb-prev" aria-label="Previous"></button>
+      <button id="lbNext" class="lb-btn lb-next" aria-label="Next"></button>
+
+      <div class="lb-stage">
+        <img id="lbImg" alt="" />
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
