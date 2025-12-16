@@ -5,7 +5,7 @@ const root = process.cwd();
 const photosDir = path.join(root, "photos");
 const outFile = path.join(root, "photos.json");
 
-const allowed = new Set([".jpg", ".jpeg"]);
+const allowed = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 function isAllowed(file) {
   const ext = path.extname(file).toLowerCase();
