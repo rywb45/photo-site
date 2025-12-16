@@ -9,7 +9,7 @@ const lbNext = document.getElementById("lbNext");
 
 let i = 0;
 
-const url = f => `photos/${encodeURIComponent(f)}`;
+const url = (f) => `photos/${encodeURIComponent(f)}`;
 
 /* Lightbox controls */
 lbClose.onclick = () => {
@@ -17,11 +17,8 @@ lbClose.onclick = () => {
   document.body.style.overflow = "";
 };
 
-lbPrev.onclick = () =>
-  show((i - 1 + photos.length) % photos.length);
-
-lbNext.onclick = () =>
-  show((i + 1) % photos.length);
+lbPrev.onclick = () => show((i - 1 + photos.length) % photos.length);
+lbNext.onclick = () => show((i + 1) % photos.length);
 
 /* Load photo list */
 async function load() {
@@ -29,23 +26,30 @@ async function load() {
   photos = await r.json();
 }
 
-/* Load image metadata */
+/* Load image metadata (aspect ratios) */
 async function meta() {
   return Promise.all(
-    photos.map((f, idx) => new Promise(res => {
-      const im = new Image();
+    photos.map(
+      (f, idx) =>
+        new Promise((res) => {
+          const im = new Image();
 
-      im.onload = () =>
-        res({
-          i: idx,
-          f,
-          ar: im.naturalWidth / im.naturalHeight
-        });
+          // small perf hints (still loads, but can feel less janky)
+          im.decoding = "async";
+          im.fetchPriority = "low";
 
-      im.onerror = () => res(null);
-      im.src = url(f);
-    }))
-  ).then(arr => arr.filter(Boolean));
+          im.onload = () =>
+            res({
+              i: idx,
+              f,
+              ar: (im.naturalWidth || 1) / (im.naturalHeight || 1),
+            });
+
+          im.onerror = () => res(null);
+          im.src = url(f);
+        })
+    )
+  ).then((arr) => arr.filter(Boolean));
 }
 
 /* Show image in lightbox */
@@ -72,14 +76,12 @@ function render(m) {
     if (!row.length) return;
 
     let h = (W - GAP * (row.length - 1)) / sum;
-    if (last) {
-      h = Math.max(MIN, Math.min(MAX, h));
-    }
+    if (last) h = Math.max(MIN, Math.min(MAX, h));
 
     const r = document.createElement("div");
     r.className = "j-row";
 
-    row.forEach(x => {
+    row.forEach((x) => {
       const b = document.createElement("button");
       b.className = "j-item";
       b.style.width = `${h * x.ar}px`;
@@ -87,6 +89,13 @@ function render(m) {
       b.onclick = () => show(x.i);
 
       const im = document.createElement("img");
+
+      // performance: don't pull everything immediately
+      im.loading = "lazy";
+      im.decoding = "async";
+      im.fetchPriority = x.i < 6 ? "high" : "low";
+      im.alt = "";
+
       im.src = url(x.f);
 
       b.appendChild(im);
@@ -98,7 +107,7 @@ function render(m) {
     sum = 0;
   };
 
-  m.forEach(x => {
+  m.forEach((x) => {
     row.push(x);
     sum += x.ar;
 
@@ -124,6 +133,9 @@ function render(m) {
     await load();
     const m = await meta();
     render(m);
+
+    // re-layout on resize
+    new ResizeObserver(() => render(m)).observe(grid);
   } catch (e) {
     grid.innerHTML = "<p>Failed to load</p>";
   }
