@@ -14,7 +14,7 @@ body {
 .header h1 {
   margin: 0;
   font-size: 44px;
-  font: Georgia
+  font-family: inherit
 }
 
 /* Signature */
@@ -22,7 +22,7 @@ body {
   position: absolute;
   left: 50%;
   top: 0;
-  transform: translate(-50%, 10px);
+  transform: transform: translateX(-50%) translateY(-10px);
   height: 60px;
 }
 
