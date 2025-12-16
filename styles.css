@@ -1,6 +1,8 @@
 body {
   margin: 0;
-  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+  background: #fff;
+  color: #111;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 
 /* Header */
@@ -13,12 +15,12 @@ body {
 
 .header h1 {
   margin: 0;
-  font-family: "Playfair Display", serif;
-  font-size: 50px;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 56px;
   font-weight: 400;
-  letter-spacing: 0;
   line-height: 1.05;
 
+  /* makes Georgia look lighter in Chromium */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -28,7 +30,7 @@ body {
   position: absolute;
   left: 50%;
   top: 0;
-  transform: translate(-50%, -30px);
+  transform: translate(-50%, -20px);
   height: 60px;
 }
 
