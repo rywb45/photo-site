@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: "Playfair Display", serif;
+  font-family: "Playfair Display", Georgia, "Times New Roman", Times, serif;
 }
 
 /* Header */
@@ -14,13 +14,14 @@ body {
 .header h1 {
   margin: 0;
   font-size: 44px;
+  font: Georgia
 }
 
 /* Signature */
 .signature {
   position: absolute;
   left: 50%;
-  top: 10px;
+  top: 20px;
   transform: translateX(-50%);
   height: 60px;
   opacity: 0.9;
@@ -57,30 +58,29 @@ body {
   inset: 0;
   background: #fff;
   display: none;
-  z-index: 999;
+  z-index: 9999;
 }
 
 .lightbox.open {
   display: block;
 }
 
-/* Image stage */
+/* IMAGE STAGE — THIS WAS THE BUG */
 .lb-stage {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   padding: 70px 18px;
-  z-index: 1;
+  pointer-events: none; /* 🔥 THIS IS THE FIX */
 }
 
 .lb-stage img {
   max-width: 96vw;
   max-height: 86vh;
-  pointer-events: none; /* critical fix */
 }
 
-/* Lightbox buttons */
+/* Buttons */
 .lb-btn {
   position: absolute;
   width: 44px;
@@ -88,7 +88,8 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  z-index: 3;
+  z-index: 10;
+  pointer-events: auto; /* 🔥 ENSURE CLICKABLE */
 }
 
 /* Button lines */
@@ -102,7 +103,7 @@ body {
   left: 50%;
 }
 
-/* Close button */
+/* Close */
 .lb-close {
   top: 18px;
   right: 18px;
@@ -121,7 +122,7 @@ body {
   transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-/* Prev button */
+/* Prev */
 .lb-prev {
   left: 18px;
   top: 50%;
@@ -138,7 +139,7 @@ body {
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
-/* Next button */
+/* Next */
 .lb-next {
   right: 18px;
   top: 50%;
