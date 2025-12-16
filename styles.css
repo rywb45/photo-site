@@ -25,18 +25,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.footer {
-  max-width: 1200px;
-  margin: 48px auto 24px;
-  padding: 0 18px;
-  display: flex;
-  justify-content: center;
-}
-
-.footer .signature {
+.signature{
   position: static;
-  height: 48px;
-  opacity: 0.9;
+  transform: none;
+  height: 60px;
 }
 
 /* Layout */
