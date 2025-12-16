@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: "Playfair Display", Georgia, "Times New Roman", Times, serif;
+  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
 }
 
 /* Header */
@@ -14,7 +14,6 @@ body {
 .header h1 {
   margin: 0;
   font-size: 44px;
-  font: Georgia
 }
 
 /* Signature */
