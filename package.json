@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen": "node tools/generate-photos-json.js",
+    "gen": "node tools/generate-photo-json.js",
     "build": "node build/generatePhotos.mjs"
   }
 }
