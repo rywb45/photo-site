@@ -65,8 +65,28 @@
         font-weight: 700;
       }
 
+      .sidebar .social {
+        margin-top: 60px;
+        display: flex;
+        gap: 16px;
+      }
+
+      .sidebar .social a {
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+
+      .sidebar .social a:hover {
+        opacity: 1;
+      }
+
+      .sidebar .social svg {
+        width: 24px;
+        height: 24px;
+      }
+
       .sidebar .signature {
-        margin-top: 80px;
+        margin-top: 60px;
         max-width: 140px;
         height: auto;
         opacity: 0.6;
@@ -235,6 +255,17 @@
     <aside class="sidebar">
       <h1>Ryan Byrne</h1>
       <nav id="albumNav"></nav>
+      
+      <div class="social">
+        <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+        </a>
+      </div>
+      
       <img src="photos/signature.png" class="signature" alt="Signature">
     </aside>
 
