@@ -144,27 +144,35 @@
         inset: 0;
         background: rgba(0, 0, 0, 0.95);
         z-index: 1000;
-        align-items: center;
-        justify-content: center;
+        overflow: hidden;
       }
 
       .lightbox.active {
-        display: flex;
+        display: block;
       }
 
-      .lb-stage {
+      .lb-track {
+        display: flex;
+        height: 100%;
+        will-change: transform;
+      }
+
+      .lb-slide {
+        flex: 0 0 100%;
         width: 100%;
         height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        pointer-events: none;
       }
 
-      #lbImg {
+      .lb-slide img {
         max-width: 90%;
         max-height: 90vh;
         object-fit: contain;
+        pointer-events: none;
+        -webkit-user-drag: none;
+        user-select: none;
       }
 
       .lb-btn {
@@ -401,9 +409,7 @@
       <button id="lbPrev" class="lb-btn lb-prev" aria-label="Previous"></button>
       <button id="lbNext" class="lb-btn lb-next" aria-label="Next"></button>
       <div class="lb-dots" id="lbDots"></div>
-      <div class="lb-stage">
-        <img id="lbImg" alt="" />
-      </div>
+      <div class="lb-track" id="lbTrack"></div>
     </div>
 
     <script>
@@ -537,10 +543,23 @@
       }
 
       const lightbox = document.getElementById('lightbox');
-      const lbImg = document.getElementById('lbImg');
+      const lbTrack = document.getElementById('lbTrack');
       const lbClose = document.getElementById('lbClose');
       const lbPrev = document.getElementById('lbPrev');
       const lbNext = document.getElementById('lbNext');
+
+      function buildCarousel() {
+        lbTrack.innerHTML = '';
+        currentPhotos.forEach((photo) => {
+          const slide = document.createElement('div');
+          slide.className = 'lb-slide';
+          const img = document.createElement('img');
+          img.src = photo;
+          img.alt = '';
+          slide.appendChild(img);
+          lbTrack.appendChild(slide);
+        });
+      }
 
       function updateDots() {
         const dotsContainer = document.getElementById('lbDots');
@@ -552,10 +571,22 @@
         });
       }
 
-      function openLightbox(index) {
+      function goToSlide(index, animate = true) {
         currentIndex = index;
-        showLightboxImage();
+        const offset = -currentIndex * window.innerWidth;
+        if (animate) {
+          lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        } else {
+          lbTrack.style.transition = 'none';
+        }
+        lbTrack.style.transform = `translateX(${offset}px)`;
         updateDots();
+      }
+
+      function openLightbox(index) {
+        buildCarousel();
+        currentIndex = index;
+        goToSlide(index, false);
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
       }
@@ -565,20 +596,16 @@
         document.body.style.overflow = '';
       }
 
-      function showLightboxImage() {
-        lbImg.src = currentPhotos[currentIndex];
-      }
-
       function nextImage() {
-        currentIndex = (currentIndex + 1) % currentPhotos.length;
-        showLightboxImage();
-        updateDots();
+        if (currentIndex < currentPhotos.length - 1) {
+          goToSlide(currentIndex + 1);
+        }
       }
 
       function prevImage() {
-        currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
-        showLightboxImage();
-        updateDots();
+        if (currentIndex > 0) {
+          goToSlide(currentIndex - 1);
+        }
       }
 
       lbClose.addEventListener('click', closeLightbox);
@@ -586,7 +613,9 @@
       lbNext.addEventListener('click', nextImage);
 
       lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) closeLightbox();
+        if (e.target === lightbox || e.target.classList.contains('lb-slide')) {
+          closeLightbox();
+        }
       });
 
       document.addEventListener('keydown', (e) => {
@@ -596,23 +625,23 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-      // Fluid swipe gesture support
+      // Fluid carousel swipe
       let touchStartX = 0;
-      let touchStartY = 0;
       let touchCurrentX = 0;
       let isDragging = false;
       let startTime = 0;
+      let baseOffset = 0;
 
-      lightbox.addEventListener('touchstart', (e) => {
+      lbTrack.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
         isDragging = true;
         startTime = Date.now();
-        lbImg.style.transition = 'none';
+        baseOffset = -currentIndex * window.innerWidth;
+        lbTrack.style.transition = 'none';
       }, { passive: true });
 
-      lightbox.addEventListener('touchmove', (e) => {
+      lbTrack.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         
         touchCurrentX = e.touches[0].clientX;
@@ -623,13 +652,13 @@
         const isAtEnd = currentIndex === currentPhotos.length - 1 && deltaX < 0;
         
         if (isAtStart || isAtEnd) {
-          deltaX = deltaX * 0.3; // Resistance at edges
+          deltaX = deltaX * 0.3;
         }
         
-        lbImg.style.transform = `translateX(${deltaX}px)`;
+        lbTrack.style.transform = `translateX(${baseOffset + deltaX}px)`;
       }, { passive: true });
 
-      lightbox.addEventListener('touchend', (e) => {
+      lbTrack.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
         
@@ -637,32 +666,17 @@
         const deltaTime = Date.now() - startTime;
         const velocity = Math.abs(deltaX) / deltaTime;
         
-        // Threshold: either moved far enough OR swiped fast enough
         const threshold = window.innerWidth * 0.2;
         const shouldChange = Math.abs(deltaX) > threshold || velocity > 0.5;
         
-        lbImg.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        
         if (shouldChange && deltaX > 0 && currentIndex > 0) {
-          // Swipe right - go to previous
-          lbImg.style.transform = `translateX(${window.innerWidth}px)`;
-          setTimeout(() => {
-            prevImage();
-            lbImg.style.transition = 'none';
-            lbImg.style.transform = 'translateX(0)';
-          }, 300);
+          goToSlide(currentIndex - 1);
         } else if (shouldChange && deltaX < 0 && currentIndex < currentPhotos.length - 1) {
-          // Swipe left - go to next
-          lbImg.style.transform = `translateX(${-window.innerWidth}px)`;
-          setTimeout(() => {
-            nextImage();
-            lbImg.style.transition = 'none';
-            lbImg.style.transform = 'translateX(0)';
-          }, 300);
+          goToSlide(currentIndex + 1);
         } else {
           // Snap back with bounce
-          lbImg.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-          lbImg.style.transform = 'translateX(0)';
+          lbTrack.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          lbTrack.style.transform = `translateX(${baseOffset}px)`;
         }
       });
 
