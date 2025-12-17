@@ -596,20 +596,73 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-      // Swipe gesture support
+      // Fluid swipe gesture support
       let touchStartX = 0;
-      let touchEndX = 0;
+      let touchStartY = 0;
+      let touchCurrentX = 0;
+      let isDragging = false;
+      let startTime = 0;
 
       lightbox.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchCurrentX = touchStartX;
+        isDragging = true;
+        startTime = Date.now();
+        lbImg.style.transition = 'none';
+      }, { passive: true });
+
+      lightbox.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        touchCurrentX = e.touches[0].clientX;
+        let deltaX = touchCurrentX - touchStartX;
+        
+        // Rubber band effect at edges
+        const isAtStart = currentIndex === 0 && deltaX > 0;
+        const isAtEnd = currentIndex === currentPhotos.length - 1 && deltaX < 0;
+        
+        if (isAtStart || isAtEnd) {
+          deltaX = deltaX * 0.3; // Resistance at edges
+        }
+        
+        lbImg.style.transform = `translateX(${deltaX}px)`;
       }, { passive: true });
 
       lightbox.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
-        if (Math.abs(diff) > 50) {
-          if (diff > 0) nextImage();
-          else prevImage();
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const deltaX = touchCurrentX - touchStartX;
+        const deltaTime = Date.now() - startTime;
+        const velocity = Math.abs(deltaX) / deltaTime;
+        
+        // Threshold: either moved far enough OR swiped fast enough
+        const threshold = window.innerWidth * 0.2;
+        const shouldChange = Math.abs(deltaX) > threshold || velocity > 0.5;
+        
+        lbImg.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        
+        if (shouldChange && deltaX > 0 && currentIndex > 0) {
+          // Swipe right - go to previous
+          lbImg.style.transform = `translateX(${window.innerWidth}px)`;
+          setTimeout(() => {
+            prevImage();
+            lbImg.style.transition = 'none';
+            lbImg.style.transform = 'translateX(0)';
+          }, 300);
+        } else if (shouldChange && deltaX < 0 && currentIndex < currentPhotos.length - 1) {
+          // Swipe left - go to next
+          lbImg.style.transform = `translateX(${-window.innerWidth}px)`;
+          setTimeout(() => {
+            nextImage();
+            lbImg.style.transition = 'none';
+            lbImg.style.transform = 'translateX(0)';
+          }, 300);
+        } else {
+          // Snap back with bounce
+          lbImg.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          lbImg.style.transform = 'translateX(0)';
         }
       });
 
