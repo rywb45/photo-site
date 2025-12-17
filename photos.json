@@ -1,18 +1,18 @@
 {
-  "archive": [
-    "archive/001.jpeg",
-    "archive/002.jpeg",
-    "archive/003.jpeg",
-    "archive/004.jpeg",
-    "archive/005.jpeg",
-    "archive/006.jpeg",
-    "archive/007.jpeg"
-  ],
   "nyc": [
-    "nyc/001.jpg",
-    "nyc/002.jpg",
-    "nyc/003.jpg",
-    "nyc/004.jpg",
-    "nyc/005.jpg"
+    "01-nyc/001.jpg",
+    "01-nyc/002.jpg",
+    "01-nyc/003.jpg",
+    "01-nyc/004.jpg",
+    "01-nyc/005.jpg"
+  ],
+  "archive": [
+    "02-archive/001.jpeg",
+    "02-archive/002.jpeg",
+    "02-archive/003.jpeg",
+    "02-archive/004.jpeg",
+    "02-archive/005.jpeg",
+    "02-archive/006.jpeg",
+    "02-archive/007.jpeg"
   ]
 }
