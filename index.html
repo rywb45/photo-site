@@ -95,7 +95,8 @@
       .main {
         margin-left: 280px;
         flex: 1;
-        padding: 60px 60px;
+        padding: 40px 60px;
+        padding: 80px 60px;
       }
 
       #grid {
@@ -208,7 +209,7 @@
         content: "›";
       }
 
-           @media (max-width: 1024px) {
+      @media (max-width: 1024px) {
         .sidebar {
           width: 220px;
           padding: 30px 40px;
@@ -220,20 +221,10 @@
         }
       }
 
-
-  .main {
-    margin-left: 0;
-    padding: 20px;
-  }
-
-  #grid {
-    gap: 3px;
-  }
-
-  .grid-row {
-    gap: 3px;
-  }
-}
+      @media (max-width: 768px) {
+        body {
+          flex-direction: column;
+        }
 
         .sidebar {
           position: relative;
@@ -265,14 +256,14 @@
     <aside class="sidebar">
       <h1>Ryan Byrne</h1>
       <nav id="albumNav"></nav>
-      
+
       <div class="social">
       <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
       <img src="instagram.svg" alt="Instagram">
       <svg width="22" height="22" viewBox="0 0 22 22" ...>
       </a>
       </div>
-      
+
       <img src="photos/signature.png" class="signature" alt="Signature">
     </aside>
 
@@ -300,10 +291,10 @@
         try {
           const response = await fetch('photos.json');
           albums = await response.json();
-          
+
           const nav = document.getElementById('albumNav');
           const albumNames = Object.keys(albums);
-          
+
           albumNames.forEach((albumName) => {
             const link = document.createElement('a');
             link.textContent = albumName.toUpperCase();
@@ -314,7 +305,7 @@
             });
             nav.appendChild(link);
           });
-          
+
           if (albumNames.length > 0) {
             switchAlbum(albumNames[0]);
           }
@@ -326,7 +317,7 @@
       function switchAlbum(albumName) {
         currentAlbum = albumName;
         currentPhotos = albums[albumName].map(f => `photos/${f}`);
-        
+
         document.querySelectorAll('#albumNav a').forEach(link => {
           if (link.dataset.album === albumName) {
             link.classList.add('active');
@@ -334,7 +325,7 @@
             link.classList.remove('active');
           }
         });
-        
+
         renderGrid();
       }
 
