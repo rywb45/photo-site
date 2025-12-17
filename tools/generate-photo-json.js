@@ -21,29 +21,34 @@ const albums = {};
 // Read all items in photos directory
 const items = fs.readdirSync(photosDir, { withFileTypes: true });
 
-for (const item of items) {
-  if (item.isDirectory()) {
-    // It's an album folder
-    const albumName = item.name;
-    const albumPath = path.join(photosDir, albumName);
-    
-    const albumFiles = fs
-      .readdirSync(albumPath)
-      .filter(isAllowed)
-      .sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-      )
-      .map(f => `${albumName}/${f}`);
-    
-    if (albumFiles.length > 0) {
-      albums[albumName] = albumFiles;
-    }
+// Sort folders naturally (handles number prefixes)
+const folders = items
+  .filter(item => item.isDirectory())
+  .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+for (const item of folders) {
+  const folderName = item.name;
+  const albumPath = path.join(photosDir, folderName);
+  
+  // Strip number prefix (e.g., "01-nyc" becomes "nyc")
+  const displayName = folderName.replace(/^\d+-/, '');
+  
+  const albumFiles = fs
+    .readdirSync(albumPath)
+    .filter(isAllowed)
+    .sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+    )
+    .map(f => `${folderName}/${f}`); // Use actual folder name in path
+  
+  if (albumFiles.length > 0) {
+    albums[displayName] = albumFiles;
   }
 }
 
 // Check if any albums were found
 if (Object.keys(albums).length === 0) {
-  console.error("No album folders found in /photos. Create folders like /photos/nyc/ and /photos/archive/");
+  console.error("No album folders found in /photos. Create folders like /photos/01-nyc/ and /photos/02-archive/");
   process.exit(1);
 }
 
