@@ -34,7 +34,6 @@ for (const f of files) {
   fs.copyFileSync(path.join(photos, f), path.join(distPhotos, f));
 }
 
-// FIX: Add "photos/" prefix to each filename
+// Add "photos/" prefix and write to ROOT (not dist)
 const filesWithPath = files.map(f => `photos/${f}`);
-
-fs.writeFileSync(path.join(dist, "photos.json"), JSON.stringify(filesWithPath, null, 2));
+fs.writeFileSync(path.join(root, "photos.json"), JSON.stringify(filesWithPath, null, 2));
