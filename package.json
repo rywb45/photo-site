@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen": "node tools/generate-photo-json.js",
+    "gen": "node tools/generate-photo-json.js"
   }
 }
