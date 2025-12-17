@@ -222,33 +222,42 @@
       }
 
       @media (max-width: 768px) {
-        body {
-          flex-direction: column;
-        }
+    body {
+    flex-direction: column;
+  }
 
-        .sidebar {
-          position: relative;
-          width: 100%;
-          height: auto;
-          border-right: none;
-          border-bottom: 1px solid #e0e0e0;
-          padding: 30px;
-        }
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 30px;
+  }
 
-        .sidebar h1 {
-          margin-bottom: 30px;
-        }
+  .sidebar h1 {
+    margin-bottom: 30px;
+  }
 
-        .sidebar nav {
-          flex-direction: row;
-          flex-wrap: wrap;
-          gap: 20px;
-        }
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
 
-        .main {
-          margin-left: 0;
-          padding: 30px;
-        }
+  .sidebar .signature {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    margin-top: 0;
+    max-width: 80px;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 30px;
+  }
+}
       }
     </style>
   </head>
@@ -259,8 +268,7 @@
 
       <div class="social">
       <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-      <img src="instagram.svg" alt="Instagram">
-      <svg width="22" height="22" viewBox="0 0 22 22" ...>
+      <img src="instagram.svg" alt="Instagram" width="22" height="22">
       </a>
       </div>
 
