@@ -20,7 +20,6 @@
         min-height: 100vh;
       }
 
-      /* LEFT SIDEBAR */
       .sidebar {
         position: fixed;
         left: 0;
@@ -55,6 +54,7 @@
         text-decoration: none;
         color: #000;
         transition: opacity 0.2s;
+        cursor: pointer;
       }
 
       .sidebar nav a:hover {
@@ -72,14 +72,12 @@
         opacity: 0.6;
       }
 
-      /* MAIN CONTENT AREA */
       .main {
         margin-left: 280px;
         flex: 1;
         padding: 40px 60px;
       }
 
-      /* PHOTO GRID */
       #grid {
         display: flex;
         flex-direction: column;
@@ -110,13 +108,11 @@
         transform: scale(1.02);
       }
 
-      /* FOOTER */
       .footer {
         margin-top: 80px;
         padding: 40px 0;
       }
 
-      /* LIGHTBOX */
       .lightbox {
         display: none;
         position: fixed;
@@ -192,7 +188,6 @@
         content: "›";
       }
 
-      /* RESPONSIVE */
       @media (max-width: 1024px) {
         .sidebar {
           width: 220px;
@@ -237,24 +232,17 @@
     </style>
   </head>
   <body>
-    <!-- LEFT SIDEBAR -->
     <aside class="sidebar">
       <h1>Ryan Byrne</h1>
-      <nav>
-        <a href="#nyc" class="active">NYC</a>
-        <a href="#archive">Archive</a>
-      </nav>
+      <nav id="albumNav"></nav>
       <img src="photos/signature.png" class="signature" alt="Signature">
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main">
       <div id="grid"></div>
-      
       <footer class="footer"></footer>
     </main>
 
-    <!-- LIGHTBOX -->
     <div id="lightbox" class="lightbox">
       <button id="lbClose" class="lb-btn lb-close" aria-label="Close"></button>
       <button id="lbPrev" class="lb-btn lb-prev" aria-label="Previous"></button>
@@ -265,21 +253,52 @@
     </div>
 
     <script>
-      // PHOTO GRID RENDERING
-      let photos = [];
+      let albums = {};
+      let currentAlbum = null;
+      let currentPhotos = [];
       let currentIndex = 0;
 
-      async function loadPhotos() {
-  try {
-    const response = await fetch('photos.json');
-    const filenames = await response.json();
-    // Add photos/ prefix to each filename
-    photos = filenames.map(f => `photos/${f}`);
-    await renderGrid();
-  } catch (error) {
-    console.error('Failed to load photos:', error);
-  }
-}
+      async function loadAlbums() {
+        try {
+          const response = await fetch('photos.json');
+          albums = await response.json();
+          
+          const nav = document.getElementById('albumNav');
+          const albumNames = Object.keys(albums);
+          
+          albumNames.forEach((albumName) => {
+            const link = document.createElement('a');
+            link.textContent = albumName.toUpperCase();
+            link.dataset.album = albumName;
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              switchAlbum(albumName);
+            });
+            nav.appendChild(link);
+          });
+          
+          if (albumNames.length > 0) {
+            switchAlbum(albumNames[0]);
+          }
+        } catch (error) {
+          console.error('Failed to load albums:', error);
+        }
+      }
+
+      function switchAlbum(albumName) {
+        currentAlbum = albumName;
+        currentPhotos = albums[albumName].map(f => `photos/${f}`);
+        
+        document.querySelectorAll('#albumNav a').forEach(link => {
+          if (link.dataset.album === albumName) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+        
+        renderGrid();
+      }
 
       async function getImageDimensions(src) {
         return new Promise((resolve) => {
@@ -295,7 +314,7 @@
         grid.innerHTML = '';
 
         const photosWithDimensions = await Promise.all(
-          photos.map(async (photo) => {
+          currentPhotos.map(async (photo) => {
             const dims = await getImageDimensions(photo);
             return { src: photo, ...dims };
           })
@@ -352,7 +371,6 @@
         });
       }
 
-      // LIGHTBOX
       const lightbox = document.getElementById('lightbox');
       const lbImg = document.getElementById('lbImg');
       const lbClose = document.getElementById('lbClose');
@@ -372,16 +390,16 @@
       }
 
       function showLightboxImage() {
-        lbImg.src = photos[currentIndex];
+        lbImg.src = currentPhotos[currentIndex];
       }
 
       function nextImage() {
-        currentIndex = (currentIndex + 1) % photos.length;
+        currentIndex = (currentIndex + 1) % currentPhotos.length;
         showLightboxImage();
       }
 
       function prevImage() {
-        currentIndex = (currentIndex - 1 + photos.length) % photos.length;
+        currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
         showLightboxImage();
       }
 
@@ -400,8 +418,7 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-      // INIT
-      loadPhotos();
+      loadAlbums();
       window.addEventListener('resize', renderGrid);
     </script>
   </body>
