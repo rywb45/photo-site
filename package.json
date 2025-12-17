@@ -4,6 +4,5 @@
   "type": "module",
   "scripts": {
     "gen": "node tools/generate-photo-json.js",
-    "build": "node build/generatePhotos.mjs"
   }
 }
