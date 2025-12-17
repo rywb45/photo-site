@@ -270,14 +270,16 @@
       let currentIndex = 0;
 
       async function loadPhotos() {
-        try {
-          const response = await fetch('photos.json');
-          photos = await response.json();
-          await renderGrid();
-        } catch (error) {
-          console.error('Failed to load photos:', error);
-        }
-      }
+  try {
+    const response = await fetch('photos.json');
+    const filenames = await response.json();
+    // Add photos/ prefix to each filename
+    photos = filenames.map(f => `photos/${f}`);
+    await renderGrid();
+  } catch (error) {
+    console.error('Failed to load photos:', error);
+  }
+}
 
       async function getImageDimensions(src) {
         return new Promise((resolve) => {
