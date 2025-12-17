@@ -7,7 +7,6 @@ on:
     paths:
       - "photos/**"
       - "tools/**"
-      - "build/**"
       - "package.json"
 
 permissions:
