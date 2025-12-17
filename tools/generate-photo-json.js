@@ -33,7 +33,7 @@ for (const item of items) {
       .sort((a, b) =>
         a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
       )
-      .map(f => `${albumName}/${f}`); // Include album name in path
+      .map(f => `${albumName}/${f}`);
     
     if (albumFiles.length > 0) {
       albums[albumName] = albumFiles;
@@ -49,4 +49,7 @@ if (Object.keys(albums).length === 0) {
 
 fs.writeFileSync(outFile, JSON.stringify(albums, null, 2) + "\n", "utf8");
 
-console.log(`Generated photos.json wit
+console.log(`Generated photos.json with ${Object.keys(albums).length} albums:`);
+for (const [album, files] of Object.entries(albums)) {
+  console.log(`  - ${album}: ${files.length} photos`);
+}
