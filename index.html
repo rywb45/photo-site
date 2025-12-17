@@ -178,6 +178,8 @@
         z-index: 10;
         pointer-events: auto;
         transition: opacity 0.2s;
+        -webkit-tap-highlight-color: transparent;  /* ADD */
+        outline: none
       }
 
       .lb-btn:hover {
@@ -314,6 +316,8 @@
           padding: 10px;
           width: 44px;
           height: 44px;
+          -webkit-tap-highlight-color: transparent;  /* ADD */
+          outline: none;
         }
 
         .mobile-close::before {
@@ -321,7 +325,7 @@
         }
 
         #grid {
-          padding: 20px;
+          padding: 30px;
           gap: 4px;
           width: 100%;
           overflow: hidden;
