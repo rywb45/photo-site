@@ -255,9 +255,8 @@
   }
 
   .sidebar .signature {
-    margin-top: auto;
-    max-width: 100px;
-    padding-top: 40px;
+    margin-top: 30px;
+    max-width: 220px;
   }
 
   .main {
@@ -313,6 +312,7 @@
     </aside>
 
     <main class="main">
+      <button class="mobile-close" id="mobileClose" aria-label="Close"></button>
       <div id="grid"></div>
       <footer class="footer"></footer>
     </main>
@@ -333,31 +333,32 @@
       let currentIndex = 0;
 
       async function loadAlbums() {
-        try {
-          const response = await fetch('photos.json');
-          albums = await response.json();
+  try {
+    const response = await fetch('photos.json');
+    albums = await response.json();
 
-          const nav = document.getElementById('albumNav');
-          const albumNames = Object.keys(albums);
+    const nav = document.getElementById('albumNav');
+    const albumNames = Object.keys(albums);
 
-          albumNames.forEach((albumName) => {
-            const link = document.createElement('a');
-            link.textContent = albumName.toUpperCase();
-            link.dataset.album = albumName;
-            link.addEventListener('click', (e) => {
-              e.preventDefault();
-              switchAlbum(albumName);
-            });
-            nav.appendChild(link);
-          });
+    albumNames.forEach((albumName) => {
+      const link = document.createElement('a');
+      link.textContent = albumName.toUpperCase();
+      link.dataset.album = albumName;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchAlbum(albumName);
+      });
+      nav.appendChild(link);
+    });
 
-          if (albumNames.length > 0) {
-            switchAlbum(albumNames[0]);
-          }
-        } catch (error) {
-          console.error('Failed to load albums:', error);
-        }
-      }
+    // Only auto-load first album on DESKTOP
+    if (albumNames.length > 0 && window.innerWidth > 768) {
+      switchAlbum(albumNames[0]);
+    }
+  } catch (error) {
+    console.error('Failed to load albums:', error);
+  }
+}
 
       function switchAlbum(albumName) {
         currentAlbum = albumName;
@@ -498,6 +499,17 @@
 
       loadAlbums();
       window.addEventListener('resize', renderGrid);
+
+      const mobileClose = document.getElementById('mobileClose');
+if (mobileClose) {
+  mobileClose.addEventListener('click', () => {
+    document.querySelector('.main').classList.remove('active');
+    // Clear active state from nav links
+    document.querySelectorAll('#albumNav a').forEach(link => {
+      link.classList.remove('active');
+    });
+  });
+}
     </script>
   </body>
 </html>
