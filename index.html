@@ -178,8 +178,8 @@
         z-index: 10;
         pointer-events: auto;
         transition: opacity 0.2s;
-        -webkit-tap-highlight-color: transparent;  /* ADD */
-        outline: none
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
       }
 
       .lb-btn:hover {
@@ -213,6 +213,10 @@
 
       .lb-next::before {
         content: "›";
+      }
+
+      .lb-dots {
+        display: none;
       }
 
       @media (max-width: 1024px) {
@@ -316,7 +320,7 @@
           padding: 10px;
           width: 44px;
           height: 44px;
-          -webkit-tap-highlight-color: transparent;  /* ADD */
+          -webkit-tap-highlight-color: transparent;
           outline: none;
         }
 
@@ -325,7 +329,7 @@
         }
 
         #grid {
-          padding: 30px;
+          padding: 20px;
           gap: 4px;
           width: 100%;
           overflow: hidden;
@@ -339,6 +343,32 @@
 
         .grid-item {
           flex-shrink: 1;
+        }
+
+        .lb-prev, .lb-next {
+          display: none;
+        }
+
+        .lb-dots {
+          position: fixed;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 8px;
+          z-index: 10;
+        }
+
+        .lb-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.4);
+          transition: background 0.2s;
+        }
+
+        .lb-dot.active {
+          background: #fff;
         }
       }
     </style>
@@ -370,6 +400,7 @@
       <button id="lbClose" class="lb-btn lb-close" aria-label="Close"></button>
       <button id="lbPrev" class="lb-btn lb-prev" aria-label="Previous"></button>
       <button id="lbNext" class="lb-btn lb-next" aria-label="Next"></button>
+      <div class="lb-dots" id="lbDots"></div>
       <div class="lb-stage">
         <img id="lbImg" alt="" />
       </div>
@@ -511,9 +542,20 @@
       const lbPrev = document.getElementById('lbPrev');
       const lbNext = document.getElementById('lbNext');
 
+      function updateDots() {
+        const dotsContainer = document.getElementById('lbDots');
+        dotsContainer.innerHTML = '';
+        currentPhotos.forEach((_, index) => {
+          const dot = document.createElement('div');
+          dot.className = 'lb-dot' + (index === currentIndex ? ' active' : '');
+          dotsContainer.appendChild(dot);
+        });
+      }
+
       function openLightbox(index) {
         currentIndex = index;
         showLightboxImage();
+        updateDots();
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
       }
@@ -530,11 +572,13 @@
       function nextImage() {
         currentIndex = (currentIndex + 1) % currentPhotos.length;
         showLightboxImage();
+        updateDots();
       }
 
       function prevImage() {
         currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
         showLightboxImage();
+        updateDots();
       }
 
       lbClose.addEventListener('click', closeLightbox);
@@ -552,6 +596,23 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
+      // Swipe gesture support
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      lightbox.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      lightbox.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) nextImage();
+          else prevImage();
+        }
+      });
+
       loadAlbums();
       window.addEventListener('resize', renderGrid);
 
@@ -565,9 +626,6 @@ if (mobileClose) {
     });
   });
 }
-    </script>
-  </body>
-</html>
     </script>
   </body>
 </html>
