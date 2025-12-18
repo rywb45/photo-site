@@ -741,7 +741,7 @@
             // Animate out
             lbTrack.style.transition = 'transform 0.3s ease-out';
             lightbox.style.transition = 'background 0.3s ease-out';
-            lbTrack.style.transform = `translateX(${baseOffset}px) translateY(${window.innerHeight}px) scale(0.8)`;
+            lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
             lightbox.style.background = 'rgba(255, 255, 255, 0)';
 
             setTimeout(() => {
