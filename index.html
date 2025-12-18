@@ -115,12 +115,12 @@
       #grid {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 8px;
       }
 
       .grid-row {
         display: flex;
-        gap: 4px;
+        gap: 8px;
         width: 100%;
       }
 
@@ -362,13 +362,13 @@
 
         #grid {
           padding: 20px;
-          gap: 4px;
+          gap: 8px;
           width: 100%;
           overflow: hidden;
         }
 
         .grid-row {
-          gap: 4px;
+          gap: 8px;
           max-width: 100%;
           overflow: hidden;
         }
@@ -519,7 +519,7 @@
         const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
         const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
         const containerWidth = (grid.clientWidth || 1200) - paddingLeft - paddingRight;
-        const gap = 4;
+        const gap = 8;
 
         let currentRow = [];
         let currentRowWidth = 0;
