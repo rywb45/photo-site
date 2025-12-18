@@ -654,37 +654,55 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-      // Trackpad/mousewheel horizontal swiping
-let wheelAccumulator = 0;
+// Trackpad/mousewheel horizontal swiping with drag effect
+let wheelDelta = 0;
 let wheelTimeout = null;
+let isWheeling = false;
 
 lightbox.addEventListener('wheel', (e) => {
   if (!lightbox.classList.contains('active')) return;
   
-  // Prevent page scroll
   e.preventDefault();
   
-  // Use deltaX for horizontal swipes
-  wheelAccumulator += e.deltaX;
+  if (!isWheeling) {
+    isWheeling = true;
+    lbTrack.style.transition = 'none';
+  }
+  
+  wheelDelta += e.deltaX;
+  
+  // Rubber band effect at edges
+  let adjustedDelta = wheelDelta;
+  const isAtStart = currentIndex === 0 && wheelDelta < 0;
+  const isAtEnd = currentIndex === currentPhotos.length - 1 && wheelDelta > 0;
+  
+  if (isAtStart || isAtEnd) {
+    adjustedDelta = wheelDelta * 0.3;
+  }
+  
+  const baseOffset = -currentIndex * window.innerWidth;
+  lbTrack.style.transform = `translateX(${baseOffset - adjustedDelta}px)`;
   
   // Clear previous timeout
   if (wheelTimeout) clearTimeout(wheelTimeout);
   
-  // Reset accumulator after gesture ends
+  // When gesture ends, snap to nearest slide
   wheelTimeout = setTimeout(() => {
-    wheelAccumulator = 0;
-  }, 200);
-  
-  // Threshold to trigger slide change
-  const threshold = 50;
-  
-  if (wheelAccumulator > threshold) {
-    nextImage();
-    wheelAccumulator = 0;
-  } else if (wheelAccumulator < -threshold) {
-    prevImage();
-    wheelAccumulator = 0;
-  }
+    const threshold = window.innerWidth * 0.15;
+    
+    lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    
+    if (wheelDelta > threshold && currentIndex < currentPhotos.length - 1) {
+      goToSlide(currentIndex + 1);
+    } else if (wheelDelta < -threshold && currentIndex > 0) {
+      goToSlide(currentIndex - 1);
+    } else {
+      lbTrack.style.transform = `translateX(${baseOffset}px)`;
+    }
+    
+    wheelDelta = 0;
+    isWheeling = false;
+  }, 150);
 }, { passive: false });
       
       // === TOUCH GESTURE HANDLING ===
