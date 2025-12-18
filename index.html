@@ -654,6 +654,39 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
+      // Trackpad/mousewheel horizontal swiping
+let wheelAccumulator = 0;
+let wheelTimeout = null;
+
+lightbox.addEventListener('wheel', (e) => {
+  if (!lightbox.classList.contains('active')) return;
+  
+  // Prevent page scroll
+  e.preventDefault();
+  
+  // Use deltaX for horizontal swipes
+  wheelAccumulator += e.deltaX;
+  
+  // Clear previous timeout
+  if (wheelTimeout) clearTimeout(wheelTimeout);
+  
+  // Reset accumulator after gesture ends
+  wheelTimeout = setTimeout(() => {
+    wheelAccumulator = 0;
+  }, 200);
+  
+  // Threshold to trigger slide change
+  const threshold = 50;
+  
+  if (wheelAccumulator > threshold) {
+    nextImage();
+    wheelAccumulator = 0;
+  } else if (wheelAccumulator < -threshold) {
+    prevImage();
+    wheelAccumulator = 0;
+  }
+}, { passive: false });
+      
       // === TOUCH GESTURE HANDLING ===
       let touchStartX = 0;
       let touchStartY = 0;
