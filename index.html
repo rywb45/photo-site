@@ -679,7 +679,7 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-// Trackpad/mousewheel horizontal swiping with drag effect
+// Trackpad/mousewheel swiping with drag effect
 let wheelDeltaX = 0;
 let wheelDeltaY = 0;
 let wheelTimeout = null;
@@ -706,32 +706,31 @@ lightbox.addEventListener('wheel', (e) => {
     wheelSampleX = 0;
     wheelSampleY = 0;
     wheelSampleCount = 0;
+    wheelDeltaX = 0;
+    wheelDeltaY = 0;
     lbTrack.style.transition = 'none';
     lightbox.style.transition = 'none';
   }
   
-  // Accumulate samples to determine direction more reliably
+  // Accumulate samples to determine direction
   if (!wheelDirection) {
     wheelSampleX += Math.abs(e.deltaX);
     wheelSampleY += Math.abs(e.deltaY);
     wheelSampleCount++;
     
-    // Need a few samples or significant movement to decide
     const totalMovement = wheelSampleX + wheelSampleY;
-    if (totalMovement > 15 || wheelSampleCount >= 3) {
-      // Use 1.5x bias toward vertical to make it easier to trigger
-      wheelDirection = (wheelSampleY * 1.5) > wheelSampleX ? 'vertical' : 'horizontal';
+    if (totalMovement > 10 || wheelSampleCount >= 2) {
+      // Determine direction - bias toward vertical if deltaY is significant
+      wheelDirection = wheelSampleY > wheelSampleX ? 'vertical' : 'horizontal';
     }
   }
   
-  // Vertical swipe down to close
+  // Vertical swipe down to close (negative deltaY = swipe down with natural scrolling)
   if (wheelDirection === 'vertical') {
-    // Only accumulate positive (downward) deltas
-    if (e.deltaY > 0) {
-      wheelDeltaY += e.deltaY;
+    if (e.deltaY < 0) {
+      wheelDeltaY += Math.abs(e.deltaY);
     } else if (wheelDeltaY > 0) {
-      // Allow pulling back up if already dragged down
-      wheelDeltaY = Math.max(0, wheelDeltaY + e.deltaY);
+      wheelDeltaY = Math.max(0, wheelDeltaY - e.deltaY);
     }
     
     if (wheelDeltaY > 0) {
