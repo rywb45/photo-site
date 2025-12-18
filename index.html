@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Ryan Byrne</title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <style>
       * {
         margin: 0;
@@ -91,6 +90,12 @@
         max-width: 140px;
         height: auto;
         opacity: 0.6;
+      }
+
+      .sidebar .copyright {
+        font-size: 12px;
+        color: #666;
+        margin-top: 10px;
       }
 
       .main {
@@ -410,6 +415,7 @@
       </div>
 
       <img src="photos/signature.png" class="signature" alt="Signature">
+      <p class="copyright">© <span id="year"></span></p>
     </aside>
 
     <main class="main">
@@ -430,6 +436,9 @@
     </div>
 
     <script>
+      // Set the current year dynamically
+      document.getElementById('year').textContent = new Date().getFullYear();
+
       let albums = {};
       let currentAlbum = null;
       let currentPhotos = [];
