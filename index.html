@@ -671,13 +671,12 @@ lightbox.addEventListener('wheel', (e) => {
   
   wheelDelta += e.deltaX;
   
-  // Hard stops at edges
-  const maxDrag = window.innerWidth * 0.3;
+  // Hard stops at edges - block scrolling past boundaries
   if (currentIndex === 0 && wheelDelta < 0) {
-    wheelDelta = Math.max(wheelDelta, -maxDrag);
+    wheelDelta = 0;
   }
   if (currentIndex === currentPhotos.length - 1 && wheelDelta > 0) {
-    wheelDelta = Math.min(wheelDelta, maxDrag);
+    wheelDelta = 0;
   }
   
   const baseOffset = -currentIndex * window.innerWidth;
@@ -686,9 +685,9 @@ lightbox.addEventListener('wheel', (e) => {
   if (wheelTimeout) clearTimeout(wheelTimeout);
   
   wheelTimeout = setTimeout(() => {
-    const threshold = window.innerWidth * 0.08;
+    const threshold = window.innerWidth * 0.05;
     
-    lbTrack.style.transition = 'transform 0.2s ease-out';
+    lbTrack.style.transition = 'transform 0.15s ease-out';
     
     if (wheelDelta > threshold && currentIndex < currentPhotos.length - 1) {
       goToSlide(currentIndex + 1);
@@ -700,7 +699,7 @@ lightbox.addEventListener('wheel', (e) => {
     
     wheelDelta = 0;
     isWheeling = false;
-  }, 80);
+  }, 50);
 }, { passive: false });
       
       // === TOUCH GESTURE HANDLING ===
