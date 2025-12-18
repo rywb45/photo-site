@@ -632,7 +632,10 @@
       let startTime = 0;
       let baseOffset = 0;
 
-      lbTrack.addEventListener('touchstart', (e) => {
+      lightbox.addEventListener('touchstart', (e) => {
+        // Ignore if touching the close button
+        if (e.target.closest('.lb-btn')) return;
+        
         touchStartX = e.touches[0].clientX;
         touchCurrentX = touchStartX;
         isDragging = true;
@@ -641,7 +644,7 @@
         lbTrack.style.transition = 'none';
       }, { passive: true });
 
-      lbTrack.addEventListener('touchmove', (e) => {
+      lightbox.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         
         touchCurrentX = e.touches[0].clientX;
@@ -658,7 +661,7 @@
         lbTrack.style.transform = `translateX(${baseOffset + deltaX}px)`;
       }, { passive: true });
 
-      lbTrack.addEventListener('touchend', (e) => {
+      lightbox.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
         
