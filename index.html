@@ -695,6 +695,58 @@ lightbox.addEventListener('wheel', (e) => {
   const timeDelta = now - lastWheelTime;
   lastWheelTime = now;
   
+  // Two-finger swipe down to close (deltaY > 0 means scrolling down)
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaY > 0) {
+    if (!isWheeling) {
+      isWheeling = true;
+      lbTrack.style.transition = 'none';
+      lightbox.style.transition = 'none';
+    }
+    
+    wheelDelta += e.deltaY;
+    
+    // Visual feedback while dragging down
+    const progress = Math.min(wheelDelta / 300, 1);
+    const opacity = 1 - (progress * 0.5);
+    const currentOffset = -currentIndex * window.innerWidth;
+    lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDelta}px)`;
+    lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
+    
+    if (wheelTimeout) clearTimeout(wheelTimeout);
+    
+    wheelTimeout = setTimeout(() => {
+      const shouldClose = wheelDelta > 150;
+      
+      if (shouldClose) {
+        // Animate out
+        lbTrack.style.transition = 'transform 0.3s ease-out';
+        lightbox.style.transition = 'background 0.3s ease-out';
+        lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${window.innerHeight}px)`;
+        lightbox.style.background = 'rgba(255, 255, 255, 0)';
+        
+        setTimeout(() => {
+          closeLightbox();
+          lbTrack.style.transform = `translateX(${currentOffset}px)`;
+          lightbox.style.background = '';
+          lbTrack.style.transition = '';
+          lightbox.style.transition = '';
+        }, 300);
+      } else {
+        // Snap back
+        lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        lightbox.style.transition = 'background 0.3s ease';
+        lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
+        lightbox.style.background = '';
+      }
+      
+      wheelDelta = 0;
+      isWheeling = false;
+    }, 60);
+    
+    return;
+  }
+  
+  // Horizontal swiping for navigation
   if (!isWheeling) {
     isWheeling = true;
     lbTrack.style.transition = 'none';
