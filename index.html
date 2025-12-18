@@ -703,7 +703,8 @@
             const scale = 1 - (progress * 0.1);
             const opacity = 1 - (progress * 0.5);
 
-            lbTrack.style.transform = `translateX(${baseOffset}px) translateY(${deltaY}px) scale(${scale})`;
+            const currentOffset = -currentIndex * window.innerWidth;
+            lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${deltaY}px)`;
             lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
           }
         }
