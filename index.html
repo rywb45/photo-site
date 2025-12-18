@@ -142,7 +142,9 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.95);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         z-index: 1000;
         overflow: hidden;
       }
@@ -179,7 +181,7 @@
         position: fixed;
         background: none;
         border: none;
-        color: #fff;
+        color: #000;
         font-size: 32px;
         cursor: pointer;
         padding: 20px;
@@ -376,7 +378,7 @@
         }
 
         .lb-dot.active {
-          background: #fff;
+          background: #000;
         }
       }
     </style>
