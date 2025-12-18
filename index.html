@@ -671,26 +671,24 @@ lightbox.addEventListener('wheel', (e) => {
   
   wheelDelta += e.deltaX;
   
-  // Rubber band effect at edges
-  let adjustedDelta = wheelDelta;
-  const isAtStart = currentIndex === 0 && wheelDelta < 0;
-  const isAtEnd = currentIndex === currentPhotos.length - 1 && wheelDelta > 0;
-  
-  if (isAtStart || isAtEnd) {
-    adjustedDelta = wheelDelta * 0.3;
+  // Hard stops at edges
+  const maxDrag = window.innerWidth * 0.3;
+  if (currentIndex === 0 && wheelDelta < 0) {
+    wheelDelta = Math.max(wheelDelta, -maxDrag);
+  }
+  if (currentIndex === currentPhotos.length - 1 && wheelDelta > 0) {
+    wheelDelta = Math.min(wheelDelta, maxDrag);
   }
   
   const baseOffset = -currentIndex * window.innerWidth;
-  lbTrack.style.transform = `translateX(${baseOffset - adjustedDelta}px)`;
+  lbTrack.style.transform = `translateX(${baseOffset - wheelDelta}px)`;
   
-  // Clear previous timeout
   if (wheelTimeout) clearTimeout(wheelTimeout);
   
-  // When gesture ends, snap to nearest slide
   wheelTimeout = setTimeout(() => {
-    const threshold = window.innerWidth * 0.15;
+    const threshold = window.innerWidth * 0.08;
     
-    lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    lbTrack.style.transition = 'transform 0.2s ease-out';
     
     if (wheelDelta > threshold && currentIndex < currentPhotos.length - 1) {
       goToSlide(currentIndex + 1);
@@ -702,7 +700,7 @@ lightbox.addEventListener('wheel', (e) => {
     
     wheelDelta = 0;
     isWheeling = false;
-  }, 150);
+  }, 80);
 }, { passive: false });
       
       // === TOUCH GESTURE HANDLING ===
