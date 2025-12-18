@@ -697,7 +697,7 @@ lightbox.addEventListener('wheel', (e) => {
     const threshold = window.innerWidth * 0.1;
     const shouldChange = Math.abs(wheelDelta) > threshold || Math.abs(wheelVelocity) > 0.3;
     
-    lbTrack.style.transition = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    lbTrack.style.transition = 'transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     
     if (shouldChange && wheelDelta > 0 && currentIndex < currentPhotos.length - 1) {
       goToSlide(currentIndex + 1);
