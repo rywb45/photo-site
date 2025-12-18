@@ -608,6 +608,10 @@
         }
         lbTrack.style.transform = `translateX(${offset}px)`;
         updateDots();
+        
+        // Show/hide arrows at edges
+        lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
+        lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';    
       }
 
       function openLightbox(index) {
@@ -618,6 +622,9 @@
         lightbox.style.opacity = '1';
         lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
         document.body.style.overflow = 'hidden';
+
+        lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
+        lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
       }
 
       function closeLightbox() {
