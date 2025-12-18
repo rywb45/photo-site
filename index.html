@@ -269,15 +269,14 @@
         }
 
         .sidebar {
-  position: relative;
-  width: 100%;
-  min-height: 100dvh;  /* changed from height: 100vh */
-  border-right: none;
-  padding: 30px 30px 20px 30px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;  /* add this */
-}
+          position: relative;
+          width: 100%;
+          height: 100vh;
+          border-right: none;
+          padding: 30px 30px 10px 30px;
+          display: flex;
+          flex-direction: column;
+        }
 
         .sidebar h1 {
           margin-bottom: 40px;
@@ -408,21 +407,19 @@
     </style>
   </head>
   <body>
-   <aside class="sidebar">
-  <div class="sidebar-content">
-    <h1>Ryan Byrne</h1>
-    <nav id="albumNav"></nav>
+    <aside class="sidebar">
+      <h1>Ryan Byrne</h1>
+      <nav id="albumNav"></nav>
 
-    <div class="social">
-      <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-        <img src="instagram.svg" alt="Instagram" width="22" height="22">
-      </a>
-    </div>
+      <div class="social">
+        <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <img src="instagram.svg" alt="Instagram" width="22" height="22">
+        </a>
+      </div>
 
-    <img src="photos/signature.png" class="signature" alt="Signature">
-  </div>
-  <p class="copyright">© <span id="year"></span></p>
-</aside>
+      <img src="photos/signature.png" class="signature" alt="Signature">
+      <p class="copyright">© <span id="year"></span></p>
+    </aside>
 
     <main class="main">
       <div class="mobile-header">
