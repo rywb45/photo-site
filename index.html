@@ -100,7 +100,7 @@
       }
 
       .mobile-close {
-      display: none;
+        display: none;
       }
 
       #grid {
@@ -139,14 +139,14 @@
       }
 
       .lightbox {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      z-index: 1000;
-      overflow: hidden;
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        z-index: 1000;
+        overflow: hidden;
       }
 
       .lightbox.active {
@@ -206,37 +206,37 @@
         content: "✕";
       }
 
-    .lb-prev {
-  left: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-}
+      .lb-prev {
+        left: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
 
-.lb-prev::before {
-  content: '';
-  display: block;
-  width: 16px;
-  height: 32px;
-  background-image: url('chevron-left.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
+      .lb-prev::before {
+        content: '';
+        display: block;
+        width: 16px;
+        height: 32px;
+        background-image: url('chevron-left.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
 
-.lb-next {
-  right: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-}
+      .lb-next {
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
 
-.lb-next::before {
-  content: '';
-  display: block;
-  width: 16px;
-  height: 32px;
-  background-image: url('chevron-right.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
+      .lb-next::before {
+        content: '';
+        display: block;
+        width: 16px;
+        height: 32px;
+        background-image: url('chevron-right.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
 
       .lb-dots {
         display: none;
@@ -368,7 +368,8 @@
           flex-shrink: 1;
         }
 
-        .lb-prev, .lb-next {
+        /* Hide all lightbox buttons on mobile */
+        .lb-prev, .lb-next, .lb-close {
           display: none;
         }
 
@@ -393,12 +394,6 @@
         .lb-dot.active {
           background: #8E8E93;
         }
-
-        .lb-close {
-        top: 20px;
-        right: 20px;
-  }
-        
       }
     </style>
   </head>
@@ -408,22 +403,22 @@
       <nav id="albumNav"></nav>
 
       <div class="social">
-      <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-      <img src="instagram.svg" alt="Instagram" width="22" height="22">
-      </a>
+        <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <img src="instagram.svg" alt="Instagram" width="22" height="22">
+        </a>
       </div>
 
       <img src="photos/signature.png" class="signature" alt="Signature">
     </aside>
 
     <main class="main">
-  <div class="mobile-header">
-    <div class="mobile-header-title" id="mobileHeaderTitle"></div>
-    <button class="mobile-close" id="mobileClose" aria-label="Close"></button>
-  </div>
-  <div id="grid"></div>
-  <footer class="footer"></footer>
-</main>
+      <div class="mobile-header">
+        <div class="mobile-header-title" id="mobileHeaderTitle"></div>
+        <button class="mobile-close" id="mobileClose" aria-label="Close"></button>
+      </div>
+      <div id="grid"></div>
+      <footer class="footer"></footer>
+    </main>
 
     <div id="lightbox" class="lightbox">
       <button id="lbClose" class="lb-btn lb-close" aria-label="Close"></button>
@@ -440,53 +435,51 @@
       let currentIndex = 0;
 
       async function loadAlbums() {
-  try {
-    const response = await fetch('photos.json');
-    albums = await response.json();
+        try {
+          const response = await fetch('photos.json');
+          albums = await response.json();
 
-    const nav = document.getElementById('albumNav');
-    const albumNames = Object.keys(albums);
+          const nav = document.getElementById('albumNav');
+          const albumNames = Object.keys(albums);
 
-    albumNames.forEach((albumName) => {
-      const link = document.createElement('a');
-      link.textContent = albumName.toUpperCase();
-      link.dataset.album = albumName;
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchAlbum(albumName);
-      });
-      nav.appendChild(link);
-    });
+          albumNames.forEach((albumName) => {
+            const link = document.createElement('a');
+            link.textContent = albumName.toUpperCase();
+            link.dataset.album = albumName;
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              switchAlbum(albumName);
+            });
+            nav.appendChild(link);
+          });
 
-    // Only auto-load first album on DESKTOP
-    if (albumNames.length > 0 && window.innerWidth > 768) {
-      switchAlbum(albumNames[0]);
-    }
-  } catch (error) {
-    console.error('Failed to load albums:', error);
-  }
-}
+          if (albumNames.length > 0 && window.innerWidth > 768) {
+            switchAlbum(albumNames[0]);
+          }
+        } catch (error) {
+          console.error('Failed to load albums:', error);
+        }
+      }
 
       function switchAlbum(albumName) {
-  currentAlbum = albumName;
-  currentPhotos = albums[albumName].map(f => `photos/${f}`);
+        currentAlbum = albumName;
+        currentPhotos = albums[albumName].map(f => `photos/${f}`);
 
-  document.querySelectorAll('#albumNav a').forEach(link => {
-    if (link.dataset.album === albumName) {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
-  });
+        document.querySelectorAll('#albumNav a').forEach(link => {
+          if (link.dataset.album === albumName) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
 
-  // Show main on mobile and set album name in header
-  if (window.innerWidth <= 768) {
-    document.querySelector('.main').classList.add('active');
-    document.getElementById('mobileHeaderTitle').textContent = albumName.toUpperCase();
-  }
+        if (window.innerWidth <= 768) {
+          document.querySelector('.main').classList.add('active');
+          document.getElementById('mobileHeaderTitle').textContent = albumName.toUpperCase();
+        }
 
-  renderGrid();
-}
+        renderGrid();
+      }
 
       async function getImageDimensions(src) {
         return new Promise((resolve) => {
@@ -509,7 +502,6 @@
         );
 
         const targetRowHeight = 320;
-        // Get the actual content width (excluding padding)
         const computedStyle = getComputedStyle(grid);
         const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
         const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
@@ -609,11 +601,14 @@
         currentIndex = index;
         goToSlide(index, false);
         lightbox.classList.add('active');
+        lightbox.style.opacity = '1';
+        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
         document.body.style.overflow = 'hidden';
       }
 
       function closeLightbox() {
         lightbox.classList.remove('active');
+        lightbox.style.opacity = '1';
         document.body.style.overflow = '';
       }
 
@@ -646,77 +641,140 @@
         if (e.key === 'ArrowRight') nextImage();
       });
 
-      // Fluid carousel swipe
+      // === TOUCH GESTURE HANDLING ===
       let touchStartX = 0;
+      let touchStartY = 0;
       let touchCurrentX = 0;
+      let touchCurrentY = 0;
       let isDragging = false;
       let startTime = 0;
       let baseOffset = 0;
+      let gestureDirection = null; // 'horizontal' or 'vertical'
 
       lightbox.addEventListener('touchstart', (e) => {
-        // Ignore if touching the close button
         if (e.target.closest('.lb-btn')) return;
-        
+
         touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
         touchCurrentX = touchStartX;
+        touchCurrentY = touchStartY;
         isDragging = true;
         startTime = Date.now();
         baseOffset = -currentIndex * window.innerWidth;
+        gestureDirection = null;
+        
         lbTrack.style.transition = 'none';
+        lightbox.style.transition = 'none';
       }, { passive: true });
 
       lightbox.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        
+
         touchCurrentX = e.touches[0].clientX;
-        let deltaX = touchCurrentX - touchStartX;
-        
-        // Rubber band effect at edges
-        const isAtStart = currentIndex === 0 && deltaX > 0;
-        const isAtEnd = currentIndex === currentPhotos.length - 1 && deltaX < 0;
-        
-        if (isAtStart || isAtEnd) {
-          deltaX = deltaX * 0.3;
+        touchCurrentY = e.touches[0].clientY;
+
+        const deltaX = touchCurrentX - touchStartX;
+        const deltaY = touchCurrentY - touchStartY;
+
+        // Determine gesture direction on first significant movement
+        if (!gestureDirection) {
+          if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+            gestureDirection = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+          } else {
+            return;
+          }
         }
-        
-        lbTrack.style.transform = `translateX(${baseOffset + deltaX}px)`;
+
+        if (gestureDirection === 'horizontal') {
+          // Horizontal swipe - navigate between photos
+          let adjustedDeltaX = deltaX;
+          const isAtStart = currentIndex === 0 && deltaX > 0;
+          const isAtEnd = currentIndex === currentPhotos.length - 1 && deltaX < 0;
+
+          if (isAtStart || isAtEnd) {
+            adjustedDeltaX = deltaX * 0.3;
+          }
+
+          lbTrack.style.transform = `translateX(${baseOffset + adjustedDeltaX}px)`;
+        } else {
+          // Vertical swipe - drag to dismiss (only downward)
+          if (deltaY > 0) {
+            const progress = Math.min(deltaY / 300, 1);
+            const scale = 1 - (progress * 0.1);
+            const opacity = 1 - (progress * 0.5);
+
+            lbTrack.style.transform = `translateX(${baseOffset}px) translateY(${deltaY}px) scale(${scale})`;
+            lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
+          }
+        }
       }, { passive: true });
 
       lightbox.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
-        
+
         const deltaX = touchCurrentX - touchStartX;
+        const deltaY = touchCurrentY - touchStartY;
         const deltaTime = Date.now() - startTime;
-        const velocity = Math.abs(deltaX) / deltaTime;
-        
-        const threshold = window.innerWidth * 0.2;
-        const shouldChange = Math.abs(deltaX) > threshold || velocity > 0.5;
-        
-        if (shouldChange && deltaX > 0 && currentIndex > 0) {
-          goToSlide(currentIndex - 1);
-        } else if (shouldChange && deltaX < 0 && currentIndex < currentPhotos.length - 1) {
-          goToSlide(currentIndex + 1);
-        } else {
-          // Snap back with bounce
-          lbTrack.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-          lbTrack.style.transform = `translateX(${baseOffset}px)`;
+
+        if (gestureDirection === 'horizontal') {
+          // Horizontal swipe logic
+          const velocity = Math.abs(deltaX) / deltaTime;
+          const threshold = window.innerWidth * 0.2;
+          const shouldChange = Math.abs(deltaX) > threshold || velocity > 0.5;
+
+          if (shouldChange && deltaX > 0 && currentIndex > 0) {
+            goToSlide(currentIndex - 1);
+          } else if (shouldChange && deltaX < 0 && currentIndex < currentPhotos.length - 1) {
+            goToSlide(currentIndex + 1);
+          } else {
+            lbTrack.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            lbTrack.style.transform = `translateX(${baseOffset}px)`;
+          }
+        } else if (gestureDirection === 'vertical' && deltaY > 0) {
+          // Vertical swipe logic - dismiss if dragged far enough or fast enough
+          const velocity = deltaY / deltaTime;
+          const shouldDismiss = deltaY > 150 || velocity > 0.5;
+
+          if (shouldDismiss) {
+            // Animate out
+            lbTrack.style.transition = 'transform 0.3s ease-out';
+            lightbox.style.transition = 'background 0.3s ease-out';
+            lbTrack.style.transform = `translateX(${baseOffset}px) translateY(${window.innerHeight}px) scale(0.8)`;
+            lightbox.style.background = 'rgba(255, 255, 255, 0)';
+
+            setTimeout(() => {
+              closeLightbox();
+              // Reset styles
+              lbTrack.style.transform = `translateX(${baseOffset}px)`;
+              lightbox.style.background = '';
+              lbTrack.style.transition = '';
+              lightbox.style.transition = '';
+            }, 300);
+          } else {
+            // Snap back
+            lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            lightbox.style.transition = 'background 0.3s ease';
+            lbTrack.style.transform = `translateX(${baseOffset}px) translateY(0) scale(1)`;
+            lightbox.style.background = '';
+          }
         }
+
+        gestureDirection = null;
       });
 
       loadAlbums();
       window.addEventListener('resize', renderGrid);
 
       const mobileClose = document.getElementById('mobileClose');
-if (mobileClose) {
-  mobileClose.addEventListener('click', () => {
-    document.querySelector('.main').classList.remove('active');
-    // Clear active state from nav links
-    document.querySelectorAll('#albumNav a').forEach(link => {
-      link.classList.remove('active');
-    });
-  });
-}
+      if (mobileClose) {
+        mobileClose.addEventListener('click', () => {
+          document.querySelector('.main').classList.remove('active');
+          document.querySelectorAll('#albumNav a').forEach(link => {
+            link.classList.remove('active');
+          });
+        });
+      }
     </script>
   </body>
 </html>
