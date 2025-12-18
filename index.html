@@ -862,106 +862,65 @@ lightbox.addEventListener('wheel', (e) => {
       });
 
       // === MOBILE ALBUM VIEW SWIPE-TO-CLOSE ===
-      let albumTouchStartX = 0;
-      let albumTouchStartY = 0;
-      let albumTouchCurrentX = 0;
-      let albumIsDragging = false;
-      let albumGestureDirection = null;
       const mainEl = document.querySelector('.main');
-      const mobileHeaderEl = document.querySelector('.mobile-header');
+      let mainTouchX = 0, mainTouchY = 0, mainDragging = false, mainDir = null;
 
       function closeAlbumView() {
         mainEl.classList.remove('active');
-        document.querySelectorAll('#albumNav a').forEach(link => {
-          link.classList.remove('active');
-        });
+        document.querySelectorAll('#albumNav a').forEach(link => link.classList.remove('active'));
         mainEl.style.transform = '';
         mainEl.style.transition = '';
       }
 
       mainEl.addEventListener('touchstart', (e) => {
-        // Only trigger if we're on mobile and in album view
         if (window.innerWidth > 768 || !mainEl.classList.contains('active')) return;
         
-        // Don't interfere with grid item clicks or header interactions
-        if (e.target.closest('.grid-item') || e.target.closest('.mobile-header')) return;
-
-        albumTouchStartX = e.touches[0].clientX;
-        albumTouchStartY = e.touches[0].clientY;
-        albumTouchCurrentX = albumTouchStartX;
-        albumIsDragging = false; // Start as false, only enable if gesture starts from edge
-        albumGestureDirection = null;
-
-        // Only enable dragging if touch starts near left edge (within 50px)
-        if (albumTouchStartX < 50) {
-          albumIsDragging = true;
+        // Don't interfere with image clicks or close button
+        if (e.target.closest('.grid-item img') || e.target.closest('.mobile-close')) return;
+        
+        // Only activate from left edge
+        if (e.touches[0].clientX < 50) {
+          mainTouchX = e.touches[0].clientX;
+          mainTouchY = e.touches[0].clientY;
+          mainDragging = true;
+          mainDir = null;
         }
       }, { passive: true });
 
       mainEl.addEventListener('touchmove', (e) => {
-        if (!albumIsDragging || window.innerWidth > 768) return;
-
-        albumTouchCurrentX = e.touches[0].clientX;
-        const albumTouchCurrentY = e.touches[0].clientY;
-
-        const deltaX = albumTouchCurrentX - albumTouchStartX;
-        const deltaY = albumTouchCurrentY - albumTouchStartY;
-
-        // Determine gesture direction
-        if (!albumGestureDirection) {
-          if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-            albumGestureDirection = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
-          } else {
-            return;
-          }
+        if (!mainDragging) return;
+        const x = e.touches[0].clientX, y = e.touches[0].clientY;
+        const dx = x - mainTouchX, dy = y - mainTouchY;
+        
+        if (!mainDir && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+          mainDir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
         }
-
-        // Only respond to rightward horizontal swipes
-        if (albumGestureDirection === 'horizontal' && deltaX > 0) {
+        
+        if (mainDir === 'h' && dx > 0) {
           e.preventDefault();
-          
           mainEl.style.transition = 'none';
-          
-          // Apply drag with slight resistance
-          const dragAmount = Math.min(deltaX, window.innerWidth);
-          mainEl.style.transform = `translateX(${dragAmount}px)`;
-          
-          // Optionally dim the background as we drag
-          const progress = dragAmount / window.innerWidth;
-          mainEl.style.opacity = 1 - (progress * 0.3);
+          mainEl.style.transform = `translateX(${Math.min(dx, window.innerWidth)}px)`;
+          mainEl.style.opacity = 1 - (dx / window.innerWidth * 0.3);
         }
       }, { passive: false });
 
       mainEl.addEventListener('touchend', (e) => {
-        if (!albumIsDragging || window.innerWidth > 768) return;
-        albumIsDragging = false;
-
-        const deltaX = albumTouchCurrentX - albumTouchStartX;
-        const deltaTime = Date.now() - startTime;
-        const velocity = Math.abs(deltaX) / deltaTime;
-
-        // If dragged more than 40% of screen width or fast swipe, close
-        const threshold = window.innerWidth * 0.4;
-        const shouldClose = (albumGestureDirection === 'horizontal' && deltaX > 0) && 
-                           (deltaX > threshold || velocity > 0.5);
-
+        if (!mainDragging) return;
+        mainDragging = false;
+        
+        const dx = e.changedTouches[0].clientX - mainTouchX;
+        const shouldClose = mainDir === 'h' && dx > window.innerWidth * 0.4;
+        
+        mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease';
         if (shouldClose) {
-          // Animate out to the right
-          mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease';
           mainEl.style.transform = `translateX(${window.innerWidth}px)`;
           mainEl.style.opacity = '0';
-
-          setTimeout(() => {
-            closeAlbumView();
-          }, 300);
+          setTimeout(closeAlbumView, 300);
         } else {
-          // Snap back
-          mainEl.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease';
           mainEl.style.transform = 'translateX(0)';
           mainEl.style.opacity = '1';
         }
-
-        albumGestureDirection = null;
+        mainDir = null;
       });
 
       loadAlbums();
