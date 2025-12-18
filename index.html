@@ -878,13 +878,10 @@ lightbox.addEventListener('wheel', (e) => {
         // Don't interfere with image clicks or close button
         if (e.target.closest('.grid-item img') || e.target.closest('.mobile-close')) return;
         
-        // Only activate from left edge
-        if (e.touches[0].clientX < 50) {
-          mainTouchX = e.touches[0].clientX;
-          mainTouchY = e.touches[0].clientY;
-          mainDragging = true;
-          mainDir = null;
-        }
+        mainTouchX = e.touches[0].clientX;
+        mainTouchY = e.touches[0].clientY;
+        mainDragging = true;
+        mainDir = null;
       }, { passive: true });
 
       mainEl.addEventListener('touchmove', (e) => {
