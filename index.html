@@ -682,22 +682,20 @@ lightbox.addEventListener('wheel', (e) => {
   const baseOffset = -currentIndex * window.innerWidth;
   lbTrack.style.transform = `translateX(${baseOffset - wheelDelta}px)`;
   
+  if (wheelTimeout) clearTimeout(wheelTimeout);
+  
   wheelTimeout = setTimeout(() => {
-  const threshold = 30; // fixed pixels instead of percentage
-  
-  lbTrack.style.transition = 'transform 0.1s ease-out';
-  
-  if (wheelDelta > threshold && currentIndex < currentPhotos.length - 1) {
-    goToSlide(currentIndex + 1);
-  } else if (wheelDelta < -threshold && currentIndex > 0) {
-    goToSlide(currentIndex - 1);
-  } else {
-    lbTrack.style.transform = `translateX(${baseOffset}px)`;
-  }
-  
-  wheelDelta = 0;
-  isWheeling = false;
-}, 30);
+    const threshold = window.innerWidth * 0.05;
+    
+    lbTrack.style.transition = 'transform 0.15s ease-out';
+    
+    if (wheelDelta > threshold && currentIndex < currentPhotos.length - 1) {
+      goToSlide(currentIndex + 1);
+    } else if (wheelDelta < -threshold && currentIndex > 0) {
+      goToSlide(currentIndex - 1);
+    } else {
+      lbTrack.style.transform = `translateX(${baseOffset}px)`;
+    }
     
     wheelDelta = 0;
     isWheeling = false;
