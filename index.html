@@ -864,25 +864,26 @@ lightbox.addEventListener('wheel', (e) => {
       // === MOBILE ALBUM VIEW SWIPE-TO-CLOSE ===
       const mainEl = document.querySelector('.main');
       let mainTouchX = 0, mainTouchY = 0, mainDragging = false, mainDir = null;
+      let mainTouchMoved = false;
 
       function closeAlbumView() {
         mainEl.classList.remove('active');
         document.querySelectorAll('#albumNav a').forEach(link => link.classList.remove('active'));
         mainEl.style.transform = '';
         mainEl.style.transition = '';
+        mainEl.style.opacity = '';
       }
 
       mainEl.addEventListener('touchstart', (e) => {
         if (window.innerWidth > 768 || !mainEl.classList.contains('active')) return;
-        
-        // Don't interfere with image clicks or close button
-        if (e.target.closest('.grid-item img') || e.target.closest('.mobile-close')) return;
+        if (e.target.closest('.mobile-close')) return;
         
         mainTouchX = e.touches[0].clientX;
         mainTouchY = e.touches[0].clientY;
         mainDragging = true;
         mainDir = null;
-      }, { passive: true });
+        mainTouchMoved = false;
+      }, { passive: true, capture: true });
 
       mainEl.addEventListener('touchmove', (e) => {
         if (!mainDragging) return;
@@ -891,15 +892,17 @@ lightbox.addEventListener('wheel', (e) => {
         
         if (!mainDir && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
           mainDir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+          mainTouchMoved = true;
         }
         
         if (mainDir === 'h' && dx > 0) {
           e.preventDefault();
+          e.stopPropagation();
           mainEl.style.transition = 'none';
           mainEl.style.transform = `translateX(${Math.min(dx, window.innerWidth)}px)`;
           mainEl.style.opacity = 1 - (dx / window.innerWidth * 0.3);
         }
-      }, { passive: false });
+      }, { passive: false, capture: true });
 
       mainEl.addEventListener('touchend', (e) => {
         if (!mainDragging) return;
@@ -908,17 +911,22 @@ lightbox.addEventListener('wheel', (e) => {
         const dx = e.changedTouches[0].clientX - mainTouchX;
         const shouldClose = mainDir === 'h' && dx > window.innerWidth * 0.4;
         
+        if (mainDir === 'h') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        
         mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease';
         if (shouldClose) {
           mainEl.style.transform = `translateX(${window.innerWidth}px)`;
           mainEl.style.opacity = '0';
           setTimeout(closeAlbumView, 300);
-        } else {
+        } else if (mainDir === 'h') {
           mainEl.style.transform = 'translateX(0)';
           mainEl.style.opacity = '1';
         }
         mainDir = null;
-      });
+      }, { capture: true });
 
       loadAlbums();
       window.addEventListener('resize', renderGrid);
