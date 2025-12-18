@@ -268,42 +268,34 @@
           flex-direction: column;
         }
 
-        @media (max-width: 768px) {
-  /* ... existing styles ... */
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: 100vh;
+          border-right: none;
+          padding: 30px 30px 10px 30px;
+          display: flex;
+          flex-direction: column;
+        }
 
-  .sidebar {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    border-right: none;
-    padding: 24px 30px 20px 30px;  /* Reduced padding */
-    display: flex;
-    flex-direction: column;
-  }
+        .sidebar h1 {
+          margin-bottom: 40px;
+        }
 
-  .sidebar h1 {
-    margin-bottom: 24px;  /* Reduced from 40px */
-  }
+        .sidebar nav {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
 
-  .sidebar nav {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;  /* Reduced from 16px */
-  }
+        .sidebar nav a {
+          font-size: 18px;
+        }
 
-  .sidebar nav a {
-    font-size: 16px;  /* Slightly smaller from 18px */
-  }
-
-  .sidebar .signature {
-    margin-top: 24px;  /* Reduced from 40px */
-    max-width: 120px;  /* Slightly smaller */
-  }
-}
-
-        .sidebar .social {
-  margin-top: 16px;  /* Reduced from 20px */
-}
+        .sidebar .signature {
+          margin-top: 40px;
+          max-width: 140px;
+        }
 
         .main {
           display: none;
