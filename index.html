@@ -680,11 +680,13 @@
       });
 
 // Trackpad/mousewheel horizontal swiping with drag effect
-let wheelDelta = 0;
+let wheelDeltaX = 0;
+let wheelDeltaY = 0;
 let wheelTimeout = null;
 let isWheeling = false;
 let lastWheelTime = 0;
 let wheelVelocity = 0;
+let wheelDirection = null; // 'horizontal' or 'vertical'
 
 lightbox.addEventListener('wheel', (e) => {
   if (!lightbox.classList.contains('active')) return;
@@ -695,30 +697,38 @@ lightbox.addEventListener('wheel', (e) => {
   const timeDelta = now - lastWheelTime;
   lastWheelTime = now;
   
-  // Two-finger swipe down to close (deltaY > 0 means scrolling down)
-  if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaY > 0) {
-    if (!isWheeling) {
-      isWheeling = true;
-      lbTrack.style.transition = 'none';
-      lightbox.style.transition = 'none';
+  if (!isWheeling) {
+    isWheeling = true;
+    wheelDirection = null;
+    lbTrack.style.transition = 'none';
+    lightbox.style.transition = 'none';
+  }
+  
+  // Determine direction on first significant movement
+  if (!wheelDirection) {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 5) {
+      wheelDirection = 'vertical';
+    } else if (Math.abs(e.deltaX) > 5) {
+      wheelDirection = 'horizontal';
     }
+  }
+  
+  // Vertical swipe down to close
+  if (wheelDirection === 'vertical' && e.deltaY > 0) {
+    wheelDeltaY += e.deltaY;
     
-    wheelDelta += e.deltaY;
-    
-    // Visual feedback while dragging down
-    const progress = Math.min(wheelDelta / 300, 1);
+    const progress = Math.min(wheelDeltaY / 300, 1);
     const opacity = 1 - (progress * 0.5);
     const currentOffset = -currentIndex * window.innerWidth;
-    lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDelta}px)`;
+    lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
     lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     
     if (wheelTimeout) clearTimeout(wheelTimeout);
     
     wheelTimeout = setTimeout(() => {
-      const shouldClose = wheelDelta > 150;
+      const shouldClose = wheelDeltaY > 150;
       
       if (shouldClose) {
-        // Animate out
         lbTrack.style.transition = 'transform 0.3s ease-out';
         lightbox.style.transition = 'background 0.3s ease-out';
         lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${window.innerHeight}px)`;
@@ -730,64 +740,61 @@ lightbox.addEventListener('wheel', (e) => {
           lightbox.style.background = '';
           lbTrack.style.transition = '';
           lightbox.style.transition = '';
+          wheelDeltaY = 0;
         }, 300);
       } else {
-        // Snap back
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
         lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
         lightbox.style.background = '';
+        wheelDeltaY = 0;
       }
       
-      wheelDelta = 0;
       isWheeling = false;
+      wheelDirection = null;
     }, 60);
     
     return;
   }
   
   // Horizontal swiping for navigation
-  if (!isWheeling) {
-    isWheeling = true;
-    lbTrack.style.transition = 'none';
-  }
-  
-  // Check edges BEFORE adding delta
-  const isAtStart = currentIndex === 0 && e.deltaX < 0;
-  const isAtEnd = currentIndex === currentPhotos.length - 1 && e.deltaX > 0;
-  
-  if (!isAtStart && !isAtEnd) {
-    wheelDelta += e.deltaX;
-  }
-  
-  // Track velocity
-  if (timeDelta > 0) {
-    wheelVelocity = e.deltaX / timeDelta;
-  }
-  
-  const baseOffset = -currentIndex * window.innerWidth;
-  lbTrack.style.transform = `translateX(${baseOffset - wheelDelta}px)`;
-  
-  if (wheelTimeout) clearTimeout(wheelTimeout);
-  
-  wheelTimeout = setTimeout(() => {
-    const threshold = window.innerWidth * 0.1;
-    const shouldChange = Math.abs(wheelDelta) > threshold || Math.abs(wheelVelocity) > 0.3;
+  if (wheelDirection === 'horizontal') {
+    const isAtStart = currentIndex === 0 && e.deltaX < 0;
+    const isAtEnd = currentIndex === currentPhotos.length - 1 && e.deltaX > 0;
     
-    lbTrack.style.transition = 'transform 0.11s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    
-    if (shouldChange && wheelDelta > 0 && currentIndex < currentPhotos.length - 1) {
-      goToSlide(currentIndex + 1);
-    } else if (shouldChange && wheelDelta < 0 && currentIndex > 0) {
-      goToSlide(currentIndex - 1);
-    } else {
-      lbTrack.style.transform = `translateX(${baseOffset}px)`;
+    if (!isAtStart && !isAtEnd) {
+      wheelDeltaX += e.deltaX;
     }
     
-    wheelDelta = 0;
-    wheelVelocity = 0;
-    isWheeling = false;
-  }, 60);
+    if (timeDelta > 0) {
+      wheelVelocity = e.deltaX / timeDelta;
+    }
+    
+    const baseOffset = -currentIndex * window.innerWidth;
+    lbTrack.style.transform = `translateX(${baseOffset - wheelDeltaX}px)`;
+    
+    if (wheelTimeout) clearTimeout(wheelTimeout);
+    
+    wheelTimeout = setTimeout(() => {
+      const threshold = window.innerWidth * 0.1;
+      const shouldChange = Math.abs(wheelDeltaX) > threshold || Math.abs(wheelVelocity) > 0.3;
+      
+      lbTrack.style.transition = 'transform 0.11s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      
+      if (shouldChange && wheelDeltaX > 0 && currentIndex < currentPhotos.length - 1) {
+        goToSlide(currentIndex + 1);
+      } else if (shouldChange && wheelDeltaX < 0 && currentIndex > 0) {
+        goToSlide(currentIndex - 1);
+      } else {
+        lbTrack.style.transform = `translateX(${baseOffset}px)`;
+      }
+      
+      wheelDeltaX = 0;
+      wheelVelocity = 0;
+      isWheeling = false;
+      wheelDirection = null;
+    }, 60);
+  }
 }, { passive: false });
       
       // === TOUCH GESTURE HANDLING FOR LIGHTBOX ===
