@@ -745,11 +745,11 @@ lightbox.addEventListener('wheel', (e) => {
     
     wheelTimeout = setTimeout(() => {
       const currentOffset = -currentIndex * window.innerWidth;
-      const shouldClose = wheelDeltaY > 100;
+      const shouldClose = wheelDeltaY > 50;
       
       if (shouldClose) {
-        lbTrack.style.transition = 'transform 0.3s ease-out';
-        lightbox.style.transition = 'background 0.3s ease-out';
+        lbTrack.style.transition = 'transform 0.2s ease-out';
+        lightbox.style.transition = 'background 0.2s ease-out';
         lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${window.innerHeight}px)`;
         lightbox.style.background = 'rgba(255, 255, 255, 0)';
         
@@ -760,7 +760,7 @@ lightbox.addEventListener('wheel', (e) => {
           lbTrack.style.transition = '';
           lightbox.style.transition = '';
           wheelDeltaY = 0;
-        }, 300);
+        }, 200);
       } else {
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
