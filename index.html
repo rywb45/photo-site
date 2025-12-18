@@ -269,14 +269,15 @@
         }
 
         .sidebar {
-          position: relative;
-          width: 100%;
-          height: 100vh;
-          border-right: none;
-          padding: 30px 30px 10px 30px;
-          display: flex;
-          flex-direction: column;
-        }
+    position: relative;
+    width: 100%;
+    height: auto;  /* Change from 100vh to auto */
+    min-height: 100vh;  /* Add this to maintain full height when content is short */
+    border-right: none;
+    padding: 30px 30px 30px 30px;  /* Add bottom padding: 30px 30px 30px 30px */
+    display: flex;
+    flex-direction: column;
+  }
 
         .sidebar h1 {
           margin-bottom: 40px;
