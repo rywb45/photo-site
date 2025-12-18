@@ -864,7 +864,7 @@ lightbox.addEventListener('wheel', (e) => {
       // === MOBILE ALBUM VIEW SWIPE-TO-CLOSE ===
       const mainEl = document.querySelector('.main');
       let mainTouchX = 0, mainTouchY = 0, mainDragging = false, mainDir = null;
-      let mainTouchMoved = false;
+      let mainTouchMoved = false, mainStartTime = 0;
 
       function closeAlbumView() {
         mainEl.classList.remove('active');
@@ -883,6 +883,7 @@ lightbox.addEventListener('wheel', (e) => {
         mainDragging = true;
         mainDir = null;
         mainTouchMoved = false;
+        mainStartTime = Date.now();
       }, { passive: true, capture: true });
 
       mainEl.addEventListener('touchmove', (e) => {
@@ -909,7 +910,12 @@ lightbox.addEventListener('wheel', (e) => {
         mainDragging = false;
         
         const dx = e.changedTouches[0].clientX - mainTouchX;
-        const shouldClose = mainDir === 'h' && dx > window.innerWidth * 0.4;
+        const deltaTime = Date.now() - mainStartTime;
+        const velocity = Math.abs(dx) / deltaTime;
+        
+        // Close if: dragged far enough OR fast flick
+        const shouldClose = mainDir === 'h' && dx > 0 && 
+                           (dx > window.innerWidth * 0.3 || velocity > 0.5);
         
         if (mainDir === 'h') {
           e.preventDefault();
