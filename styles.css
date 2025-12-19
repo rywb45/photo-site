@@ -20,15 +20,20 @@ body {
   width: 280px;
   height: 100vh;
   padding: 40px 53px;
-  background: radial-gradient(circle at 50% 50%, #e0e0e0, #f5f5f5);
+  background: #fff;
   border-right: 1px solid #e0e0e0;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  transition: background 0.3s ease;
 }
 
-.sidebar::before {
+.sidebar:not(.bloom-disabled) {
+  background: radial-gradient(circle at 50% 50%, #e0e0e0, #f5f5f5);
+}
+
+.sidebar:not(.bloom-disabled)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -52,6 +57,7 @@ body {
   animation-delay: var(--delay, 0s);
   pointer-events: none;
   z-index: 0;
+  transition: opacity 0.5s ease;
 }
 
 @keyframes bloomFloat {
@@ -106,6 +112,17 @@ body {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   margin-bottom: 60px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sidebar h1:hover {
+  opacity: 0.6;
+}
+
+.sidebar.bloom-disabled .bloom-orb {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 .sidebar nav {
@@ -356,7 +373,7 @@ body {
 
   .sidebar .copyright {
     margin-top: auto;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     flex-shrink: 0;
     margin-left: 5px;
   }
