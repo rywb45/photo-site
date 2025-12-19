@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <aside class="sidebar">
+    <aside class="sidebar bloom-disabled">
       <!-- Bloom orb background elements -->
       <div class="bloom-orb bloom-orb-1" style="width: 350px; height: 350px; left: -100px; top: -50px; --duration: 15s; --start-x: 0; --start-y: 0; --end-x: 150px; --end-y: 200px;"></div>
       <div class="bloom-orb bloom-orb-2" style="width: 300px; height: 300px; right: -80px; bottom: -80px; --duration: 18s; --delay: 2s; --start-x: 0; --start-y: 0; --end-x: -120px; --end-y: -150px;"></div>
@@ -46,5 +46,18 @@
       <div class="lb-track" id="lbTrack"></div>
     </div>
     <script src="script.js"></script>
+    <script>
+      // Toggle bloom effect on/off when clicking name
+      document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const nameElement = sidebar.querySelector('h1');
+        
+        if (nameElement) {
+          nameElement.addEventListener('click', function() {
+            sidebar.classList.toggle('bloom-disabled');
+          });
+        }
+      });
+    </script>
   </body>
 </html>
