@@ -94,28 +94,40 @@ function switchAlbum(albumName, clickedElement = null) {
 }
 
 // ============================================
-// Slide-in animation for mobile
+// Slide-in animation for mobile (with parallax)
 // ============================================
 function animateSlideIn() {
   const main = document.querySelector('.main');
+  const grid = document.getElementById('grid');
+  const mobileHeader = document.querySelector('.mobile-header');
   
   // Start off-screen to the right
   main.style.transition = 'none';
   main.style.transform = 'translateX(100%)';
   main.classList.add('active');
   
+  // Offset the grid further right (it will lag behind)
+  grid.style.transition = 'none';
+  grid.style.transform = 'translateX(30%)';
+  
   // Force reflow
   main.offsetHeight;
   
-  // Slide in
-  main.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  // Slide in main container
+  main.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
   main.style.transform = 'translateX(0)';
+  
+  // Grid slides in slower, creating parallax depth
+  grid.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  grid.style.transform = 'translateX(0)';
   
   // Cleanup after animation
   setTimeout(() => {
     main.style.transition = '';
     main.style.transform = '';
-  }, 350);
+    grid.style.transition = '';
+    grid.style.transform = '';
+  }, 500);
 }
 
 // ============================================
