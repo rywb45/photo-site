@@ -735,14 +735,10 @@ lightbox.addEventListener('wheel', (e) => {
     
     if (wheelDeltaY > 0) {
       const progress = Math.min(wheelDeltaY / 300, 1);
-      const opacity = 1 - (progress * 0.7);
-      
-      // Move entire lightbox down
-      lightbox.style.transform = `translateY(${wheelDeltaY}px)`;
-      lightbox.style.background = `rgba(255, 255, 255, ${0.7 * (1 - progress)})`;
-      
-      // Fade out close button
-      lbClose.style.opacity = Math.max(0, 1 - progress * 3);
+      const opacity = 1 - (progress * 0.5);
+      const currentOffset = -currentIndex * window.innerWidth;
+      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
+      lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
     
     if (wheelTimeout) clearTimeout(wheelTimeout);
@@ -753,24 +749,17 @@ lightbox.addEventListener('wheel', (e) => {
       
       if (shouldClose) {
         closeLightbox();
-        lightbox.style.transform = '';
+        lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
         lightbox.style.background = '';
         lbTrack.style.transition = '';
         lightbox.style.transition = '';
-        lbClose.style.opacity = '';
         wheelDeltaY = 0;
       } else {
-        lightbox.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease';
-        lightbox.style.transform = 'translateY(0)';
+        lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        lightbox.style.transition = 'background 0.3s ease';
+        lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
         lightbox.style.background = '';
-        lbClose.style.transition = 'opacity 0.3s ease';
-        lbClose.style.opacity = '';
         wheelDeltaY = 0;
-        
-        setTimeout(() => {
-          lightbox.style.transition = '';
-          lbClose.style.transition = '';
-        }, 300);
       }
       
       isWheeling = false;
@@ -1023,6 +1012,9 @@ lightbox.addEventListener('wheel', (e) => {
       if (mobileClose) {
         mobileClose.addEventListener('click', closeAlbumView);
       }
+    </script>
+  </body>
+</html>
     </script>
   </body>
 </html>
