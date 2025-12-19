@@ -10,16 +10,7 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <aside class="sidebar bloom-disabled">
-      <!-- Bloom orb background elements -->
-      <div class="bloom-orb bloom-orb-1" style="width: 350px; height: 350px; left: -100px; top: -50px; --duration: 15s; --start-x: 0; --start-y: 0; --end-x: 150px; --end-y: 200px;"></div>
-      <div class="bloom-orb bloom-orb-2" style="width: 300px; height: 300px; right: -80px; bottom: -80px; --duration: 18s; --delay: 2s; --start-x: 0; --start-y: 0; --end-x: -120px; --end-y: -150px;"></div>
-      <div class="bloom-orb bloom-orb-3" style="width: 250px; height: 250px; left: 40%; top: 20%; --duration: 20s; --delay: 4s; --start-x: 0; --start-y: 0; --end-x: 80px; --end-y: -120px;"></div>
-      <div class="bloom-orb bloom-orb-4" style="width: 220px; height: 220px; right: 30%; bottom: 30%; --duration: 16s; --delay: 6s; --start-x: 0; --start-y: 0; --end-x: -100px; --end-y: 100px;"></div>
-      <div class="bloom-orb bloom-orb-5" style="width: 180px; height: 180px; left: 60%; top: 60%; --duration: 22s; --delay: 8s; --start-x: 0; --start-y: 0; --end-x: 60px; --end-y: -80px;"></div>
-      <div class="bloom-orb bloom-orb-1" style="width: 200px; height: 200px; left: 20%; bottom: 20%; --duration: 19s; --delay: 10s; --start-x: 0; --start-y: 0; --end-x: -70px; --end-y: 90px;"></div>
-      <div class="bloom-orb bloom-orb-2" style="width: 160px; height: 160px; right: 15%; top: 40%; --duration: 17s; --delay: 12s; --start-x: 0; --start-y: 0; --end-x: 50px; --end-y: 70px;"></div>
-      
+    <aside class="sidebar">
       <h1>Ryan Byrne</h1>
       <nav id="albumNav"></nav>
       <div class="social">
@@ -47,14 +38,14 @@
     </div>
     <script src="script.js"></script>
     <script>
-      // Toggle bloom effect on/off when clicking name
+      // Toggle color inversion on/off when clicking name
       document.addEventListener('DOMContentLoaded', function() {
         const sidebar = document.querySelector('.sidebar');
         const nameElement = sidebar.querySelector('h1');
         
         if (nameElement) {
           nameElement.addEventListener('click', function() {
-            sidebar.classList.toggle('bloom-disabled');
+            sidebar.classList.toggle('inverted');
           });
         }
       });
