@@ -104,89 +104,71 @@ function switchAlbum(albumName, clickedElement = null) {
 function animateMorphOpen(clickedElement, albumName) {
   const main = document.querySelector('.main');
   const linkRect = clickedElement.getBoundingClientRect();
+  const grid = document.getElementById('grid');
+  const mobileHeader = document.querySelector('.mobile-header');
   
-  // Create the morphing card element
-  const morphCard = document.createElement('div');
-  morphCard.className = 'morph-card';
-  morphCard.style.cssText = `
-    position: fixed;
-    top: ${linkRect.top}px;
-    left: ${linkRect.left}px;
-    width: ${linkRect.width}px;
-    height: ${linkRect.height}px;
-    background: white;
-    z-index: 1001;
-    overflow: hidden;
-    border-radius: 4px;
-  `;
+  // Screen dimensions (where .main will end up)
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
   
-  // Create the morphing title inside the card
-  const morphTitle = document.createElement('span');
-  morphTitle.textContent = albumName.toUpperCase();
-  morphTitle.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    color: #1a1a1a;
-    white-space: nowrap;
-  `;
-  morphCard.appendChild(morphTitle);
-  document.body.appendChild(morphCard);
+  // Calculate scale factors to shrink .main down to link size
+  const scaleX = linkRect.width / screenWidth;
+  const scaleY = linkRect.height / screenHeight;
+  
+  // When scaled, .main's top-left will be at (0,0) but we need it at linkRect position
+  // After scaling, the element's visual size is screenWidth * scaleX, screenHeight * scaleY
+  // We need to translate so the scaled element's top-left aligns with linkRect
+  // But transform-origin is top-left (0 0), so we just translate to linkRect position
+  const translateX = linkRect.left;
+  const translateY = linkRect.top;
+  
+  // Hide content initially, will fade in
+  grid.style.opacity = '0';
+  if (mobileHeader) mobileHeader.style.opacity = '0';
   
   // Hide the clicked link during animation
   clickedElement.style.opacity = '0';
   
-  // Get target positions
-  const headerTitle = document.getElementById('mobileHeaderTitle');
-  const headerRect = headerTitle.getBoundingClientRect();
+  // Set initial state: scaled down and positioned over the link
+  main.style.transition = 'none';
+  main.style.transformOrigin = 'top left';
+  main.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+  main.style.borderRadius = '4px';
+  main.classList.add('active');
   
-  // Force reflow before starting animation
-  morphCard.offsetHeight;
+  // Force reflow
+  main.offsetHeight;
   
-  // Animate the card expanding to full screen
-  morphCard.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-  morphTitle.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+  // Animate to full screen
+  main.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
   
   requestAnimationFrame(() => {
-    // Expand card to full screen
-    morphCard.style.top = '0';
-    morphCard.style.left = '0';
-    morphCard.style.width = '100vw';
-    morphCard.style.height = '100vh';
-    morphCard.style.borderRadius = '0';
-    
-    // Move title to header position
-    morphTitle.style.top = `${headerRect.top + headerRect.height / 2}px`;
-    morphTitle.style.left = `${headerRect.left}px`;
-    morphTitle.style.transform = 'translateY(-50%)';
+    main.style.transform = 'translate(0, 0) scale(1, 1)';
+    main.style.borderRadius = '0';
   });
   
-  // After animation completes, show real content and remove morph card
+  // Fade in content partway through the animation
   setTimeout(() => {
-    main.classList.add('active');
-    main.style.opacity = '0';
-    
-    // Quick fade in of the real content
-    requestAnimationFrame(() => {
-      main.style.transition = 'opacity 0.15s ease';
-      main.style.opacity = '1';
-    });
-    
-    // Remove morph card
-    morphCard.remove();
+    grid.style.transition = 'opacity 0.25s ease';
+    if (mobileHeader) mobileHeader.style.transition = 'opacity 0.25s ease';
+    grid.style.opacity = '1';
+    if (mobileHeader) mobileHeader.style.opacity = '1';
+  }, 150);
+  
+  // Cleanup after animation completes
+  setTimeout(() => {
+    main.style.transition = '';
+    main.style.transform = '';
+    main.style.transformOrigin = '';
+    main.style.borderRadius = '';
+    grid.style.transition = '';
+    grid.style.opacity = '';
+    if (mobileHeader) {
+      mobileHeader.style.transition = '';
+      mobileHeader.style.opacity = '';
+    }
     clickedElement.style.opacity = '';
-    
-    // Clean up inline styles after animation
-    setTimeout(() => {
-      main.style.transition = '';
-      main.style.opacity = '';
-    }, 150);
-  }, 400);
+  }, 450);
 }
 
 // ============================================
