@@ -57,7 +57,7 @@ async function loadAlbums() {
       link.dataset.album = albumName;
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        switchAlbum(albumName);
+        switchAlbum(albumName, e.currentTarget);
       });
       nav.appendChild(link);
     });
@@ -70,7 +70,7 @@ async function loadAlbums() {
   }
 }
 
-function switchAlbum(albumName) {
+function switchAlbum(albumName, clickedElement = null) {
   currentAlbum = albumName;
   currentPhotos = albums[albumName].map(f => `photos/${f}`);
 
@@ -86,11 +86,107 @@ function switchAlbum(albumName) {
   });
 
   if (window.innerWidth <= 768) {
-    document.querySelector('.main').classList.add('active');
     document.getElementById('mobileHeaderTitle').textContent = albumName.toUpperCase();
+    
+    if (clickedElement) {
+      animateMorphOpen(clickedElement, albumName);
+    } else {
+      document.querySelector('.main').classList.add('active');
+    }
   }
 
   renderGrid();
+}
+
+// ============================================
+// Morphing card animation for mobile
+// ============================================
+function animateMorphOpen(clickedElement, albumName) {
+  const main = document.querySelector('.main');
+  const linkRect = clickedElement.getBoundingClientRect();
+  
+  // Create the morphing card element
+  const morphCard = document.createElement('div');
+  morphCard.className = 'morph-card';
+  morphCard.style.cssText = `
+    position: fixed;
+    top: ${linkRect.top}px;
+    left: ${linkRect.left}px;
+    width: ${linkRect.width}px;
+    height: ${linkRect.height}px;
+    background: white;
+    z-index: 1001;
+    overflow: hidden;
+    border-radius: 4px;
+  `;
+  
+  // Create the morphing title inside the card
+  const morphTitle = document.createElement('span');
+  morphTitle.textContent = albumName.toUpperCase();
+  morphTitle.style.cssText = `
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: #1a1a1a;
+    white-space: nowrap;
+  `;
+  morphCard.appendChild(morphTitle);
+  document.body.appendChild(morphCard);
+  
+  // Hide the clicked link during animation
+  clickedElement.style.opacity = '0';
+  
+  // Get target positions
+  const headerTitle = document.getElementById('mobileHeaderTitle');
+  const headerRect = headerTitle.getBoundingClientRect();
+  
+  // Force reflow before starting animation
+  morphCard.offsetHeight;
+  
+  // Animate the card expanding to full screen
+  morphCard.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+  morphTitle.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+  
+  requestAnimationFrame(() => {
+    // Expand card to full screen
+    morphCard.style.top = '0';
+    morphCard.style.left = '0';
+    morphCard.style.width = '100vw';
+    morphCard.style.height = '100vh';
+    morphCard.style.borderRadius = '0';
+    
+    // Move title to header position
+    morphTitle.style.top = `${headerRect.top + headerRect.height / 2}px`;
+    morphTitle.style.left = `${headerRect.left}px`;
+    morphTitle.style.transform = 'translateY(-50%)';
+  });
+  
+  // After animation completes, show real content and remove morph card
+  setTimeout(() => {
+    main.classList.add('active');
+    main.style.opacity = '0';
+    
+    // Quick fade in of the real content
+    requestAnimationFrame(() => {
+      main.style.transition = 'opacity 0.15s ease';
+      main.style.opacity = '1';
+    });
+    
+    // Remove morph card
+    morphCard.remove();
+    clickedElement.style.opacity = '';
+    
+    // Clean up inline styles after animation
+    setTimeout(() => {
+      main.style.transition = '';
+      main.style.opacity = '';
+    }, 150);
+  }, 400);
 }
 
 // ============================================
