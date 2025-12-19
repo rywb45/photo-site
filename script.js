@@ -57,7 +57,7 @@ async function loadAlbums() {
       link.dataset.album = albumName;
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        switchAlbum(albumName, e.currentTarget);
+        switchAlbum(albumName);
       });
       nav.appendChild(link);
     });
@@ -87,88 +87,35 @@ function switchAlbum(albumName, clickedElement = null) {
 
   if (window.innerWidth <= 768) {
     document.getElementById('mobileHeaderTitle').textContent = albumName.toUpperCase();
-    
-    if (clickedElement) {
-      animateMorphOpen(clickedElement, albumName);
-    } else {
-      document.querySelector('.main').classList.add('active');
-    }
+    animateSlideIn();
   }
 
   renderGrid();
 }
 
 // ============================================
-// Morphing card animation for mobile
+// Slide-in animation for mobile
 // ============================================
-function animateMorphOpen(clickedElement, albumName) {
+function animateSlideIn() {
   const main = document.querySelector('.main');
-  const linkRect = clickedElement.getBoundingClientRect();
-  const grid = document.getElementById('grid');
-  const mobileHeader = document.querySelector('.mobile-header');
   
-  // Screen dimensions (where .main will end up)
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-  
-  // Calculate scale factors to shrink .main down to link size
-  const scaleX = linkRect.width / screenWidth;
-  const scaleY = linkRect.height / screenHeight;
-  
-  // When scaled, .main's top-left will be at (0,0) but we need it at linkRect position
-  // After scaling, the element's visual size is screenWidth * scaleX, screenHeight * scaleY
-  // We need to translate so the scaled element's top-left aligns with linkRect
-  // But transform-origin is top-left (0 0), so we just translate to linkRect position
-  const translateX = linkRect.left;
-  const translateY = linkRect.top;
-  
-  // Hide content initially, will fade in
-  grid.style.opacity = '0';
-  if (mobileHeader) mobileHeader.style.opacity = '0';
-  
-  // Hide the clicked link during animation
-  clickedElement.style.opacity = '0';
-  
-  // Set initial state: scaled down and positioned over the link
+  // Start off-screen to the right
   main.style.transition = 'none';
-  main.style.transformOrigin = 'top left';
-  main.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
-  main.style.borderRadius = '4px';
+  main.style.transform = 'translateX(100%)';
   main.classList.add('active');
   
   // Force reflow
   main.offsetHeight;
   
-  // Animate to full screen
-  main.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+  // Slide in
+  main.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  main.style.transform = 'translateX(0)';
   
-  requestAnimationFrame(() => {
-    main.style.transform = 'translate(0, 0) scale(1, 1)';
-    main.style.borderRadius = '0';
-  });
-  
-  // Fade in content partway through the animation
-  setTimeout(() => {
-    grid.style.transition = 'opacity 0.25s ease';
-    if (mobileHeader) mobileHeader.style.transition = 'opacity 0.25s ease';
-    grid.style.opacity = '1';
-    if (mobileHeader) mobileHeader.style.opacity = '1';
-  }, 150);
-  
-  // Cleanup after animation completes
+  // Cleanup after animation
   setTimeout(() => {
     main.style.transition = '';
     main.style.transform = '';
-    main.style.transformOrigin = '';
-    main.style.borderRadius = '';
-    grid.style.transition = '';
-    grid.style.opacity = '';
-    if (mobileHeader) {
-      mobileHeader.style.transition = '';
-      mobileHeader.style.opacity = '';
-    }
-    clickedElement.style.opacity = '';
-  }, 450);
+  }, 350);
 }
 
 // ============================================
