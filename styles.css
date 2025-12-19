@@ -113,11 +113,6 @@ body {
   text-transform: uppercase;
   margin-bottom: 60px;
   cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.sidebar h1:hover {
-  opacity: 0.6;
 }
 
 .sidebar.bloom-disabled .bloom-orb {
@@ -373,7 +368,7 @@ body {
 
   .sidebar .copyright {
     margin-top: auto;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     flex-shrink: 0;
     margin-left: 5px;
   }
