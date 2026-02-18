@@ -15,20 +15,18 @@
     "02-buildings/005.jpg",
     "02-buildings/006.jpg"
   ],
-  "nyc": [
-    "03-nyc/001.jpg",
-    "03-nyc/002.jpg",
-    "03-nyc/003.jpg",
-    "03-nyc/004.jpg",
-    "03-nyc/005.jpg"
-  ],
   "archive": [
-    "04-archive/001.jpeg",
-    "04-archive/002.jpeg",
-    "04-archive/003.jpeg",
-    "04-archive/004.jpeg",
-    "04-archive/005.jpeg",
-    "04-archive/006.jpeg",
-    "04-archive/007.jpeg"
+    "03-archive/001.jpg",
+    "03-archive/002.jpg",
+    "03-archive/003.jpg",
+    "03-archive/004.jpg",
+    "03-archive/005.jpg",
+    "03-archive/006.jpg",
+    "03-archive/007.jpg",
+    "03-archive/008.jpg",
+    "03-archive/009.jpg",
+    "03-archive/010.jpg",
+    "03-archive/011.jpg",
+    "03-archive/012.jpg"
   ]
 }
