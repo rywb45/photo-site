@@ -1,18 +1,32 @@
 {
+  "people": [
+    "01-people/001.jpg",
+    "01-people/002.jpg",
+    "01-people/003.jpg",
+    "01-people/004.jpg",
+    "01-people/005.jpg"
+  ],
+  "buildings": [
+    "02-buildings/001.jpg",
+    "02-buildings/002.jpg",
+    "02-buildings/003.jpg",
+    "02-buildings/004.jpg",
+    "02-buildings/005.jpg"
+  ],
   "nyc": [
-    "01-nyc/001.jpg",
-    "01-nyc/002.jpg",
-    "01-nyc/003.jpg",
-    "01-nyc/004.jpg",
-    "01-nyc/005.jpg"
+    "03-nyc/001.jpg",
+    "03-nyc/002.jpg",
+    "03-nyc/003.jpg",
+    "03-nyc/004.jpg",
+    "03-nyc/005.jpg"
   ],
   "archive": [
-    "02-archive/001.jpeg",
-    "02-archive/002.jpeg",
-    "02-archive/003.jpeg",
-    "02-archive/004.jpeg",
-    "02-archive/005.jpeg",
-    "02-archive/006.jpeg",
-    "02-archive/007.jpeg"
+    "04-archive/001.jpeg",
+    "04-archive/002.jpeg",
+    "04-archive/003.jpeg",
+    "04-archive/004.jpeg",
+    "04-archive/005.jpeg",
+    "04-archive/006.jpeg",
+    "04-archive/007.jpeg"
   ]
 }
