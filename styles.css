@@ -368,10 +368,14 @@ body.inverted {
   }
 
   .sidebar .copyright {
-    margin-top: auto;
+    margin-top: 12px;
     margin-bottom: 20px;
     flex-shrink: 0;
     margin-left: 5px;
+  }
+
+  .sidebar .theme-toggle {
+    margin-top: auto;
   }
 
   .sidebar h1 {
