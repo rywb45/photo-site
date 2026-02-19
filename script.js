@@ -373,6 +373,8 @@ function closeLightbox() {
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
     lightbox.style.background = '';
+    lightbox.style.opacity = '';
+    lbTrack.style.opacity = '';
 
     // Get fresh grid position (might have scrolled)
     const freshRect = morphSource.getBoundingClientRect();
@@ -400,6 +402,8 @@ function closeLightbox() {
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
     lightbox.style.background = '';
+    lightbox.style.opacity = '';
+    lbTrack.style.opacity = '';
     morphSource = null;
     morphRect = null;
   }
@@ -414,6 +418,13 @@ lbPrev.addEventListener('click', () => {
 });
 lbNext.addEventListener('click', () => {
   if (currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
+});
+
+// Click anywhere on lightbox backdrop to close (not on image or buttons)
+lightbox.addEventListener('click', (e) => {
+  if (e.target === lightbox || e.target.classList.contains('lb-slide')) {
+    closeLightbox();
+  }
 });
 
 // Keyboard navigation
@@ -458,36 +469,41 @@ lightbox.addEventListener('wheel', (e) => {
     }
   }
 
-  // Vertical swiping to dismiss (both directions)
+  // Vertical swiping to dismiss (swipe down only)
   if (wheelDirection === 'vertical') {
     wheelDeltaY += e.deltaY;
 
-    const absDelta = Math.abs(wheelDeltaY);
-    if (absDelta > 0) {
-      const progress = Math.min(absDelta / 300, 1);
+    // Only track downward (positive deltaY with natural scrolling)
+    if (wheelDeltaY > 0) {
+      const progress = Math.min(wheelDeltaY / 300, 1);
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
       lbTrack.style.transition = 'none';
-      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${-wheelDeltaY}px)`;
+      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
 
     if (wheelTimeout) clearTimeout(wheelTimeout);
 
     wheelTimeout = setTimeout(() => {
-      const shouldDismiss = Math.abs(wheelDeltaY) > 150;
+      const shouldDismiss = wheelDeltaY > 150;
 
       if (shouldDismiss) {
-        const exitY = wheelDeltaY > 0 ? -window.innerHeight : window.innerHeight;
-        lbTrack.style.transition = 'transform 0.3s ease-out';
-        lightbox.style.transition = 'background 0.3s ease-out';
-        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${exitY}px)`;
+        // Clear morph source so closeLightbox does a simple close
+        if (morphSource) morphSource.style.opacity = '';
+        morphSource = null;
+        morphRect = null;
+
+        lbTrack.style.transition = 'transform 0.25s ease-out';
+        lightbox.style.transition = 'background 0.25s ease-out';
+        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
         lightbox.style.background = 'rgba(255, 255, 255, 0)';
         setTimeout(() => {
           closeLightbox();
           lbTrack.style.transition = '';
           lightbox.style.transition = '';
-        }, 300);
+          lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+        }, 260);
       } else {
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
