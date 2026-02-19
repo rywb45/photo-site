@@ -391,12 +391,10 @@ let gestureDirection = null;
 // Pinch-to-zoom state
 let isPinching = false;
 let zoomScale = 1;
-let zoomX = 0;
-let zoomY = 0;
+let zoomOriginX = 0;
+let zoomOriginY = 0;
 let initialPinchDist = 0;
 let initialPinchScale = 1;
-let pinchMidX = 0;
-let pinchMidY = 0;
 let panStartX = 0;
 let panStartY = 0;
 let panOffsetX = 0;
@@ -404,14 +402,6 @@ let panOffsetY = 0;
 let lastPanX = 0;
 let lastPanY = 0;
 let lastTapTime = 0;
-
-// Momentum state
-let panVelocityX = 0;
-let panVelocityY = 0;
-let lastPanTime = 0;
-let lastPanMoveX = 0;
-let lastPanMoveY = 0;
-let momentumRAF = null;
 
 function getDistance(t1, t2) {
   const dx = t1.clientX - t2.clientX;
@@ -434,125 +424,24 @@ function getCurrentSlideImg() {
   return null;
 }
 
-function getPanBounds(img) {
-  if (!img || zoomScale <= 1) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-  const rect = img.getBoundingClientRect();
-  const imgW = rect.width / zoomScale;
-  const imgH = rect.height / zoomScale;
-  const overflowX = Math.max(0, (imgW * zoomScale - window.innerWidth) / 2);
-  const overflowY = Math.max(0, (imgH * zoomScale - window.innerHeight) / 2);
-  return {
-    minX: -overflowX,
-    maxX: overflowX,
-    minY: -overflowY,
-    maxY: overflowY
-  };
-}
-
-function clampWithElastic(value, min, max, elasticity) {
-  if (value < min) {
-    return min + (value - min) * elasticity;
-  }
-  if (value > max) {
-    return max + (value - max) * elasticity;
-  }
-  return value;
-}
-
-function applyZoom(img, scale, x, y, elastic) {
-  if (scale <= 1) {
+function applyZoom(img) {
+  if (zoomScale <= 1) {
     img.style.transform = '';
-    img.style.transformOrigin = '';
-    return;
-  }
-  
-  let px = panOffsetX;
-  let py = panOffsetY;
-  
-  if (elastic) {
-    const bounds = getPanBounds(img);
-    px = clampWithElastic(px, bounds.minX, bounds.maxX, 0.3);
-    py = clampWithElastic(py, bounds.minY, bounds.maxY, 0.3);
-  }
-  
-  img.style.willChange = 'transform';
-  img.style.transformOrigin = `${x}px ${y}px`;
-  img.style.transform = `scale(${scale}) translate(${px / scale}px, ${py / scale}px)`;
-}
-
-function snapToBounds(img) {
-  if (!img || zoomScale <= 1) return;
-  const bounds = getPanBounds(img);
-  const clampedX = Math.max(bounds.minX, Math.min(bounds.maxX, panOffsetX));
-  const clampedY = Math.max(bounds.minY, Math.min(bounds.maxY, panOffsetY));
-  
-  if (clampedX !== panOffsetX || clampedY !== panOffsetY) {
-    panOffsetX = clampedX;
-    panOffsetY = clampedY;
-    img.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    applyZoom(img, zoomScale, zoomX, zoomY, false);
-    setTimeout(() => { img.style.transition = ''; }, 300);
-  }
-}
-
-function startMomentum(img) {
-  if (Math.abs(panVelocityX) < 0.1 && Math.abs(panVelocityY) < 0.1) {
-    snapToBounds(img);
-    return;
-  }
-  
-  const friction = 0.95;
-  
-  function tick() {
-    panVelocityX *= friction;
-    panVelocityY *= friction;
-    
-    if (Math.abs(panVelocityX) < 0.5 && Math.abs(panVelocityY) < 0.5) {
-      snapToBounds(img);
-      return;
-    }
-    
-    panOffsetX += panVelocityX;
-    panOffsetY += panVelocityY;
-    
-    // Slow down faster near bounds
-    const bounds = getPanBounds(img);
-    if (panOffsetX < bounds.minX || panOffsetX > bounds.maxX) {
-      panVelocityX *= 0.7;
-    }
-    if (panOffsetY < bounds.minY || panOffsetY > bounds.maxY) {
-      panVelocityY *= 0.7;
-    }
-    
-    applyZoom(img, zoomScale, zoomX, zoomY, true);
-    momentumRAF = requestAnimationFrame(tick);
-  }
-  
-  momentumRAF = requestAnimationFrame(tick);
-}
-
-function stopMomentum() {
-  if (momentumRAF) {
-    cancelAnimationFrame(momentumRAF);
-    momentumRAF = null;
+  } else {
+    img.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoomScale})`;
   }
 }
 
 function resetZoom() {
-  stopMomentum();
   const img = getCurrentSlideImg();
   if (img) {
     img.style.transition = 'transform 0.3s ease';
     img.style.transform = '';
-    img.style.transformOrigin = '';
-    img.style.willChange = '';
     setTimeout(() => { img.style.transition = ''; }, 300);
   }
   zoomScale = 1;
   panOffsetX = 0;
   panOffsetY = 0;
-  panVelocityX = 0;
-  panVelocityY = 0;
 }
 
 lightbox.addEventListener('touchstart', (e) => {
@@ -573,15 +462,12 @@ lightbox.addEventListener('touchstart', (e) => {
         // Zoom out
         resetZoom();
       } else {
-        // Zoom in to 2x at tap point
-        const rect = img.getBoundingClientRect();
-        zoomX = e.touches[0].clientX - rect.left;
-        zoomY = e.touches[0].clientY - rect.top;
+        // Zoom in to 2x
         zoomScale = 2;
         panOffsetX = 0;
         panOffsetY = 0;
         img.style.transition = 'transform 0.3s ease';
-        applyZoom(img, zoomScale, zoomX, zoomY);
+        applyZoom(img);
         setTimeout(() => { img.style.transition = ''; }, 300);
       }
       isDragging = false;
@@ -596,16 +482,6 @@ lightbox.addEventListener('touchstart', (e) => {
     gestureDirection = null;
     initialPinchDist = getDistance(e.touches[0], e.touches[1]);
     initialPinchScale = zoomScale;
-    const mid = getMidpoint(e.touches[0], e.touches[1]);
-    pinchMidX = mid.x;
-    pinchMidY = mid.y;
-
-    const img = getCurrentSlideImg();
-    if (img && zoomScale <= 1) {
-      const rect = img.getBoundingClientRect();
-      zoomX = mid.x - rect.left;
-      zoomY = mid.y - rect.top;
-    }
     return;
   }
 
@@ -620,17 +496,11 @@ lightbox.addEventListener('touchstart', (e) => {
 
   // If zoomed, start panning
   if (zoomScale > 1) {
-    stopMomentum();
     isDragging = false;
     panStartX = e.touches[0].clientX;
     panStartY = e.touches[0].clientY;
     lastPanX = panOffsetX;
     lastPanY = panOffsetY;
-    panVelocityX = 0;
-    panVelocityY = 0;
-    lastPanTime = Date.now();
-    lastPanMoveX = e.touches[0].clientX;
-    lastPanMoveY = e.touches[0].clientY;
   } else {
     isDragging = true;
     lbTrack.style.transition = 'none';
@@ -643,15 +513,12 @@ lightbox.addEventListener('touchmove', (e) => {
   if (isPinching && e.touches.length === 2) {
     e.preventDefault();
     const dist = getDistance(e.touches[0], e.touches[1]);
-    const rawScale = initialPinchScale * (dist / initialPinchDist);
-    // Allow slight overscale below 1 for elastic feel, clamp at 0.8
-    const scale = Math.max(0.8, Math.min(rawScale, 5));
-    zoomScale = scale;
+    zoomScale = Math.max(1, Math.min(initialPinchScale * (dist / initialPinchDist), 5));
 
     const img = getCurrentSlideImg();
     if (img) {
       img.style.transition = 'none';
-      applyZoom(img, zoomScale, zoomX, zoomY, false);
+      applyZoom(img);
     }
     return;
   }
@@ -659,26 +526,15 @@ lightbox.addEventListener('touchmove', (e) => {
   // Pan while zoomed (single finger)
   if (zoomScale > 1 && e.touches.length === 1) {
     e.preventDefault();
-    const now = Date.now();
     const dx = e.touches[0].clientX - panStartX;
     const dy = e.touches[0].clientY - panStartY;
     panOffsetX = lastPanX + dx;
     panOffsetY = lastPanY + dy;
 
-    // Track velocity for momentum
-    const dt = now - lastPanTime;
-    if (dt > 0) {
-      panVelocityX = (e.touches[0].clientX - lastPanMoveX) * 0.6 + panVelocityX * 0.4;
-      panVelocityY = (e.touches[0].clientY - lastPanMoveY) * 0.6 + panVelocityY * 0.4;
-    }
-    lastPanTime = now;
-    lastPanMoveX = e.touches[0].clientX;
-    lastPanMoveY = e.touches[0].clientY;
-
     const img = getCurrentSlideImg();
     if (img) {
       img.style.transition = 'none';
-      applyZoom(img, zoomScale, zoomX, zoomY, true);
+      applyZoom(img);
     }
     return;
   }
@@ -731,10 +587,8 @@ lightbox.addEventListener('touchend', (e) => {
     return;
   }
 
-  // End pan while zoomed — start momentum
+  // End pan while zoomed
   if (zoomScale > 1) {
-    const img = getCurrentSlideImg();
-    if (img) startMomentum(img);
     return;
   }
 
