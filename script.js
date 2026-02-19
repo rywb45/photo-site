@@ -312,7 +312,7 @@ lightbox.addEventListener('wheel', (e) => {
       const shouldDismiss = Math.abs(wheelDeltaY) > 150;
 
       if (shouldDismiss) {
-        const exitY = wheelDeltaY > 0 ? window.innerHeight : -window.innerHeight;
+        const exitY = wheelDeltaY > 0 ? -window.innerHeight : window.innerHeight;
         lbTrack.style.transition = 'transform 0.3s ease-out';
         lightbox.style.transition = 'background 0.3s ease-out';
         lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${exitY}px)`;
