@@ -29,7 +29,7 @@ body {
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-.sidebar.inverted {
+body.inverted .sidebar {
   background: #000;
   border-right: 1px solid #1f1f1f;
 }
@@ -44,7 +44,7 @@ body {
   transition: color 0.3s ease;
 }
 
-.sidebar.inverted h1 {
+body.inverted .sidebar h1 {
   color: #fff;
 }
 
@@ -70,7 +70,7 @@ body {
   cursor: pointer;
 }
 
-.sidebar.inverted nav a {
+body.inverted .sidebar nav a {
   color: #fff;
 }
 
@@ -93,7 +93,7 @@ body {
   transition: opacity 0.2s, filter 0.3s ease;
 }
 
-.sidebar.inverted .social a {
+body.inverted .sidebar .social a {
   filter: invert(1);
 }
 
@@ -114,7 +114,7 @@ body {
   transition: filter 0.3s ease;
 }
 
-.sidebar.inverted .signature {
+body.inverted .sidebar .signature {
   filter: invert(1);
 }
 
@@ -126,7 +126,7 @@ body {
   transition: color 0.3s ease;
 }
 
-.sidebar.inverted .copyright {
+body.inverted .sidebar .copyright {
   color: #fff;
 }
 
@@ -135,6 +135,16 @@ body {
   margin-left: 280px;
   flex: 1;
   padding: 60px 60px;
+  background: #fff;
+  transition: background 0.3s ease;
+}
+
+body.inverted .main {
+  background: #000;
+}
+
+body.inverted {
+  background: #000;
 }
 
 .mobile-close {
@@ -451,4 +461,37 @@ body {
   .lb-dot.active {
     background: #000;
   }
+}
+
+/* Dark mode overrides for mobile */
+@media (max-width: 768px) {
+  body.inverted .main {
+    background: #000;
+  }
+
+  body.inverted .mobile-header {
+    background: rgba(0, 0, 0, 0.85);
+  }
+
+  body.inverted .mobile-header-title {
+    color: #fff;
+  }
+
+  body.inverted .mobile-close {
+    color: #fff;
+  }
+}
+
+/* Dark mode lightbox */
+body.inverted .lightbox {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+body.inverted .lb-close {
+  color: #fff;
+}
+
+body.inverted .lb-prev::before,
+body.inverted .lb-next::before {
+  filter: invert(1);
 }
