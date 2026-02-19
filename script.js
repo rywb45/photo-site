@@ -7,9 +7,6 @@ let currentAlbum = null;
 let currentPhotos = [];
 let currentIndex = 0;
 
-// Performance: Cache image dimensions
-const dimensionCache = new Map();
-
 // Performance: Track which album carousel is built for
 let carouselBuiltForAlbum = null;
 
@@ -20,25 +17,6 @@ const lbClose = document.getElementById('lbClose');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
 const mainEl = document.querySelector('.main');
-
-// ============================================
-// Image dimension loading with caching
-// ============================================
-async function getImageDimensions(src) {
-  if (dimensionCache.has(src)) {
-    return dimensionCache.get(src);
-  }
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const dims = { width: img.naturalWidth, height: img.naturalHeight };
-      dimensionCache.set(src, dims);
-      resolve(dims);
-    };
-    img.onerror = () => resolve({ width: 1, height: 1 });
-    img.src = src;
-  });
-}
 
 // ============================================
 // Album loading and switching
@@ -72,7 +50,12 @@ async function loadAlbums() {
 
 function switchAlbum(albumName, clickedElement = null) {
   currentAlbum = albumName;
-  currentPhotos = albums[albumName].map(f => `photos/${f}`);
+  currentPhotos = albums[albumName].map(p => ({
+    full: `photos/${p.src}`,
+    grid: `photos/${p.grid}`,
+    width: p.w,
+    height: p.h
+  }));
 
   // Reset carousel cache when album changes
   carouselBuiltForAlbum = null;
@@ -99,19 +82,15 @@ function switchAlbum(albumName, clickedElement = null) {
 function animateSlideIn() {
   const main = document.querySelector('.main');
   
-  // Start off-screen to the right
   main.style.transition = 'none';
   main.style.transform = 'translateX(100%)';
   main.classList.add('active');
   
-  // Force reflow
   main.offsetHeight;
   
-  // Slide in
   main.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
   main.style.transform = 'translateX(0)';
   
-  // Cleanup after animation
   setTimeout(() => {
     main.style.transition = '';
     main.style.transform = '';
@@ -119,18 +98,11 @@ function animateSlideIn() {
 }
 
 // ============================================
-// Grid rendering
+// Grid rendering (uses pre-stored dimensions)
 // ============================================
-async function renderGrid() {
+function renderGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-
-  const photosWithDimensions = await Promise.all(
-    currentPhotos.map(async (photo) => {
-      const dims = await getImageDimensions(photo);
-      return { src: photo, ...dims };
-    })
-  );
 
   const targetRowHeight = 320;
   const computedStyle = getComputedStyle(grid);
@@ -142,14 +114,14 @@ async function renderGrid() {
   let currentRow = [];
   let currentRowWidth = 0;
 
-  photosWithDimensions.forEach((photo, index) => {
+  currentPhotos.forEach((photo, index) => {
     const aspectRatio = photo.width / photo.height;
     const scaledWidth = targetRowHeight * aspectRatio;
 
-    currentRow.push({ ...photo, index });
+    currentRow.push({ ...photo, index, aspectRatio });
     currentRowWidth += scaledWidth;
 
-    const isLastPhoto = index === photosWithDimensions.length - 1;
+    const isLastPhoto = index === currentPhotos.length - 1;
     const rowFull = currentRowWidth + gap * (currentRow.length - 1) >= containerWidth;
 
     if (rowFull || isLastPhoto) {
@@ -162,16 +134,18 @@ async function renderGrid() {
       rowDiv.className = 'grid-row';
 
       currentRow.forEach((item) => {
-        const itemWidth = (item.width / item.height) * adjustedHeight;
+        const itemWidth = item.aspectRatio * adjustedHeight;
         const itemDiv = document.createElement('div');
         itemDiv.className = 'grid-item';
         itemDiv.style.width = `${itemWidth}px`;
         itemDiv.style.height = `${adjustedHeight}px`;
 
         const img = document.createElement('img');
-        img.src = item.src;
+        img.src = item.grid;
         img.alt = '';
         img.loading = 'lazy';
+        img.width = Math.round(itemWidth);
+        img.height = Math.round(adjustedHeight);
         img.addEventListener('click', () => openLightbox(item.index));
 
         itemDiv.appendChild(img);
@@ -187,7 +161,7 @@ async function renderGrid() {
 }
 
 // ============================================
-// Lightbox carousel
+// Lightbox carousel (uses full-res images)
 // ============================================
 function buildCarousel() {
   if (carouselBuiltForAlbum === currentAlbum) return;
@@ -197,13 +171,12 @@ function buildCarousel() {
     const slide = document.createElement('div');
     slide.className = 'lb-slide';
     const img = document.createElement('img');
-    img.src = photo;
+    img.src = photo.full;
     img.alt = '';
     slide.appendChild(img);
     lbTrack.appendChild(slide);
   });
 
-  // Build dots once with carousel
   buildDots();
   carouselBuiltForAlbum = currentAlbum;
 }
@@ -237,7 +210,6 @@ function goToSlide(index, animate = true) {
   lbTrack.style.transform = `translateX(${offset}px)`;
   updateDots();
 
-  // Show/hide arrows at edges
   if (window.innerWidth > 768) {
     lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
     lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
@@ -260,74 +232,43 @@ function openLightbox(index) {
 }
 
 function closeLightbox() {
-  // Clear any pending wheel timeouts
-  if (wheelTimeout) {
-    clearTimeout(wheelTimeout);
-    wheelTimeout = null;
-  }
-
-  // Reset wheel state
-  wheelDeltaX = 0;
-  wheelDeltaY = 0;
-  isWheeling = false;
-  wheelDirection = null;
-
   lightbox.classList.remove('active');
-  lightbox.style.opacity = '1';
-  lightbox.style.background = '';
-  lbTrack.style.transition = '';
-  lightbox.style.transition = '';
   document.body.style.overflow = '';
+  lightbox.style.background = '';
 }
 
-function nextImage() {
-  if (currentIndex < currentPhotos.length - 1) {
-    goToSlide(currentIndex + 1);
-  }
-}
-
-function prevImage() {
-  if (currentIndex > 0) {
-    goToSlide(currentIndex - 1);
-  }
-}
-
-// Lightbox button events
+// ============================================
+// Lightbox controls
+// ============================================
 lbClose.addEventListener('click', closeLightbox);
-lbPrev.addEventListener('click', prevImage);
-lbNext.addEventListener('click', nextImage);
-
-lightbox.addEventListener('click', (e) => {
-  if (e.target === lightbox || e.target.classList.contains('lb-slide')) {
-    closeLightbox();
-  }
+lbPrev.addEventListener('click', () => {
+  if (currentIndex > 0) goToSlide(currentIndex - 1);
+});
+lbNext.addEventListener('click', () => {
+  if (currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
 });
 
 // Keyboard navigation
 document.addEventListener('keydown', (e) => {
   if (!lightbox.classList.contains('active')) return;
   if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') prevImage();
-  if (e.key === 'ArrowRight') nextImage();
+  if (e.key === 'ArrowLeft' && currentIndex > 0) goToSlide(currentIndex - 1);
+  if (e.key === 'ArrowRight' && currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
 });
 
 // ============================================
-// Trackpad/mousewheel swiping
+// Trackpad/wheel gesture handling for lightbox
 // ============================================
+let isWheeling = false;
 let wheelDeltaX = 0;
 let wheelDeltaY = 0;
 let wheelTimeout = null;
-let isWheeling = false;
-let lastWheelTime = 0;
-let wheelVelocity = 0;
 let wheelDirection = null;
-let wheelSampleX = 0;
-let wheelSampleY = 0;
-let wheelSampleCount = 0;
+let wheelVelocity = 0;
+let lastWheelTime = 0;
 
 lightbox.addEventListener('wheel', (e) => {
   if (!lightbox.classList.contains('active')) return;
-
   e.preventDefault();
 
   const now = Date.now();
@@ -336,40 +277,28 @@ lightbox.addEventListener('wheel', (e) => {
 
   if (!isWheeling) {
     isWheeling = true;
-    wheelDirection = null;
-    wheelSampleX = 0;
-    wheelSampleY = 0;
-    wheelSampleCount = 0;
     wheelDeltaX = 0;
     wheelDeltaY = 0;
-    lbTrack.style.transition = 'none';
-    lightbox.style.transition = 'none';
+    wheelDirection = null;
   }
 
-  // Accumulate samples to determine direction
   if (!wheelDirection) {
-    wheelSampleX += Math.abs(e.deltaX);
-    wheelSampleY += Math.abs(e.deltaY);
-    wheelSampleCount++;
-
-    const totalMovement = wheelSampleX + wheelSampleY;
-    if (totalMovement > 10 || wheelSampleCount >= 2) {
-      wheelDirection = wheelSampleY > wheelSampleX ? 'vertical' : 'horizontal';
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      wheelDirection = 'horizontal';
+    } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      wheelDirection = 'vertical';
     }
   }
 
-  // Vertical swipe down to close
+  // Vertical swiping to dismiss
   if (wheelDirection === 'vertical') {
-    if (e.deltaY < 0) {
-      wheelDeltaY += Math.abs(e.deltaY);
-    } else if (wheelDeltaY > 0) {
-      wheelDeltaY = Math.max(0, wheelDeltaY - e.deltaY);
-    }
+    wheelDeltaY += e.deltaY;
 
-    if (wheelDeltaY > 0) {
-      const progress = Math.min(wheelDeltaY / 300, 1);
+    if (wheelDeltaY < 0) {
+      const progress = Math.min(Math.abs(wheelDeltaY) / 300, 1);
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
+      lbTrack.style.transition = 'none';
       lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
@@ -377,15 +306,22 @@ lightbox.addEventListener('wheel', (e) => {
     if (wheelTimeout) clearTimeout(wheelTimeout);
 
     wheelTimeout = setTimeout(() => {
-      const currentOffset = -currentIndex * window.innerWidth;
-      const shouldClose = wheelDeltaY > 50;
+      const shouldDismiss = wheelDeltaY < -150;
 
-      if (shouldClose) {
-        closeLightbox();
-        lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
+      if (shouldDismiss) {
+        lbTrack.style.transition = 'transform 0.3s ease-out';
+        lightbox.style.transition = 'background 0.3s ease-out';
+        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${-window.innerHeight}px)`;
+        lightbox.style.background = 'rgba(255, 255, 255, 0)';
+        setTimeout(() => {
+          closeLightbox();
+          lbTrack.style.transition = '';
+          lightbox.style.transition = '';
+        }, 300);
       } else {
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
+        const currentOffset = -currentIndex * window.innerWidth;
         lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
         lightbox.style.background = '';
         wheelDeltaY = 0;
@@ -475,7 +411,6 @@ lightbox.addEventListener('touchmove', (e) => {
   const deltaX = touchCurrentX - touchStartX;
   const deltaY = touchCurrentY - touchStartY;
 
-  // Determine gesture direction on first significant movement
   if (!gestureDirection) {
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
       gestureDirection = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
