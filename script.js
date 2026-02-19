@@ -290,12 +290,12 @@ lightbox.addEventListener('wheel', (e) => {
     }
   }
 
-  // Vertical swiping to dismiss
+  // Vertical swiping to dismiss (scroll down = image slides down)
   if (wheelDirection === 'vertical') {
     wheelDeltaY += e.deltaY;
 
-    if (wheelDeltaY < 0) {
-      const progress = Math.min(Math.abs(wheelDeltaY) / 300, 1);
+    if (wheelDeltaY > 0) {
+      const progress = Math.min(wheelDeltaY / 300, 1);
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
       lbTrack.style.transition = 'none';
@@ -306,12 +306,12 @@ lightbox.addEventListener('wheel', (e) => {
     if (wheelTimeout) clearTimeout(wheelTimeout);
 
     wheelTimeout = setTimeout(() => {
-      const shouldDismiss = wheelDeltaY < -150;
+      const shouldDismiss = wheelDeltaY > 150;
 
       if (shouldDismiss) {
         lbTrack.style.transition = 'transform 0.3s ease-out';
         lightbox.style.transition = 'background 0.3s ease-out';
-        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${-window.innerHeight}px)`;
+        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
         lightbox.style.background = 'rgba(255, 255, 255, 0)';
         setTimeout(() => {
           closeLightbox();
