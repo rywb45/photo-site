@@ -39,21 +39,11 @@
     </div>
     <script src="script.js"></script>
     <script>
-      // Auto-detect system dark mode + manual toggle
+      // Default dark mode + manual toggle
       document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('inverted');
+
         const toggle = document.getElementById('themeToggle');
-        
-        // Auto-detect system preference
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.body.classList.add('inverted');
-        }
-
-        // Listen for system changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-          document.body.classList.toggle('inverted', e.matches);
-        });
-
-        // Manual toggle
         if (toggle) {
           toggle.addEventListener('click', function() {
             document.body.classList.toggle('inverted');
