@@ -109,7 +109,7 @@ function renderGrid() {
   const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
   const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
   const containerWidth = (grid.clientWidth || 1200) - paddingLeft - paddingRight;
-  const gap = 6;
+  const gap = 10;
 
   let currentRow = [];
   let currentRowWidth = 0;
