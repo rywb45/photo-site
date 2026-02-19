@@ -85,7 +85,6 @@ body.inverted .sidebar nav a {
 .sidebar .social {
   margin-top: 20px;
   display: flex;
-  align-items: center;
   gap: 16px;
 }
 
@@ -137,6 +136,8 @@ body.inverted .sidebar .signature {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  margin-top: 16px;
+  margin-left: 1px;
   padding: 0;
   transition: border-color 0.3s, transform 0.2s;
 }
