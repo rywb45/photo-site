@@ -109,7 +109,7 @@ function renderGrid() {
   const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
   const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
   const containerWidth = (grid.clientWidth || 1200) - paddingLeft - paddingRight;
-  const gap = 10;
+  const gap = 6;
 
   let currentRow = [];
   let currentRowWidth = 0;
@@ -237,7 +237,7 @@ function openLightbox(index, sourceImg) {
     morphSource = sourceImg;
     morphRect = sourceImg.getBoundingClientRect();
 
-    // Create clone at grid position
+    // Create clone at grid position using grid image (already loaded/cached)
     morphClone = document.createElement('div');
     morphClone.className = 'morph-clone';
     morphClone.style.cssText = `
@@ -247,13 +247,12 @@ function openLightbox(index, sourceImg) {
       width: ${morphRect.width}px;
       height: ${morphRect.height}px;
       z-index: 1002;
-      border-radius: 1px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+      will-change: transform;
     `;
 
     const cloneImg = document.createElement('img');
-    cloneImg.src = currentPhotos[index].full;
+    cloneImg.src = sourceImg.src;
     cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     morphClone.appendChild(cloneImg);
     document.body.appendChild(morphClone);
@@ -264,7 +263,6 @@ function openLightbox(index, sourceImg) {
     // Show lightbox backdrop only (hide the track)
     lightbox.classList.add('active');
     lightbox.style.opacity = '0';
-    lightbox.style.transition = 'opacity 0.25s ease';
     lbTrack.style.opacity = '0';
     document.body.style.overflow = 'hidden';
 
@@ -272,10 +270,10 @@ function openLightbox(index, sourceImg) {
     goToSlide(index, false);
     lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
 
-    // Force reflow then animate
+    // Force reflow
     morphClone.offsetHeight;
 
-    // Calculate target position (centered, same as lightbox)
+    // Calculate target position
     const ar = currentPhotos[index].width / currentPhotos[index].height;
     let targetW, targetH;
     const maxW = window.innerWidth * 0.9;
@@ -292,14 +290,17 @@ function openLightbox(index, sourceImg) {
     const targetL = (window.innerWidth - targetW) / 2;
     const targetT = (window.innerHeight - targetH) / 2;
 
-    // Animate clone to center
-    morphClone.style.left = targetL + 'px';
-    morphClone.style.top = targetT + 'px';
-    morphClone.style.width = targetW + 'px';
-    morphClone.style.height = targetH + 'px';
+    // Use requestAnimationFrame for smooth animation start
+    requestAnimationFrame(() => {
+      morphClone.style.transition = 'left 0.3s cubic-bezier(0.2, 0, 0, 1), top 0.3s cubic-bezier(0.2, 0, 0, 1), width 0.3s cubic-bezier(0.2, 0, 0, 1), height 0.3s cubic-bezier(0.2, 0, 0, 1)';
+      morphClone.style.left = targetL + 'px';
+      morphClone.style.top = targetT + 'px';
+      morphClone.style.width = targetW + 'px';
+      morphClone.style.height = targetH + 'px';
 
-    // Fade in backdrop
-    lightbox.style.opacity = '1';
+      lightbox.style.transition = 'opacity 0.2s ease';
+      lightbox.style.opacity = '1';
+    });
 
     // After animation, reveal real lightbox and remove clone
     setTimeout(() => {
@@ -315,7 +316,7 @@ function openLightbox(index, sourceImg) {
         lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
         lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
       }
-    }, 310);
+    }, 320);
 
   } else {
     // No source — instant open (e.g. keyboard or programmatic)
@@ -358,13 +359,12 @@ function closeLightbox() {
       width: ${startRect.width}px;
       height: ${startRect.height}px;
       z-index: 1002;
-      border-radius: 1px;
       overflow: hidden;
-      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+      will-change: transform;
     `;
 
     const cloneImg = document.createElement('img');
-    cloneImg.src = currentPhotos[currentIndex].full;
+    cloneImg.src = morphSource.src || currentPhotos[currentIndex].grid;
     cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     morphClone.appendChild(cloneImg);
     document.body.appendChild(morphClone);
@@ -379,14 +379,14 @@ function closeLightbox() {
     // Get fresh grid position (might have scrolled)
     const freshRect = morphSource.getBoundingClientRect();
 
-    // Force reflow
-    morphClone.offsetHeight;
-
-    // Animate back to grid
-    morphClone.style.left = freshRect.left + 'px';
-    morphClone.style.top = freshRect.top + 'px';
-    morphClone.style.width = freshRect.width + 'px';
-    morphClone.style.height = freshRect.height + 'px';
+    // Use rAF for smooth start
+    requestAnimationFrame(() => {
+      morphClone.style.transition = 'left 0.25s cubic-bezier(0.2, 0, 0, 1), top 0.25s cubic-bezier(0.2, 0, 0, 1), width 0.25s cubic-bezier(0.2, 0, 0, 1), height 0.25s cubic-bezier(0.2, 0, 0, 1)';
+      morphClone.style.left = freshRect.left + 'px';
+      morphClone.style.top = freshRect.top + 'px';
+      morphClone.style.width = freshRect.width + 'px';
+      morphClone.style.height = freshRect.height + 'px';
+    });
 
     setTimeout(() => {
       if (morphSource) morphSource.style.opacity = '';
@@ -396,7 +396,7 @@ function closeLightbox() {
       }
       morphSource = null;
       morphRect = null;
-    }, 260);
+    }, 270);
 
   } else {
     lightbox.classList.remove('active');
