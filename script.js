@@ -402,6 +402,7 @@ let panOffsetY = 0;
 let lastPanX = 0;
 let lastPanY = 0;
 let lastTapTime = 0;
+let pinchEndTime = 0;
 
 function getDistance(t1, t2) {
   const dx = t1.clientX - t2.clientX;
@@ -446,6 +447,12 @@ function resetZoom() {
 
 lightbox.addEventListener('touchstart', (e) => {
   if (e.target.closest('.lb-btn')) return;
+
+  // Ignore touches briefly after pinch to prevent glitchy swipe
+  if (Date.now() - pinchEndTime < 300 && e.touches.length === 1) {
+    isDragging = false;
+    return;
+  }
 
   // Double-tap to zoom
   if (e.touches.length === 1) {
@@ -541,6 +548,7 @@ lightbox.addEventListener('touchmove', (e) => {
 
   // Normal swipe/dismiss (not zoomed)
   if (!isDragging) return;
+  if (Date.now() - pinchEndTime < 300) return;
 
   touchCurrentX = e.touches[0].clientX;
   touchCurrentY = e.touches[0].clientY;
@@ -581,6 +589,7 @@ lightbox.addEventListener('touchend', (e) => {
   // End pinch
   if (isPinching) {
     isPinching = false;
+    pinchEndTime = Date.now();
     if (zoomScale < 1.1) {
       resetZoom();
     }
