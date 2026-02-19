@@ -121,7 +121,7 @@ body.inverted .sidebar .signature {
 .sidebar .copyright {
   font-size: 12px;
   color: #000;
-  margin-top: auto;
+  margin-top: 12px;
   margin-left: 5px;
   transition: color 0.3s ease;
 }
@@ -136,7 +136,7 @@ body.inverted .sidebar .signature {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  margin-top: 16px;
+  margin-top: auto;
   margin-left: 1px;
   padding: 0;
   transition: border-color 0.3s, transform 0.2s;
