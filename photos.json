@@ -1,33 +1,33 @@
 {
   "people": [
-    "01-people/001.jpg",
-    "01-people/002.jpg",
-    "01-people/003.jpg",
-    "01-people/004.jpg",
-    "01-people/005.jpg",
-    "01-people/006.jpg",
-    "01-people/007.jpg"
+    { "src": "01-people/001.webp", "grid": "01-people/grid/001.webp", "w": 2048, "h": 1365 },
+    { "src": "01-people/002.webp", "grid": "01-people/grid/002.webp", "w": 2048, "h": 1365 },
+    { "src": "01-people/003.webp", "grid": "01-people/grid/003.webp", "w": 2048, "h": 1365 },
+    { "src": "01-people/004.webp", "grid": "01-people/grid/004.webp", "w": 1365, "h": 2048 },
+    { "src": "01-people/005.webp", "grid": "01-people/grid/005.webp", "w": 2048, "h": 1365 },
+    { "src": "01-people/006.webp", "grid": "01-people/grid/006.webp", "w": 1365, "h": 2048 },
+    { "src": "01-people/007.webp", "grid": "01-people/grid/007.webp", "w": 2048, "h": 1338 }
   ],
   "buildings": [
-    "02-buildings/001.jpg",
-    "02-buildings/002.jpg",
-    "02-buildings/003.jpg",
-    "02-buildings/004.jpg",
-    "02-buildings/005.jpg",
-    "02-buildings/006.jpg"
+    { "src": "02-buildings/001.webp", "grid": "02-buildings/grid/001.webp", "w": 2048, "h": 1365 },
+    { "src": "02-buildings/002.webp", "grid": "02-buildings/grid/002.webp", "w": 1365, "h": 2048 },
+    { "src": "02-buildings/003.webp", "grid": "02-buildings/grid/003.webp", "w": 2048, "h": 1365 },
+    { "src": "02-buildings/004.webp", "grid": "02-buildings/grid/004.webp", "w": 1365, "h": 2048 },
+    { "src": "02-buildings/005.webp", "grid": "02-buildings/grid/005.webp", "w": 1365, "h": 2048 },
+    { "src": "02-buildings/006.webp", "grid": "02-buildings/grid/006.webp", "w": 1365, "h": 2048 }
   ],
   "archive": [
-    "03-archive/001.jpg",
-    "03-archive/002.jpg",
-    "03-archive/003.jpg",
-    "03-archive/004.jpg",
-    "03-archive/005.jpg",
-    "03-archive/006.jpg",
-    "03-archive/007.jpg",
-    "03-archive/008.jpg",
-    "03-archive/009.jpg",
-    "03-archive/010.jpg",
-    "03-archive/011.jpg",
-    "03-archive/012.jpg"
+    { "src": "03-archive/001.webp", "grid": "03-archive/grid/001.webp", "w": 2912, "h": 3883 },
+    { "src": "03-archive/002.webp", "grid": "03-archive/grid/002.webp", "w": 4284, "h": 5711 },
+    { "src": "03-archive/003.webp", "grid": "03-archive/grid/003.webp", "w": 4032, "h": 3024 },
+    { "src": "03-archive/004.webp", "grid": "03-archive/grid/004.webp", "w": 3881, "h": 5174 },
+    { "src": "03-archive/005.webp", "grid": "03-archive/grid/005.webp", "w": 4032, "h": 3024 },
+    { "src": "03-archive/006.webp", "grid": "03-archive/grid/006.webp", "w": 5712, "h": 4284 },
+    { "src": "03-archive/007.webp", "grid": "03-archive/grid/007.webp", "w": 4032, "h": 3024 },
+    { "src": "03-archive/008.webp", "grid": "03-archive/grid/008.webp", "w": 4284, "h": 5712 },
+    { "src": "03-archive/009.webp", "grid": "03-archive/grid/009.webp", "w": 4032, "h": 3024 },
+    { "src": "03-archive/010.webp", "grid": "03-archive/grid/010.webp", "w": 3024, "h": 4032 },
+    { "src": "03-archive/011.webp", "grid": "03-archive/grid/011.webp", "w": 3024, "h": 4032 },
+    { "src": "03-archive/012.webp", "grid": "03-archive/grid/012.webp", "w": 5941, "h": 3940 }
   ]
 }
