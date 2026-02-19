@@ -128,8 +128,8 @@ body.inverted .sidebar .signature {
 
 /* Theme toggle - half circle */
 .theme-toggle {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 1.5px solid #000;
   background: none;
@@ -137,6 +137,7 @@ body.inverted .sidebar .signature {
   position: relative;
   overflow: hidden;
   margin-top: auto;
+  margin-bottom: 10px;
   margin-left: 1px;
   padding: 0;
   transition: border-color 0.3s, transform 0.2s;
@@ -376,6 +377,7 @@ body.inverted {
 
   .sidebar .theme-toggle {
     margin-top: auto;
+    margin-bottom: 15px;
   }
 
   .sidebar h1 {
