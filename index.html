@@ -40,12 +40,11 @@
     <script>
       // Toggle color inversion on/off when clicking name
       document.addEventListener('DOMContentLoaded', function() {
-        const sidebar = document.querySelector('.sidebar');
-        const nameElement = sidebar.querySelector('h1');
+        const nameElement = document.querySelector('.sidebar h1');
         
         if (nameElement) {
           nameElement.addEventListener('click', function() {
-            sidebar.classList.toggle('inverted');
+            document.body.classList.toggle('inverted');
           });
         }
       });
