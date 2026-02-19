@@ -501,21 +501,16 @@ body.inverted .lb-next::before {
 body::after {
   content: '';
   position: fixed;
-  inset: -200%;
+  inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.03;
+  opacity: 0.04;
   mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  animation: grain 0.4s steps(1) infinite;
+  background: repeating-conic-gradient(#000 0.0001%, transparent 0.0002%, transparent 0.0025%, #000 0.0026%) 50% 50% / 200px 200px;
+  animation: grain 0.5s steps(2) infinite;
 }
 
 @keyframes grain {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-30px, 15px); }
-  40% { transform: translate(25px, -20px); }
-  60% { transform: translate(-15px, 30px); }
-  80% { transform: translate(20px, -10px); }
-  100% { transform: translate(0, 0); }
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-10px, 10px); }
 }
