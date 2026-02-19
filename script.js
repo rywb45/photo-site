@@ -490,21 +490,27 @@ lightbox.addEventListener('wheel', (e) => {
       const shouldDismiss = wheelDeltaY < -150;
 
       if (shouldDismiss) {
-        // Clear morph source so closeLightbox does a simple close
+        // Clear morph source
         if (morphSource) morphSource.style.opacity = '';
         morphSource = null;
         morphRect = null;
 
-        lbTrack.style.transition = 'transform 0.25s ease-out';
-        lightbox.style.transition = 'background 0.25s ease-out';
+        lbTrack.style.transition = 'transform 0.2s ease-out';
+        lightbox.style.transition = 'background 0.2s ease-out';
         lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
         lightbox.style.background = 'rgba(255, 255, 255, 0)';
         setTimeout(() => {
-          closeLightbox();
-          lbTrack.style.transition = '';
+          // Direct teardown — no closeLightbox to avoid pop-back
+          resetZoom();
+          lightbox.classList.remove('active');
+          document.body.style.overflow = '';
+          lightbox.style.background = '';
+          lightbox.style.opacity = '';
           lightbox.style.transition = '';
+          lbTrack.style.opacity = '';
+          lbTrack.style.transition = 'none';
           lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
-        }, 260);
+        }, 210);
       } else {
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
