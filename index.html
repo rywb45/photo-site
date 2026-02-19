@@ -19,6 +19,7 @@
         </a>
       </div>
       <img src="photos/signature.png" class="signature" alt="Signature">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
       <p class="copyright">© <span id="year"></span></p>
     </aside>
     <main class="main">
@@ -38,12 +39,23 @@
     </div>
     <script src="script.js"></script>
     <script>
-      // Toggle color inversion on/off when clicking name
+      // Auto-detect system dark mode + manual toggle
       document.addEventListener('DOMContentLoaded', function() {
-        const nameElement = document.querySelector('.sidebar h1');
+        const toggle = document.getElementById('themeToggle');
         
-        if (nameElement) {
-          nameElement.addEventListener('click', function() {
+        // Auto-detect system preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.body.classList.add('inverted');
+        }
+
+        // Listen for system changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+          document.body.classList.toggle('inverted', e.matches);
+        });
+
+        // Manual toggle
+        if (toggle) {
+          toggle.addEventListener('click', function() {
             document.body.classList.toggle('inverted');
           });
         }
