@@ -391,8 +391,6 @@ let gestureDirection = null;
 // Pinch-to-zoom state
 let isPinching = false;
 let zoomScale = 1;
-let zoomOriginX = 0;
-let zoomOriginY = 0;
 let initialPinchDist = 0;
 let initialPinchScale = 1;
 let panStartX = 0;
@@ -402,19 +400,13 @@ let panOffsetY = 0;
 let lastPanX = 0;
 let lastPanY = 0;
 let lastTapTime = 0;
-let pinchEndTime = 0;
+let pinchJustEnded = false;
+let pinchEndTimer = null;
 
 function getDistance(t1, t2) {
   const dx = t1.clientX - t2.clientX;
   const dy = t1.clientY - t2.clientY;
   return Math.sqrt(dx * dx + dy * dy);
-}
-
-function getMidpoint(t1, t2) {
-  return {
-    x: (t1.clientX + t2.clientX) / 2,
-    y: (t1.clientY + t2.clientY) / 2
-  };
 }
 
 function getCurrentSlideImg() {
@@ -445,42 +437,14 @@ function resetZoom() {
   panOffsetY = 0;
 }
 
+function setPinchCooldown() {
+  pinchJustEnded = true;
+  if (pinchEndTimer) clearTimeout(pinchEndTimer);
+  pinchEndTimer = setTimeout(() => { pinchJustEnded = false; }, 400);
+}
+
 lightbox.addEventListener('touchstart', (e) => {
   if (e.target.closest('.lb-btn')) return;
-
-  // Ignore touches briefly after pinch to prevent glitchy swipe
-  if (Date.now() - pinchEndTime < 300 && e.touches.length === 1) {
-    isDragging = false;
-    return;
-  }
-
-  // Double-tap to zoom
-  if (e.touches.length === 1) {
-    const now = Date.now();
-    const timeSinceLastTap = now - lastTapTime;
-    lastTapTime = now;
-
-    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
-      e.preventDefault();
-      const img = getCurrentSlideImg();
-      if (!img) return;
-
-      if (zoomScale > 1) {
-        // Zoom out
-        resetZoom();
-      } else {
-        // Zoom in to 2x
-        zoomScale = 2;
-        panOffsetX = 0;
-        panOffsetY = 0;
-        img.style.transition = 'transform 0.3s ease';
-        applyZoom(img);
-        setTimeout(() => { img.style.transition = ''; }, 300);
-      }
-      isDragging = false;
-      return;
-    }
-  }
 
   // Two-finger pinch start
   if (e.touches.length === 2) {
@@ -492,7 +456,33 @@ lightbox.addEventListener('touchstart', (e) => {
     return;
   }
 
-  // Single-finger start
+  // Skip if pinch just ended (prevents glitch from leftover finger)
+  if (pinchJustEnded) return;
+
+  // Double-tap to zoom
+  const now = Date.now();
+  const timeSinceLastTap = now - lastTapTime;
+  lastTapTime = now;
+
+  if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+    e.preventDefault();
+    const img = getCurrentSlideImg();
+    if (!img) return;
+
+    if (zoomScale > 1) {
+      resetZoom();
+    } else {
+      zoomScale = 2.5;
+      panOffsetX = 0;
+      panOffsetY = 0;
+      img.style.transition = 'transform 0.3s ease';
+      applyZoom(img);
+      setTimeout(() => { img.style.transition = ''; }, 300);
+    }
+    isDragging = false;
+    return;
+  }
+
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
   touchCurrentX = touchStartX;
@@ -530,8 +520,11 @@ lightbox.addEventListener('touchmove', (e) => {
     return;
   }
 
+  // If pinch is active but lost a finger, ignore
+  if (isPinching) return;
+
   // Pan while zoomed (single finger)
-  if (zoomScale > 1 && e.touches.length === 1) {
+  if (zoomScale > 1 && e.touches.length === 1 && !pinchJustEnded) {
     e.preventDefault();
     const dx = e.touches[0].clientX - panStartX;
     const dy = e.touches[0].clientY - panStartY;
@@ -548,7 +541,6 @@ lightbox.addEventListener('touchmove', (e) => {
 
   // Normal swipe/dismiss (not zoomed)
   if (!isDragging) return;
-  if (Date.now() - pinchEndTime < 300) return;
 
   touchCurrentX = e.touches[0].clientX;
   touchCurrentY = e.touches[0].clientY;
@@ -588,13 +580,19 @@ lightbox.addEventListener('touchmove', (e) => {
 lightbox.addEventListener('touchend', (e) => {
   // End pinch
   if (isPinching) {
-    isPinching = false;
-    pinchEndTime = Date.now();
-    if (zoomScale < 1.1) {
-      resetZoom();
+    // Only end pinch when all fingers lifted
+    if (e.touches.length === 0) {
+      isPinching = false;
+      setPinchCooldown();
+      if (zoomScale < 1.1) {
+        resetZoom();
+      }
     }
     return;
   }
+
+  // Ignore if in cooldown
+  if (pinchJustEnded) return;
 
   // End pan while zoomed
   if (zoomScale > 1) {
