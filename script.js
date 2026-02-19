@@ -473,20 +473,21 @@ lightbox.addEventListener('wheel', (e) => {
   if (wheelDirection === 'vertical') {
     wheelDeltaY += e.deltaY;
 
-    // Only track downward (positive deltaY with natural scrolling)
-    if (wheelDeltaY > 0) {
-      const progress = Math.min(wheelDeltaY / 300, 1);
+    // Two fingers drag down = negative deltaY on this Mac
+    if (wheelDeltaY < 0) {
+      const absDelta = Math.abs(wheelDeltaY);
+      const progress = Math.min(absDelta / 300, 1);
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
       lbTrack.style.transition = 'none';
-      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
+      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${absDelta}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
 
     if (wheelTimeout) clearTimeout(wheelTimeout);
 
     wheelTimeout = setTimeout(() => {
-      const shouldDismiss = wheelDeltaY > 150;
+      const shouldDismiss = wheelDeltaY < -150;
 
       if (shouldDismiss) {
         // Clear morph source so closeLightbox does a simple close
