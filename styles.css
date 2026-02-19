@@ -204,6 +204,7 @@ body.inverted {
 
 .lightbox.active {
   display: block;
+  touch-action: none;
 }
 
 .lb-track {
