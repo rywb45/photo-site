@@ -290,23 +290,23 @@ lightbox.addEventListener('wheel', (e) => {
     }
   }
 
-  // Vertical swiping to dismiss (scroll down = image slides down)
+  // Vertical swiping to dismiss (two fingers drag down on trackpad)
   if (wheelDirection === 'vertical') {
     wheelDeltaY += e.deltaY;
 
-    if (wheelDeltaY > 0) {
-      const progress = Math.min(wheelDeltaY / 300, 1);
+    if (wheelDeltaY < 0) {
+      const progress = Math.min(Math.abs(wheelDeltaY) / 300, 1);
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
       lbTrack.style.transition = 'none';
-      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
+      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${-wheelDeltaY}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
 
     if (wheelTimeout) clearTimeout(wheelTimeout);
 
     wheelTimeout = setTimeout(() => {
-      const shouldDismiss = wheelDeltaY > 150;
+      const shouldDismiss = wheelDeltaY < -150;
 
       if (shouldDismiss) {
         lbTrack.style.transition = 'transform 0.3s ease-out';
