@@ -146,7 +146,7 @@ function renderGrid() {
         img.loading = 'lazy';
         img.width = Math.round(itemWidth);
         img.height = Math.round(adjustedHeight);
-        img.addEventListener('click', () => openLightbox(item.index));
+        img.addEventListener('click', (e) => openLightbox(item.index, e.currentTarget));
 
         itemDiv.appendChild(img);
         rowDiv.appendChild(itemDiv);
@@ -201,6 +201,12 @@ function updateDots() {
 
 function goToSlide(index, animate = true) {
   resetZoom();
+  // If navigating away from original photo, clear morph source
+  if (index !== currentIndex) {
+    if (morphSource) morphSource.style.opacity = '';
+    morphSource = null;
+    morphRect = null;
+  }
   currentIndex = index;
   const offset = -currentIndex * window.innerWidth;
   if (animate) {
@@ -217,26 +223,182 @@ function goToSlide(index, animate = true) {
   }
 }
 
-function openLightbox(index) {
+// Morph transition state
+let morphSource = null;
+let morphClone = null;
+let morphRect = null;
+
+function openLightbox(index, sourceImg) {
   buildCarousel();
   currentIndex = index;
-  goToSlide(index, false);
-  lightbox.classList.add('active');
-  lightbox.style.opacity = '1';
-  lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
-  document.body.style.overflow = 'hidden';
 
-  if (window.innerWidth > 768) {
-    lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
-    lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
+  // If we have a source image, do the morph
+  if (sourceImg) {
+    morphSource = sourceImg;
+    morphRect = sourceImg.getBoundingClientRect();
+
+    // Create clone at grid position
+    morphClone = document.createElement('div');
+    morphClone.className = 'morph-clone';
+    morphClone.style.cssText = `
+      position: fixed;
+      left: ${morphRect.left}px;
+      top: ${morphRect.top}px;
+      width: ${morphRect.width}px;
+      height: ${morphRect.height}px;
+      z-index: 1002;
+      border-radius: 1px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+    `;
+
+    const cloneImg = document.createElement('img');
+    cloneImg.src = currentPhotos[index].full;
+    cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    morphClone.appendChild(cloneImg);
+    document.body.appendChild(morphClone);
+
+    // Hide the source in the grid
+    morphSource.style.opacity = '0';
+
+    // Show lightbox backdrop (hidden track)
+    lightbox.classList.add('active');
+    lightbox.style.opacity = '0';
+    lightbox.style.transition = 'opacity 0.35s ease';
+    document.body.style.overflow = 'hidden';
+
+    // Force reflow then animate
+    morphClone.offsetHeight;
+
+    // Calculate target position (centered, same as lightbox)
+    const ar = currentPhotos[index].width / currentPhotos[index].height;
+    let targetW, targetH;
+    const maxW = window.innerWidth * 0.9;
+    const maxH = window.innerHeight * 0.9;
+
+    if (maxW / maxH > ar) {
+      targetH = maxH;
+      targetW = targetH * ar;
+    } else {
+      targetW = maxW;
+      targetH = targetW / ar;
+    }
+
+    const targetL = (window.innerWidth - targetW) / 2;
+    const targetT = (window.innerHeight - targetH) / 2;
+
+    // Animate clone to center
+    morphClone.style.left = targetL + 'px';
+    morphClone.style.top = targetT + 'px';
+    morphClone.style.width = targetW + 'px';
+    morphClone.style.height = targetH + 'px';
+
+    // Fade in backdrop
+    lightbox.style.opacity = '1';
+
+    // After animation, show real lightbox and remove clone
+    setTimeout(() => {
+      goToSlide(index, false);
+      lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+      lightbox.style.transition = '';
+
+      if (morphClone && morphClone.parentNode) {
+        morphClone.remove();
+        morphClone = null;
+      }
+
+      if (window.innerWidth > 768) {
+        lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
+        lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
+      }
+    }, 420);
+
+  } else {
+    // No source — instant open (e.g. keyboard or programmatic)
+    goToSlide(index, false);
+    lightbox.classList.add('active');
+    lightbox.style.opacity = '1';
+    lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+    document.body.style.overflow = 'hidden';
+
+    if (window.innerWidth > 768) {
+      lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
+      lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
+    }
   }
 }
 
 function closeLightbox() {
   resetZoom();
-  lightbox.classList.remove('active');
-  document.body.style.overflow = '';
-  lightbox.style.background = '';
+
+  // If we have a morph source, animate back
+  if (morphSource && morphRect) {
+    const slideImg = getCurrentSlideImg();
+
+    // Create clone at current lightbox position
+    morphClone = document.createElement('div');
+    morphClone.className = 'morph-clone';
+
+    const lbImg = slideImg || null;
+    let startRect;
+    if (lbImg) {
+      startRect = lbImg.getBoundingClientRect();
+    } else {
+      startRect = { left: window.innerWidth * 0.05, top: window.innerHeight * 0.05, width: window.innerWidth * 0.9, height: window.innerHeight * 0.9 };
+    }
+
+    morphClone.style.cssText = `
+      position: fixed;
+      left: ${startRect.left}px;
+      top: ${startRect.top}px;
+      width: ${startRect.width}px;
+      height: ${startRect.height}px;
+      z-index: 1002;
+      border-radius: 1px;
+      overflow: hidden;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.15, 1);
+    `;
+
+    const cloneImg = document.createElement('img');
+    cloneImg.src = currentPhotos[currentIndex].full;
+    cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    morphClone.appendChild(cloneImg);
+    document.body.appendChild(morphClone);
+
+    // Hide lightbox immediately
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    lightbox.style.background = '';
+
+    // Get fresh grid position (might have scrolled)
+    const freshRect = morphSource.getBoundingClientRect();
+
+    // Force reflow
+    morphClone.offsetHeight;
+
+    // Animate back to grid
+    morphClone.style.left = freshRect.left + 'px';
+    morphClone.style.top = freshRect.top + 'px';
+    morphClone.style.width = freshRect.width + 'px';
+    morphClone.style.height = freshRect.height + 'px';
+
+    setTimeout(() => {
+      if (morphSource) morphSource.style.opacity = '';
+      if (morphClone && morphClone.parentNode) {
+        morphClone.remove();
+        morphClone = null;
+      }
+      morphSource = null;
+      morphRect = null;
+    }, 370);
+
+  } else {
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    lightbox.style.background = '';
+    morphSource = null;
+    morphRect = null;
+  }
 }
 
 // ============================================
@@ -302,7 +464,7 @@ lightbox.addEventListener('wheel', (e) => {
       const opacity = 1 - (progress * 0.5);
       const currentOffset = -currentIndex * window.innerWidth;
       lbTrack.style.transition = 'none';
-      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${wheelDeltaY}px)`;
+      lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${-wheelDeltaY}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
 
