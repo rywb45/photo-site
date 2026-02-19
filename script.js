@@ -249,7 +249,7 @@ function openLightbox(index, sourceImg) {
       z-index: 1002;
       border-radius: 1px;
       overflow: hidden;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.15, 1);
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
     `;
 
     const cloneImg = document.createElement('img');
@@ -261,11 +261,16 @@ function openLightbox(index, sourceImg) {
     // Hide the source in the grid
     morphSource.style.opacity = '0';
 
-    // Show lightbox backdrop (hidden track)
+    // Show lightbox backdrop only (hide the track)
     lightbox.classList.add('active');
     lightbox.style.opacity = '0';
-    lightbox.style.transition = 'opacity 0.35s ease';
+    lightbox.style.transition = 'opacity 0.25s ease';
+    lbTrack.style.opacity = '0';
     document.body.style.overflow = 'hidden';
+
+    // Set up the slide position now while hidden
+    goToSlide(index, false);
+    lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
 
     // Force reflow then animate
     morphClone.offsetHeight;
@@ -296,10 +301,9 @@ function openLightbox(index, sourceImg) {
     // Fade in backdrop
     lightbox.style.opacity = '1';
 
-    // After animation, show real lightbox and remove clone
+    // After animation, reveal real lightbox and remove clone
     setTimeout(() => {
-      goToSlide(index, false);
-      lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+      lbTrack.style.opacity = '1';
       lightbox.style.transition = '';
 
       if (morphClone && morphClone.parentNode) {
@@ -311,7 +315,7 @@ function openLightbox(index, sourceImg) {
         lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
         lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
       }
-    }, 420);
+    }, 310);
 
   } else {
     // No source — instant open (e.g. keyboard or programmatic)
@@ -356,7 +360,7 @@ function closeLightbox() {
       z-index: 1002;
       border-radius: 1px;
       overflow: hidden;
-      transition: all 0.35s cubic-bezier(0.4, 0, 0.15, 1);
+      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
     `;
 
     const cloneImg = document.createElement('img');
@@ -390,7 +394,7 @@ function closeLightbox() {
       }
       morphSource = null;
       morphRect = null;
-    }, 370);
+    }, 260);
 
   } else {
     lightbox.classList.remove('active');
