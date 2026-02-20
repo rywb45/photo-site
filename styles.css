@@ -546,28 +546,27 @@ body.inverted .lb-next::before {
 /* ============================================
    Edit Mode
    ============================================ */
-body.edit-mode #grid {
-  display: flex !important;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 20px;
-}
-
-body.edit-mode #grid .grid-row {
-  display: none;
-}
-
 body.edit-mode .edit-item {
   position: relative;
   cursor: grab;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: box-shadow 0.2s;
-  flex-shrink: 0;
 }
 
 body.edit-mode .edit-item:active {
   cursor: grabbing;
+}
+
+body.edit-mode .edit-item.edit-dragging {
+  opacity: 0.4;
+}
+
+body.edit-mode .edit-item.edit-dragover {
+  box-shadow: 0 0 0 3px #fff;
+  transform: scale(0.97);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+body.inverted.edit-mode .edit-item.edit-dragover {
+  box-shadow: 0 0 0 3px #fff;
 }
 
 .edit-badge {
