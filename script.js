@@ -1151,7 +1151,6 @@ function renderEditGrid() {
 
       if (dist < radius && dist > 0) {
         const t = 1 - dist / radius;
-        // Ease out cubic for smooth falloff
         const easedT = t * t;
         const force = easedT * strength;
         const angle = Math.atan2(dy, dx);
@@ -1159,9 +1158,13 @@ function renderEditGrid() {
         const pushY = Math.sin(angle) * force;
         const scale = 1 - easedT * 0.08;
 
+        item.style.animation = 'none';
         item.style.transform = `translate(${pushX}px, ${pushY}px) scale(${scale})`;
       } else {
-        if (item.style.transform) item.style.transform = '';
+        if (item.style.transform) {
+          item.style.transform = '';
+          item.style.animation = '';
+        }
       }
     });
 
@@ -1250,9 +1253,10 @@ function renderEditGrid() {
     isDragging = false;
     cancelAnimationFrame(rafId);
 
-    // Clear all transforms with spring back
+    // Clear all transforms and restore wiggle
     items.forEach((item, i) => {
       item.style.transform = '';
+      item.style.animation = '';
       item.classList.remove('edit-dragging');
     });
 
