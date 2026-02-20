@@ -959,6 +959,8 @@ let editMode = false;
 let sortableInstance = null;
 let nameClickCount = 0;
 let nameClickTimer = null;
+let preEditPhotos = null;
+let preEditAlbums = null;
 
 const REPO_OWNER = 'rywb45';
 const REPO_NAME = 'photo-site';
@@ -996,6 +998,10 @@ function enterEditMode() {
   editMode = true;
   document.body.classList.add('edit-mode');
 
+  // Snapshot current state for cancel
+  preEditPhotos = [...currentPhotos];
+  preEditAlbums = JSON.parse(JSON.stringify(albums));
+
   // INSTANT: activate edit mode
   renderEditGrid();
   showEditBar();
@@ -1007,7 +1013,7 @@ function enterEditMode() {
   playTypewriterIn(nameText);
 }
 
-function exitEditMode() {
+function exitEditMode(saved) {
   editMode = false;
   document.body.classList.remove('edit-mode');
 
@@ -1028,6 +1034,15 @@ function exitEditMode() {
     bar.classList.remove('visible');
     setTimeout(() => bar.remove(), 350);
   }
+
+  // If cancelled, restore original order
+  if (!saved && preEditPhotos) {
+    currentPhotos = preEditPhotos;
+    albums = preEditAlbums;
+  }
+
+  preEditPhotos = null;
+  preEditAlbums = null;
 
   renderGrid();
 
@@ -1429,7 +1444,7 @@ async function saveOrder() {
     carouselBuiltForAlbum = null;
 
     saveBtn.textContent = 'SAVED ✓';
-    setTimeout(() => exitEditMode(), 800);
+    setTimeout(() => exitEditMode(true), 800);
 
   } catch(err) {
     console.error('Save failed:', err);
