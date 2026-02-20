@@ -49,6 +49,16 @@ async function loadAlbums() {
 }
 
 function switchAlbum(albumName, clickedElement = null) {
+  // If in edit mode, save current album's reorder before switching
+  if (editMode && currentAlbum && currentPhotos.length) {
+    albums[currentAlbum] = currentPhotos.map(p => ({
+      src: p.full.replace('photos/', ''),
+      grid: p.grid.replace('photos/', ''),
+      w: p.width,
+      h: p.height
+    }));
+  }
+
   currentAlbum = albumName;
   currentPhotos = albums[albumName].map(p => ({
     full: `photos/${p.src}`,
@@ -73,7 +83,11 @@ function switchAlbum(albumName, clickedElement = null) {
     animateSlideIn();
   }
 
-  renderGrid();
+  if (editMode) {
+    renderEditGrid();
+  } else {
+    renderGrid();
+  }
 }
 
 // ============================================
@@ -923,7 +937,13 @@ loadAlbums();
 let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(renderGrid, 150);
+  resizeTimeout = setTimeout(() => {
+    if (editMode) {
+      renderEditGrid();
+    } else {
+      renderGrid();
+    }
+  }, 150);
 });
 
 // Mobile close button
