@@ -7,12 +7,6 @@
       "h": 1365
     },
     {
-      "src": "02-buildings/005.webp",
-      "grid": "02-buildings/grid/005.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
       "src": "02-buildings/003.webp",
       "grid": "02-buildings/grid/003.webp",
       "w": 2048,
@@ -91,6 +85,12 @@
       "grid": "01-people/grid/004.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "01-people/005.webp",
+      "grid": "01-people/grid/005.webp",
+      "w": 1365,
+      "h": 2048
     }
   ],
   "archive": [
