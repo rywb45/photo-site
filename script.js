@@ -1001,54 +1001,73 @@ function exitEditMode() {
 }
 
 function renderEditGrid() {
+  // Re-render normal grid first
+  renderGrid();
+
   const grid = document.getElementById('grid');
-  grid.innerHTML = '';
 
-  // Add items directly to grid (no row divs) for SortableJS
-  currentPhotos.forEach((photo, index) => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'edit-item';
-    itemDiv.dataset.index = index;
+  // Add edit badges and drag handlers to each grid item
+  const items = grid.querySelectorAll('.grid-item');
+  let dragSrcIndex = null;
 
-    const ar = photo.width / photo.height;
-    const h = 160;
-    const w = Math.round(h * ar);
-    itemDiv.style.width = `${w}px`;
-    itemDiv.style.height = `${h}px`;
-
-    const img = document.createElement('img');
-    img.src = photo.grid;
-    img.alt = '';
-    img.draggable = false;
-    img.style.cssText = 'width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;';
-
+  items.forEach((item, i) => {
+    // Add number badge
     const badge = document.createElement('div');
     badge.className = 'edit-badge';
-    badge.textContent = index + 1;
+    badge.textContent = i + 1;
+    item.appendChild(badge);
 
-    itemDiv.appendChild(img);
-    itemDiv.appendChild(badge);
-    grid.appendChild(itemDiv);
-  });
+    // Make draggable
+    item.setAttribute('draggable', 'true');
+    item.classList.add('edit-item');
+    item.dataset.editIndex = i;
 
-  // Initialize SortableJS
-  if (typeof Sortable !== 'undefined') {
-    sortableInstance = new Sortable(grid, {
-      animation: 200,
-      ghostClass: 'edit-ghost',
-      chosenClass: 'edit-chosen',
-      dragClass: 'edit-drag',
-      onEnd: function() {
-        const items = grid.querySelectorAll('.edit-item');
-        items.forEach((item, i) => {
-          item.querySelector('.edit-badge').textContent = i + 1;
-        });
-      }
+    // Remove lightbox click in edit mode
+    const img = item.querySelector('img');
+    const newImg = img.cloneNode(true);
+    img.replaceWith(newImg);
+    newImg.style.pointerEvents = 'none';
+    newImg.style.userSelect = 'none';
+
+    item.addEventListener('dragstart', (e) => {
+      dragSrcIndex = parseInt(item.dataset.editIndex);
+      item.classList.add('edit-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Need to set data for Firefox
+      e.dataTransfer.setData('text/plain', dragSrcIndex);
     });
-  } else {
-    console.error('SortableJS not loaded');
-    alert('Drag library failed to load. Check your connection.');
-  }
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      item.classList.add('edit-dragover');
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('edit-dragover');
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('edit-dragging');
+      items.forEach(el => el.classList.remove('edit-dragover'));
+    });
+
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      item.classList.remove('edit-dragover');
+
+      const dropIndex = parseInt(item.dataset.editIndex);
+      if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
+
+      // Swap photos in the array
+      const temp = currentPhotos[dragSrcIndex];
+      currentPhotos.splice(dragSrcIndex, 1);
+      currentPhotos.splice(dropIndex, 0, temp);
+
+      // Re-render with new order
+      renderEditGrid();
+    });
+  });
 }
 
 function showEditBar() {
