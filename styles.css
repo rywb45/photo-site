@@ -579,9 +579,8 @@ body:not(.inverted) .edit-cursor {
 body.edit-mode .edit-item {
   position: relative;
   cursor: grab;
-  transition: transform 0.4s cubic-bezier(0.25, 1.5, 0.4, 1);
   will-change: transform;
-  animation: wiggle 0.4s ease-in-out infinite alternate;
+  animation: wiggle 0.3s ease-in-out infinite alternate;
 }
 
 body.edit-mode .edit-item:nth-child(odd) {
@@ -590,18 +589,18 @@ body.edit-mode .edit-item:nth-child(odd) {
 }
 
 body.edit-mode .edit-item:nth-child(even) {
-  animation-delay: 0.1s;
+  animation-delay: 0.15s;
   animation-name: wiggleB;
 }
 
 @keyframes wiggleA {
-  0% { transform: rotate(-0.5deg); }
-  100% { transform: rotate(0.5deg); }
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(0.3px, -0.3px) rotate(0.15deg); }
 }
 
 @keyframes wiggleB {
-  0% { transform: rotate(0.4deg); }
-  100% { transform: rotate(-0.4deg); }
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-0.3px, 0.3px) rotate(-0.15deg); }
 }
 
 body.edit-mode .edit-item:active {
