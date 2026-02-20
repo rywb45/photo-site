@@ -1025,18 +1025,11 @@ function renderEditGrid() {
   renderGrid();
 
   const grid = document.getElementById('grid');
-
-  // Add edit badges and drag handlers to each grid item
   const items = grid.querySelectorAll('.grid-item');
   let dragSrcIndex = null;
+  let dragOverIndex = null;
 
   items.forEach((item, i) => {
-    // Add number badge
-    const badge = document.createElement('div');
-    badge.className = 'edit-badge';
-    badge.textContent = i + 1;
-    item.appendChild(badge);
-
     // Make draggable
     item.setAttribute('draggable', 'true');
     item.classList.add('edit-item');
@@ -1051,35 +1044,57 @@ function renderEditGrid() {
 
     item.addEventListener('dragstart', (e) => {
       dragSrcIndex = parseInt(item.dataset.editIndex);
-      item.classList.add('edit-dragging');
+      dragOverIndex = dragSrcIndex;
+      setTimeout(() => item.classList.add('edit-dragging'), 0);
       e.dataTransfer.effectAllowed = 'move';
-      // Need to set data for Firefox
       e.dataTransfer.setData('text/plain', dragSrcIndex);
     });
 
     item.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      item.classList.add('edit-dragover');
+
+      const overIndex = parseInt(item.dataset.editIndex);
+      if (overIndex === dragOverIndex || dragSrcIndex === null) return;
+      dragOverIndex = overIndex;
+
+      // Apply push animation to all items
+      const allItems = grid.querySelectorAll('.grid-item');
+      allItems.forEach((el, idx) => {
+        el.classList.remove('edit-push-left', 'edit-push-right');
+        if (idx === dragSrcIndex) return;
+
+        if (dragSrcIndex < overIndex) {
+          // Dragging forward — items between src and target push left
+          if (idx > dragSrcIndex && idx <= overIndex) {
+            el.classList.add('edit-push-left');
+          }
+        } else {
+          // Dragging backward — items between target and src push right
+          if (idx >= overIndex && idx < dragSrcIndex) {
+            el.classList.add('edit-push-right');
+          }
+        }
+      });
     });
 
-    item.addEventListener('dragleave', () => {
-      item.classList.remove('edit-dragover');
-    });
+    item.addEventListener('dragleave', () => {});
 
     item.addEventListener('dragend', () => {
       item.classList.remove('edit-dragging');
-      items.forEach(el => el.classList.remove('edit-dragover'));
+      const allItems = grid.querySelectorAll('.grid-item');
+      allItems.forEach(el => {
+        el.classList.remove('edit-push-left', 'edit-push-right');
+      });
     });
 
     item.addEventListener('drop', (e) => {
       e.preventDefault();
-      item.classList.remove('edit-dragover');
 
       const dropIndex = parseInt(item.dataset.editIndex);
       if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
 
-      // Swap photos in the array
+      // Move photo in array
       const temp = currentPhotos[dragSrcIndex];
       currentPhotos.splice(dragSrcIndex, 1);
       currentPhotos.splice(dropIndex, 0, temp);
