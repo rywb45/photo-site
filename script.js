@@ -1053,11 +1053,7 @@ function exitEditMode(saved) {
 
 function playTypewriterIn(el) {
   const original = 'Ryan Byrne';
-  const upper = original.toUpperCase();
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!&*';
-
-  let text = original;
-  let i = text.length;
+  let i = original.length;
 
   let eraseInterval = setInterval(() => {
     if (!editMode) { clearInterval(eraseInterval); el.textContent = original; return; }
@@ -1065,46 +1061,24 @@ function playTypewriterIn(el) {
     if (i < 0) {
       clearInterval(eraseInterval);
       let j = 0;
-      let scrambleCount = 0;
-
       let typeInterval = setInterval(() => {
         if (!editMode) { clearInterval(typeInterval); el.textContent = original; return; }
-        if (j >= upper.length) {
+        if (j >= original.length) {
           clearInterval(typeInterval);
-          el.style.textShadow = '0 0 10px rgba(255,255,255,0.3)';
-          setTimeout(() => {
-            el.textContent = original;
-            el.style.textShadow = '';
-          }, 200);
           return;
         }
-
-        if (upper[j] === ' ') {
-          el.textContent = upper.substring(0, j + 1);
-          j++;
-          scrambleCount = 0;
-          return;
-        }
-
-        if (scrambleCount < 2) {
-          el.textContent = upper.substring(0, j) + chars[Math.floor(Math.random() * chars.length)];
-          scrambleCount++;
-        } else {
-          el.textContent = upper.substring(0, j + 1);
-          scrambleCount = 0;
-          j++;
-        }
-      }, 30);
+        el.textContent = original.substring(0, j + 1);
+        j++;
+      }, 35);
       return;
     }
-    el.textContent = text.substring(0, i);
+    el.textContent = original.substring(0, i);
   }, 35);
 }
 
 function playTypewriterOut(el) {
   const original = 'Ryan Byrne';
-  const current = el.textContent;
-  let i = current.length;
+  let i = original.length;
 
   let eraseInterval = setInterval(() => {
     i--;
@@ -1123,7 +1097,7 @@ function playTypewriterOut(el) {
       }, 35);
       return;
     }
-    el.textContent = current.substring(0, i);
+    el.textContent = original.substring(0, i);
   }, 35);
 }
 
