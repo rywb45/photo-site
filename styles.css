@@ -549,7 +549,8 @@ body.inverted .lb-next::before {
 body.edit-mode .edit-item {
   position: relative;
   cursor: grab;
-  transition: transform 0.4s cubic-bezier(0.25, 1.6, 0.4, 1), opacity 0.2s;
+  transition: transform 0.4s cubic-bezier(0.25, 1.5, 0.4, 1);
+  will-change: transform;
 }
 
 body.edit-mode .edit-item:active {
@@ -557,21 +558,8 @@ body.edit-mode .edit-item:active {
 }
 
 body.edit-mode .edit-item.edit-dragging {
-  opacity: 0.2;
-  transform: scale(0.9);
-  transition: opacity 0.15s, transform 0.15s;
-}
-
-body.edit-mode .edit-item.edit-push-left {
-  transform: translateX(-30px) scale(0.96);
-}
-
-body.edit-mode .edit-item.edit-push-right {
-  transform: translateX(30px) scale(0.96);
-}
-
-body.edit-mode .edit-item.edit-dragover {
-  box-shadow: none;
+  opacity: 0.15;
+  transition: opacity 0.15s;
 }
 
 /* Edit mode drag states */
