@@ -1,4 +1,48 @@
 {
+  "buildings": [
+    {
+      "src": "02-buildings/001.webp",
+      "grid": "02-buildings/grid/001.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "02-buildings/005.webp",
+      "grid": "02-buildings/grid/005.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "02-buildings/003.webp",
+      "grid": "02-buildings/grid/003.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "02-buildings/004.webp",
+      "grid": "02-buildings/grid/004.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "02-buildings/006.webp",
+      "grid": "02-buildings/grid/006.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "02-buildings/002.webp",
+      "grid": "02-buildings/grid/002.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "02-buildings/007.webp",
+      "grid": "02-buildings/grid/007.webp",
+      "w": 1365,
+      "h": 2048
+    }
+  ],
   "people": [
     {
       "src": "01-people/003.webp",
@@ -47,50 +91,6 @@
       "grid": "01-people/grid/004.webp",
       "w": 2048,
       "h": 1365
-    }
-  ],
-  "buildings": [
-    {
-      "src": "02-buildings/001.webp",
-      "grid": "02-buildings/grid/001.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "02-buildings/005.webp",
-      "grid": "02-buildings/grid/005.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "02-buildings/003.webp",
-      "grid": "02-buildings/grid/003.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "02-buildings/004.webp",
-      "grid": "02-buildings/grid/004.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "02-buildings/006.webp",
-      "grid": "02-buildings/grid/006.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "02-buildings/002.webp",
-      "grid": "02-buildings/grid/002.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "02-buildings/007.webp",
-      "grid": "02-buildings/grid/007.webp",
-      "w": 1365,
-      "h": 2048
     }
   ],
   "archive": [
