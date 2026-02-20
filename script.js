@@ -1007,33 +1007,111 @@ function exitEditMode() {
   editMode = false;
   document.body.classList.remove('edit-mode');
 
+  // Clean up drag listeners
+  const grid = document.getElementById('grid');
+  if (grid._editCleanup) {
+    grid._editCleanup();
+    grid._editCleanup = null;
+  }
+
   if (sortableInstance) {
     sortableInstance.destroy();
     sortableInstance = null;
   }
 
-  // Remove edit bar
   const bar = document.getElementById('editBar');
   if (bar) bar.remove();
 
-  // Re-render normal grid
   renderGrid();
 }
 
 function renderEditGrid() {
-  // Re-render normal grid first
   renderGrid();
 
   const grid = document.getElementById('grid');
-  const items = grid.querySelectorAll('.grid-item');
+  const items = Array.from(grid.querySelectorAll('.grid-item'));
   let dragSrcIndex = null;
-  let dragOverIndex = null;
+  let isDragging = false;
+  let mouseX = 0, mouseY = 0;
+  let startX = 0, startY = 0;
+  let clone = null;
+  let rafId = null;
+  let itemRects = [];
+
+  function cachePositions() {
+    itemRects = items.map(item => {
+      const rect = item.getBoundingClientRect();
+      return {
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+        w: rect.width,
+        h: rect.height
+      };
+    });
+  }
+
+  function animationLoop() {
+    if (!isDragging) return;
+
+    const radius = 300;
+    const strength = 50;
+
+    items.forEach((item, i) => {
+      if (i === dragSrcIndex) return;
+
+      const r = itemRects[i];
+      if (!r) return;
+
+      const dx = r.cx - mouseX;
+      const dy = r.cy - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < radius && dist > 0) {
+        const t = 1 - dist / radius;
+        // Ease out cubic for smooth falloff
+        const easedT = t * t;
+        const force = easedT * strength;
+        const angle = Math.atan2(dy, dx);
+        const pushX = Math.cos(angle) * force;
+        const pushY = Math.sin(angle) * force;
+        const scale = 1 - easedT * 0.08;
+
+        item.style.transform = `translate(${pushX}px, ${pushY}px) scale(${scale})`;
+      } else {
+        if (item.style.transform) item.style.transform = '';
+      }
+    });
+
+    // Move clone with cursor
+    if (clone) {
+      clone.style.left = (mouseX - clone._offsetX) + 'px';
+      clone.style.top = (mouseY - clone._offsetY) + 'px';
+    }
+
+    rafId = requestAnimationFrame(animationLoop);
+  }
+
+  function findDropTarget() {
+    let closest = null;
+    let closestDist = Infinity;
+
+    items.forEach((item, i) => {
+      if (i === dragSrcIndex) return;
+      const r = itemRects[i];
+      const dx = r.cx - mouseX;
+      const dy = r.cy - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < closestDist && dist < 200) {
+        closestDist = dist;
+        closest = i;
+      }
+    });
+
+    return closest;
+  }
 
   items.forEach((item, i) => {
-    // Make draggable
-    item.setAttribute('draggable', 'true');
     item.classList.add('edit-item');
-    item.dataset.editIndex = i;
 
     // Remove lightbox click in edit mode
     const img = item.querySelector('img');
@@ -1042,67 +1120,85 @@ function renderEditGrid() {
     newImg.style.pointerEvents = 'none';
     newImg.style.userSelect = 'none';
 
-    item.addEventListener('dragstart', (e) => {
-      dragSrcIndex = parseInt(item.dataset.editIndex);
-      dragOverIndex = dragSrcIndex;
-      setTimeout(() => item.classList.add('edit-dragging'), 0);
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', dragSrcIndex);
-    });
-
-    item.addEventListener('dragover', (e) => {
+    item.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
+      dragSrcIndex = i;
+      startX = e.clientX;
+      startY = e.clientY;
 
-      const overIndex = parseInt(item.dataset.editIndex);
-      if (overIndex === dragOverIndex || dragSrcIndex === null) return;
-      dragOverIndex = overIndex;
+      const rect = item.getBoundingClientRect();
 
-      // Apply push animation to all items
-      const allItems = grid.querySelectorAll('.grid-item');
-      allItems.forEach((el, idx) => {
-        el.classList.remove('edit-push-left', 'edit-push-right');
-        if (idx === dragSrcIndex) return;
+      // Create floating clone
+      clone = item.cloneNode(true);
+      clone.style.cssText = `
+        position: fixed;
+        left: ${rect.left}px;
+        top: ${rect.top}px;
+        width: ${rect.width}px;
+        height: ${rect.height}px;
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0.85;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: none;
+        will-change: left, top;
+      `;
+      clone._offsetX = e.clientX - rect.left;
+      clone._offsetY = e.clientY - rect.top;
+      document.body.appendChild(clone);
 
-        if (dragSrcIndex < overIndex) {
-          // Dragging forward — items between src and target push left
-          if (idx > dragSrcIndex && idx <= overIndex) {
-            el.classList.add('edit-push-left');
-          }
-        } else {
-          // Dragging backward — items between target and src push right
-          if (idx >= overIndex && idx < dragSrcIndex) {
-            el.classList.add('edit-push-right');
-          }
-        }
-      });
+      item.classList.add('edit-dragging');
+      isDragging = true;
+      cachePositions();
+      rafId = requestAnimationFrame(animationLoop);
     });
+  });
 
-    item.addEventListener('dragleave', () => {});
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  }
 
-    item.addEventListener('dragend', () => {
+  function onMouseUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    cancelAnimationFrame(rafId);
+
+    // Clear all transforms with spring back
+    items.forEach((item, i) => {
+      item.style.transform = '';
       item.classList.remove('edit-dragging');
-      const allItems = grid.querySelectorAll('.grid-item');
-      allItems.forEach(el => {
-        el.classList.remove('edit-push-left', 'edit-push-right');
-      });
     });
 
-    item.addEventListener('drop', (e) => {
-      e.preventDefault();
+    // Remove clone
+    if (clone) {
+      clone.remove();
+      clone = null;
+    }
 
-      const dropIndex = parseInt(item.dataset.editIndex);
-      if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
-
-      // Move photo in array
+    // Find drop target
+    const dropIndex = findDropTarget();
+    if (dropIndex !== null && dropIndex !== dragSrcIndex) {
       const temp = currentPhotos[dragSrcIndex];
       currentPhotos.splice(dragSrcIndex, 1);
       currentPhotos.splice(dropIndex, 0, temp);
-
-      // Re-render with new order
       renderEditGrid();
-    });
-  });
+    }
+
+    dragSrcIndex = null;
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
+  grid._editCleanup = () => {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    cancelAnimationFrame(rafId);
+  };
 }
 
 function showEditBar() {
