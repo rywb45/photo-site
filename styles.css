@@ -618,10 +618,11 @@ body.edit-mode .edit-item.edit-dragging {
 /* Album link dragging in sidebar */
 body.edit-mode #albumNav a {
   cursor: grab;
-  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+  transition: transform 0.3s cubic-bezier(0.25, 1.5, 0.4, 1), opacity 0.2s, background 0.2s;
   padding: 4px 8px;
   margin: -4px -8px;
   border-radius: 4px;
+  user-select: none;
 }
 
 body.edit-mode #albumNav a:active {
@@ -629,22 +630,13 @@ body.edit-mode #albumNav a:active {
 }
 
 body.edit-mode #albumNav a.edit-album-dragging {
-  opacity: 0.3;
-}
-
-body.edit-mode #albumNav a.edit-album-dragover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateX(4px);
+  opacity: 0.2;
 }
 
 body.edit-mode #albumNav a.edit-album-photo-target {
   background: rgba(255, 255, 255, 0.15);
   transform: scale(1.05);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
-}
-
-body:not(.inverted).edit-mode #albumNav a.edit-album-dragover {
-  background: rgba(0, 0, 0, 0.06);
 }
 
 body:not(.inverted).edit-mode #albumNav a.edit-album-photo-target {
