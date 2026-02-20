@@ -996,18 +996,21 @@ function enterEditMode() {
   editMode = true;
   document.body.classList.add('edit-mode');
 
-  // Rebuild grid in flat mode for sorting
+  // INSTANT: activate edit mode
   renderEditGrid();
-
-  // Show save/cancel bar
   showEditBar();
+
+  // DECORATIVE: typewriter animation
+  const nameText = document.getElementById('nameText');
+  const cursor = document.getElementById('editCursor');
+  cursor.classList.add('blinking');
+  playTypewriterIn(nameText);
 }
 
 function exitEditMode() {
   editMode = false;
   document.body.classList.remove('edit-mode');
 
-  // Clean up drag listeners
   const grid = document.getElementById('grid');
   if (grid._editCleanup) {
     grid._editCleanup();
@@ -1023,6 +1026,86 @@ function exitEditMode() {
   if (bar) bar.remove();
 
   renderGrid();
+
+  // DECORATIVE: typewriter out
+  const nameText = document.getElementById('nameText');
+  playTypewriterOut(nameText);
+}
+
+function playTypewriterIn(el) {
+  const original = 'Ryan Byrne';
+  const upper = original.toUpperCase();
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!&*';
+
+  let text = original;
+  let i = text.length;
+
+  let eraseInterval = setInterval(() => {
+    if (!editMode) { clearInterval(eraseInterval); el.textContent = original; return; }
+    i--;
+    if (i < 0) {
+      clearInterval(eraseInterval);
+      let j = 0;
+      let scrambleCount = 0;
+
+      let typeInterval = setInterval(() => {
+        if (!editMode) { clearInterval(typeInterval); el.textContent = original; return; }
+        if (j >= upper.length) {
+          clearInterval(typeInterval);
+          el.style.textShadow = '0 0 10px rgba(255,255,255,0.3)';
+          setTimeout(() => {
+            el.textContent = original;
+            el.style.textShadow = '';
+          }, 200);
+          return;
+        }
+
+        if (upper[j] === ' ') {
+          el.textContent = upper.substring(0, j + 1);
+          j++;
+          scrambleCount = 0;
+          return;
+        }
+
+        if (scrambleCount < 2) {
+          el.textContent = upper.substring(0, j) + chars[Math.floor(Math.random() * chars.length)];
+          scrambleCount++;
+        } else {
+          el.textContent = upper.substring(0, j + 1);
+          scrambleCount = 0;
+          j++;
+        }
+      }, 30);
+      return;
+    }
+    el.textContent = text.substring(0, i);
+  }, 35);
+}
+
+function playTypewriterOut(el) {
+  const original = 'Ryan Byrne';
+  const current = el.textContent;
+  let i = current.length;
+
+  let eraseInterval = setInterval(() => {
+    i--;
+    if (i < 0) {
+      clearInterval(eraseInterval);
+      let j = 0;
+      let typeBack = setInterval(() => {
+        if (j >= original.length) {
+          clearInterval(typeBack);
+          const cursor = document.getElementById('editCursor');
+          cursor.classList.remove('blinking');
+          return;
+        }
+        el.textContent = original.substring(0, j + 1);
+        j++;
+      }, 35);
+      return;
+    }
+    el.textContent = current.substring(0, i);
+  }, 35);
 }
 
 function renderEditGrid() {
