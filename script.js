@@ -1004,16 +1004,15 @@ function renderEditGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
 
-  // Flat grid for drag-and-drop — all photos in a single sortable container
+  // Add items directly to grid (no row divs) for SortableJS
   currentPhotos.forEach((photo, index) => {
     const itemDiv = document.createElement('div');
-    itemDiv.className = 'grid-item edit-item';
+    itemDiv.className = 'edit-item';
     itemDiv.dataset.index = index;
 
-    // Fixed size for edit mode
     const ar = photo.width / photo.height;
-    const h = 200;
-    const w = h * ar;
+    const h = 160;
+    const w = Math.round(h * ar);
     itemDiv.style.width = `${w}px`;
     itemDiv.style.height = `${h}px`;
 
@@ -1021,7 +1020,7 @@ function renderEditGrid() {
     img.src = photo.grid;
     img.alt = '';
     img.draggable = false;
-    img.style.cssText = 'width:100%;height:100%;object-fit:cover;pointer-events:none;';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;';
 
     const badge = document.createElement('div');
     badge.className = 'edit-badge';
@@ -1033,19 +1032,23 @@ function renderEditGrid() {
   });
 
   // Initialize SortableJS
-  sortableInstance = new Sortable(grid, {
-    animation: 200,
-    ghostClass: 'edit-ghost',
-    chosenClass: 'edit-chosen',
-    dragClass: 'edit-drag',
-    onEnd: function() {
-      // Update badges after reorder
-      const items = grid.querySelectorAll('.edit-item');
-      items.forEach((item, i) => {
-        item.querySelector('.edit-badge').textContent = i + 1;
-      });
-    }
-  });
+  if (typeof Sortable !== 'undefined') {
+    sortableInstance = new Sortable(grid, {
+      animation: 200,
+      ghostClass: 'edit-ghost',
+      chosenClass: 'edit-chosen',
+      dragClass: 'edit-drag',
+      onEnd: function() {
+        const items = grid.querySelectorAll('.edit-item');
+        items.forEach((item, i) => {
+          item.querySelector('.edit-badge').textContent = i + 1;
+        });
+      }
+    });
+  } else {
+    console.error('SortableJS not loaded');
+    alert('Drag library failed to load. Check your connection.');
+  }
 }
 
 function showEditBar() {
