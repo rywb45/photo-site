@@ -7,8 +7,32 @@
       "h": 1365
     },
     {
-      "src": "01-people/004.webp",
-      "grid": "01-people/grid/004.webp",
+      "src": "01-people/007.webp",
+      "grid": "01-people/grid/007.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "01-people/006.webp",
+      "grid": "01-people/grid/006.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "01-people/002.webp",
+      "grid": "01-people/grid/002.webp",
+      "w": 2048,
+      "h": 1463
+    },
+    {
+      "src": "01-people/008.webp",
+      "grid": "01-people/grid/008.webp",
+      "w": 2048,
+      "h": 1338
+    },
+    {
+      "src": "01-people/001.webp",
+      "grid": "01-people/grid/001.webp",
       "w": 2048,
       "h": 1365
     },
@@ -19,34 +43,10 @@
       "h": 2048
     },
     {
-      "src": "01-people/007.webp",
-      "grid": "01-people/grid/007.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "01-people/002.webp",
-      "grid": "01-people/grid/002.webp",
-      "w": 2048,
-      "h": 1463
-    },
-    {
-      "src": "01-people/006.webp",
-      "grid": "01-people/grid/006.webp",
+      "src": "01-people/004.webp",
+      "grid": "01-people/grid/004.webp",
       "w": 2048,
       "h": 1365
-    },
-    {
-      "src": "01-people/001.webp",
-      "grid": "01-people/grid/001.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "01-people/008.webp",
-      "grid": "01-people/grid/008.webp",
-      "w": 2048,
-      "h": 1338
     }
   ],
   "buildings": [
