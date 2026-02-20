@@ -931,3 +931,257 @@ const mobileClose = document.getElementById('mobileClose');
 if (mobileClose) {
   mobileClose.addEventListener('click', closeAlbumView);
 }
+
+// ============================================
+// Edit Mode: Hidden login + drag reorder + save
+// ============================================
+let editMode = false;
+let sortableInstance = null;
+let nameClickCount = 0;
+let nameClickTimer = null;
+
+const REPO_OWNER = 'rywb45';
+const REPO_NAME = 'photo-site';
+
+// Triple-click name to toggle edit mode
+document.querySelector('.sidebar h1').addEventListener('click', () => {
+  nameClickCount++;
+
+  if (nameClickTimer) clearTimeout(nameClickTimer);
+  nameClickTimer = setTimeout(() => { nameClickCount = 0; }, 500);
+
+  if (nameClickCount >= 3) {
+    nameClickCount = 0;
+    if (editMode) {
+      exitEditMode();
+    } else {
+      attemptLogin();
+    }
+  }
+});
+
+function attemptLogin() {
+  let token = localStorage.getItem('gh_token');
+
+  if (!token) {
+    token = prompt('GitHub Personal Access Token:');
+    if (!token) return;
+    localStorage.setItem('gh_token', token);
+  }
+
+  enterEditMode();
+}
+
+function enterEditMode() {
+  editMode = true;
+  document.body.classList.add('edit-mode');
+
+  // Rebuild grid in flat mode for sorting
+  renderEditGrid();
+
+  // Show save/cancel bar
+  showEditBar();
+}
+
+function exitEditMode() {
+  editMode = false;
+  document.body.classList.remove('edit-mode');
+
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
+
+  // Remove edit bar
+  const bar = document.getElementById('editBar');
+  if (bar) bar.remove();
+
+  // Re-render normal grid
+  renderGrid();
+}
+
+function renderEditGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  // Flat grid for drag-and-drop — all photos in a single sortable container
+  currentPhotos.forEach((photo, index) => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'grid-item edit-item';
+    itemDiv.dataset.index = index;
+
+    // Fixed size for edit mode
+    const ar = photo.width / photo.height;
+    const h = 200;
+    const w = h * ar;
+    itemDiv.style.width = `${w}px`;
+    itemDiv.style.height = `${h}px`;
+
+    const img = document.createElement('img');
+    img.src = photo.grid;
+    img.alt = '';
+    img.draggable = false;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;pointer-events:none;';
+
+    const badge = document.createElement('div');
+    badge.className = 'edit-badge';
+    badge.textContent = index + 1;
+
+    itemDiv.appendChild(img);
+    itemDiv.appendChild(badge);
+    grid.appendChild(itemDiv);
+  });
+
+  // Initialize SortableJS
+  sortableInstance = new Sortable(grid, {
+    animation: 200,
+    ghostClass: 'edit-ghost',
+    chosenClass: 'edit-chosen',
+    dragClass: 'edit-drag',
+    onEnd: function() {
+      // Update badges after reorder
+      const items = grid.querySelectorAll('.edit-item');
+      items.forEach((item, i) => {
+        item.querySelector('.edit-badge').textContent = i + 1;
+      });
+    }
+  });
+}
+
+function showEditBar() {
+  const bar = document.createElement('div');
+  bar.id = 'editBar';
+  bar.className = 'edit-bar';
+  bar.innerHTML = `
+    <span class="edit-bar-label">EDIT MODE</span>
+    <div class="edit-bar-actions">
+      <button class="edit-bar-btn edit-cancel" onclick="exitEditMode()">CANCEL</button>
+      <button class="edit-bar-btn edit-save" onclick="saveOrder()">SAVE</button>
+    </div>
+  `;
+  document.body.appendChild(bar);
+}
+
+async function saveOrder() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) {
+    alert('No token found. Please log in again.');
+    exitEditMode();
+    return;
+  }
+
+  const saveBtn = document.querySelector('.edit-save');
+  saveBtn.textContent = 'SAVING...';
+  saveBtn.disabled = true;
+
+  try {
+    // Get new order from DOM
+    const grid = document.getElementById('grid');
+    const items = grid.querySelectorAll('.edit-item');
+    const newOrder = Array.from(items).map(item => parseInt(item.dataset.index));
+
+    // Reorder currentPhotos
+    const reordered = newOrder.map(i => currentPhotos[i]);
+
+    // Rebuild the album data in the original format for photos.json
+    const newAlbumPhotos = reordered.map(p => ({
+      src: p.full.replace('photos/', ''),
+      grid: p.grid.replace('photos/', ''),
+      w: p.width,
+      h: p.height
+    }));
+
+    // Update albums object
+    albums[currentAlbum] = newAlbumPhotos;
+
+    // Build order.json (just filenames per album for the upload script)
+    let orderData = {};
+    try {
+      // Fetch existing order.json if it exists
+      const existingOrder = await fetchFileFromGitHub('order.json', token);
+      if (existingOrder) {
+        orderData = JSON.parse(existingOrder.content);
+      }
+    } catch(e) {
+      // No existing order.json, start fresh
+    }
+
+    // Extract filenames without extension and path prefix
+    orderData[currentAlbum] = newAlbumPhotos.map(p => {
+      const parts = p.src.split('/');
+      return parts[parts.length - 1].replace('.webp', '');
+    });
+
+    // Save both files to GitHub
+    await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+    await saveFileToGitHub('order.json', JSON.stringify(orderData, null, 2), token);
+
+    // Update local state
+    currentPhotos = reordered;
+    carouselBuiltForAlbum = null;
+
+    saveBtn.textContent = 'SAVED ✓';
+    setTimeout(() => exitEditMode(), 800);
+
+  } catch(err) {
+    console.error('Save failed:', err);
+    alert('Save failed. Check your token and try again.');
+    // Clear bad token
+    if (err.message && err.message.includes('401')) {
+      localStorage.removeItem('gh_token');
+    }
+    saveBtn.textContent = 'SAVE';
+    saveBtn.disabled = false;
+  }
+}
+
+async function fetchFileFromGitHub(path, token) {
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+
+  const data = await res.json();
+  return {
+    content: atob(data.content.replace(/\n/g, '')),
+    sha: data.sha
+  };
+}
+
+async function saveFileToGitHub(path, content, token) {
+  // Get current file SHA (needed for updates)
+  let sha = null;
+  try {
+    const existing = await fetchFileFromGitHub(path, token);
+    if (existing) sha = existing.sha;
+  } catch(e) {}
+
+  const body = {
+    message: `Update ${path} - reorder ${new Date().toISOString()}`,
+    content: btoa(unescape(encodeURIComponent(content)))
+  };
+
+  if (sha) body.sha = sha;
+
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const errData = await res.json();
+    throw new Error(`GitHub save failed: ${res.status} - ${errData.message}`);
+  }
+
+  return res.json();
+}
