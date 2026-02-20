@@ -962,6 +962,7 @@ let nameClickTimer = null;
 let preEditPhotos = null;
 let preEditAlbums = null;
 let preEditAlbumOrder = null;
+let pendingMoves = [];
 
 const REPO_OWNER = 'rywb45';
 const REPO_NAME = 'photo-site';
@@ -1019,55 +1020,107 @@ function enterEditMode() {
 function setupEditSidebar() {
   const navLinks = Array.from(document.querySelectorAll('#albumNav a'));
   let dragSrcAlbum = null;
-  let sidebarDragging = false;
+  let isDragging = false;
+  let clone = null;
+  let mouseY = 0;
+  let linkRects = [];
 
-  navLinks.forEach((link) => {
+  function cacheLinkPositions() {
+    linkRects = navLinks.map(link => {
+      const rect = link.getBoundingClientRect();
+      return { cy: rect.top + rect.height / 2, h: rect.height, top: rect.top, left: rect.left, width: rect.width };
+    });
+  }
+
+  navLinks.forEach((link, i) => {
     const albumName = link.dataset.album;
-
-    // Make album links draggable for reordering
-    link.setAttribute('draggable', 'true');
     link.classList.add('edit-album-link');
 
-    link.addEventListener('dragstart', (e) => {
+    link.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+
       dragSrcAlbum = albumName;
-      sidebarDragging = true;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', albumName);
-      setTimeout(() => link.classList.add('edit-album-dragging'), 0);
-    });
+      isDragging = true;
+      cacheLinkPositions();
 
-    link.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      // Highlight as album reorder target
-      if (sidebarDragging && albumName !== dragSrcAlbum) {
-        link.classList.add('edit-album-dragover');
+      const rect = link.getBoundingClientRect();
+      clone = link.cloneNode(true);
+      clone.style.cssText = `
+        position: fixed;
+        left: ${rect.left}px;
+        top: ${rect.top}px;
+        width: ${rect.width}px;
+        pointer-events: none;
+        z-index: 10001;
+        opacity: 0.85;
+        font-size: ${getComputedStyle(link).fontSize};
+        font-weight: ${getComputedStyle(link).fontWeight};
+        letter-spacing: ${getComputedStyle(link).letterSpacing};
+        text-transform: uppercase;
+        color: ${getComputedStyle(link).color};
+        will-change: top;
+      `;
+      clone._offsetY = e.clientY - rect.top;
+      document.body.appendChild(clone);
+
+      link.classList.add('edit-album-dragging');
+      mouseY = e.clientY;
+
+      function onMove(ev) {
+        mouseY = ev.clientY;
+        clone.style.top = (mouseY - clone._offsetY) + 'px';
+
+        // Push other links
+        navLinks.forEach((other, j) => {
+          if (other.dataset.album === dragSrcAlbum) return;
+          const r = linkRects[j];
+          const dy = r.cy - mouseY;
+          const dist = Math.abs(dy);
+
+          if (dist < 50) {
+            const push = (1 - dist / 50) * 16 * Math.sign(dy);
+            other.style.transition = 'none';
+            other.style.transform = `translateY(${push}px)`;
+          } else {
+            if (other.style.transform) {
+              other.style.transition = 'transform 0.3s cubic-bezier(0.25, 1.5, 0.4, 1)';
+              other.style.transform = '';
+            }
+          }
+        });
       }
-      // Highlight as photo drop target
-      if (!sidebarDragging && albumName !== currentAlbum) {
-        link.classList.add('edit-album-photo-target');
+
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        isDragging = false;
+
+        if (clone) { clone.remove(); clone = null; }
+        link.classList.remove('edit-album-dragging');
+        navLinks.forEach(l => { l.style.transition = ''; l.style.transform = ''; });
+
+        // Find drop target
+        let closest = null;
+        let closestDist = Infinity;
+        navLinks.forEach((other, j) => {
+          if (other.dataset.album === dragSrcAlbum) return;
+          const dist = Math.abs(linkRects[j].cy - mouseY);
+          if (dist < closestDist && dist < 60) {
+            closestDist = dist;
+            closest = other.dataset.album;
+          }
+        });
+
+        if (closest) {
+          reorderAlbums(dragSrcAlbum, closest);
+        }
+        dragSrcAlbum = null;
       }
-    });
 
-    link.addEventListener('dragleave', () => {
-      link.classList.remove('edit-album-dragover', 'edit-album-photo-target');
-    });
-
-    link.addEventListener('drop', (e) => {
-      e.preventDefault();
-      link.classList.remove('edit-album-dragover', 'edit-album-photo-target');
-
-      if (sidebarDragging && dragSrcAlbum && dragSrcAlbum !== albumName) {
-        // Reorder albums
-        reorderAlbums(dragSrcAlbum, albumName);
-      }
-    });
-
-    link.addEventListener('dragend', () => {
-      link.classList.remove('edit-album-dragging');
-      navLinks.forEach(l => l.classList.remove('edit-album-dragover', 'edit-album-photo-target'));
-      sidebarDragging = false;
-      dragSrcAlbum = null;
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     });
   });
 }
@@ -1097,32 +1150,38 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 
   const photo = currentPhotos[photoIndex];
 
-  // Convert to storage format
-  const photoData = {
-    src: photo.full.replace('photos/', ''),
-    grid: photo.grid.replace('photos/', ''),
+  // Get paths
+  const fullPath = photo.full.replace('photos/', '');
+  const gridPath = photo.grid.replace('photos/', '');
+  const filename = fullPath.split('/').pop();
+  const srcFolder = fullPath.split('/')[0];
+
+  // Find target album's folder prefix from its existing photos
+  const targetPhotos = albums[targetAlbum];
+  let targetFolderPrefix = targetAlbum;
+  if (targetPhotos.length > 0) {
+    targetFolderPrefix = targetPhotos[0].src.split('/')[0];
+  }
+
+  // Record the move for the upload script
+  pendingMoves.push({
+    file: filename,
+    from: srcFolder,
+    to: targetFolderPrefix
+  });
+
+  // Build new paths
+  const newPhotoData = {
+    src: targetFolderPrefix + '/' + filename,
+    grid: targetFolderPrefix + '/grid/' + filename,
     w: photo.width,
     h: photo.height
   };
 
-  // Update source path to target album folder
-  const filename = photoData.src.split('/').pop();
-  const targetFolder = Object.keys(albums).indexOf(targetAlbum);
-  // Find target album's folder prefix from existing photos
-  const targetPhotos = albums[targetAlbum];
-  let targetPrefix = targetAlbum;
-  if (targetPhotos.length > 0) {
-    const existingSrc = targetPhotos[0].src;
-    targetPrefix = existingSrc.substring(0, existingSrc.lastIndexOf('/'));
-  }
-
-  // Update paths
-  const srcPrefix = photoData.src.substring(0, photoData.src.lastIndexOf('/'));
-  photoData.src = photoData.src.replace(srcPrefix, targetPrefix);
-  photoData.grid = photoData.grid.replace(srcPrefix, targetPrefix);
-
-  // Remove from current album
+  // Remove from current album's currentPhotos
   currentPhotos.splice(photoIndex, 1);
+
+  // Sync currentPhotos back to albums
   albums[currentAlbum] = currentPhotos.map(p => ({
     src: p.full.replace('photos/', ''),
     grid: p.grid.replace('photos/', ''),
@@ -1131,9 +1190,8 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
   }));
 
   // Add to target album
-  albums[targetAlbum].push(photoData);
+  albums[targetAlbum].push(newPhotoData);
 
-  // Re-render current grid
   renderEditGrid();
 }
 
@@ -1186,6 +1244,7 @@ function exitEditMode(saved) {
   preEditPhotos = null;
   preEditAlbums = null;
   preEditAlbumOrder = null;
+  pendingMoves = [];
 
   renderGrid();
 
@@ -1577,31 +1636,13 @@ async function saveOrder() {
     }
 
     // Detect cross-album moves by comparing to pre-edit state
-    let moves = [];
-    if (preEditAlbums) {
-      for (const [albumName, photos] of Object.entries(albums)) {
-        for (const photo of photos) {
-          const filename = photo.src.split('/').pop();
-          // Check if this file existed in a different album before
-          for (const [oldAlbum, oldPhotos] of Object.entries(preEditAlbums)) {
-            if (oldAlbum === albumName) continue;
-            const wasHere = oldPhotos.some(p => p.src.split('/').pop() === filename);
-            if (wasHere) {
-              const oldFolder = oldPhotos[0].src.substring(0, oldPhotos[0].src.lastIndexOf('/'));
-              const newFolder = photo.src.substring(0, photo.src.lastIndexOf('/'));
-              moves.push({ file: filename, from: oldFolder, to: newFolder });
-            }
-          }
-        }
-      }
-    }
-
     // Save photos.json, order.json, and moves.json if needed
     await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
     await saveFileToGitHub('order.json', JSON.stringify(orderData, null, 2), token);
 
-    if (moves.length > 0) {
-      await saveFileToGitHub('moves.json', JSON.stringify(moves, null, 2), token);
+    if (pendingMoves.length > 0) {
+      await saveFileToGitHub('moves.json', JSON.stringify(pendingMoves, null, 2), token);
+      pendingMoves = [];
     }
 
     carouselBuiltForAlbum = null;
