@@ -963,14 +963,14 @@ let nameClickTimer = null;
 const REPO_OWNER = 'rywb45';
 const REPO_NAME = 'photo-site';
 
-// Triple-click name to toggle edit mode
+// Double-click name to toggle edit mode
 document.querySelector('.sidebar h1').addEventListener('click', () => {
   nameClickCount++;
 
   if (nameClickTimer) clearTimeout(nameClickTimer);
-  nameClickTimer = setTimeout(() => { nameClickCount = 0; }, 500);
+  nameClickTimer = setTimeout(() => { nameClickCount = 0; }, 400);
 
-  if (nameClickCount >= 3) {
+  if (nameClickCount >= 2) {
     nameClickCount = 0;
     if (editMode) {
       exitEditMode();
@@ -1132,49 +1132,38 @@ async function saveOrder() {
   saveBtn.disabled = true;
 
   try {
-    // Get new order from DOM
-    const grid = document.getElementById('grid');
-    const items = grid.querySelectorAll('.edit-item');
-    const newOrder = Array.from(items).map(item => parseInt(item.dataset.index));
-
-    // Reorder currentPhotos
-    const reordered = newOrder.map(i => currentPhotos[i]);
-
-    // Rebuild the album data in the original format for photos.json
-    const newAlbumPhotos = reordered.map(p => ({
+    // currentPhotos is already in the reordered state from drag-and-drop
+    // First, save current album back to albums object
+    const newAlbumPhotos = currentPhotos.map(p => ({
       src: p.full.replace('photos/', ''),
       grid: p.grid.replace('photos/', ''),
       w: p.width,
       h: p.height
     }));
 
-    // Update albums object
     albums[currentAlbum] = newAlbumPhotos;
 
     // Build order.json (just filenames per album for the upload script)
     let orderData = {};
     try {
-      // Fetch existing order.json if it exists
       const existingOrder = await fetchFileFromGitHub('order.json', token);
       if (existingOrder) {
         orderData = JSON.parse(existingOrder.content);
       }
-    } catch(e) {
-      // No existing order.json, start fresh
-    }
+    } catch(e) {}
 
-    // Extract filenames without extension and path prefix
-    orderData[currentAlbum] = newAlbumPhotos.map(p => {
-      const parts = p.src.split('/');
-      return parts[parts.length - 1].replace('.webp', '');
-    });
+    // Save order for all albums that exist
+    for (const [albumName, photos] of Object.entries(albums)) {
+      orderData[albumName] = photos.map(p => {
+        const parts = p.src.split('/');
+        return parts[parts.length - 1].replace('.webp', '');
+      });
+    }
 
     // Save both files to GitHub
     await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
     await saveFileToGitHub('order.json', JSON.stringify(orderData, null, 2), token);
 
-    // Update local state
-    currentPhotos = reordered;
     carouselBuiltForAlbum = null;
 
     saveBtn.textContent = 'SAVED ✓';
@@ -1182,8 +1171,7 @@ async function saveOrder() {
 
   } catch(err) {
     console.error('Save failed:', err);
-    alert('Save failed. Check your token and try again.');
-    // Clear bad token
+    alert('Save failed: ' + err.message + '\nCheck console for details.');
     if (err.message && err.message.includes('401')) {
       localStorage.removeItem('gh_token');
     }
