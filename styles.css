@@ -628,6 +628,12 @@ body.edit-mode .edit-item.edit-dragging {
   justify-content: space-between;
   padding: 0 24px;
   z-index: 9999;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.edit-bar.visible {
+  transform: translateY(0);
 }
 
 body.inverted .edit-bar {
