@@ -1022,8 +1022,12 @@ function exitEditMode() {
     sortableInstance = null;
   }
 
+  // Animate bar out
   const bar = document.getElementById('editBar');
-  if (bar) bar.remove();
+  if (bar) {
+    bar.classList.remove('visible');
+    setTimeout(() => bar.remove(), 350);
+  }
 
   renderGrid();
 
@@ -1192,12 +1196,22 @@ function renderEditGrid() {
     items.forEach((item, i) => {
       if (i === dragSrcIndex) return;
       const r = itemRects[i];
+      
+      // Check if cursor is within or near the item's bounds
+      const withinX = mouseX >= r.cx - r.w / 2 - 40 && mouseX <= r.cx + r.w / 2 + 40;
+      const withinY = mouseY >= r.cy - r.h / 2 - 40 && mouseY <= r.cy + r.h / 2 + 40;
+      
       const dx = r.cx - mouseX;
       const dy = r.cy - mouseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < closestDist && dist < 200) {
-        closestDist = dist;
-        closest = i;
+      
+      if ((withinX && withinY) || dist < 350) {
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = i;
+        }
+      }
+    });
       }
     });
 
@@ -1364,6 +1378,9 @@ function showEditBar() {
     </div>
   `;
   document.body.appendChild(bar);
+  // Force reflow then animate in
+  bar.offsetHeight;
+  bar.classList.add('visible');
 }
 
 async function saveOrder() {
