@@ -1159,11 +1159,19 @@ function renderEditGrid() {
         const scale = 1 - easedT * 0.08;
 
         item.style.animation = 'none';
+        item.style.transition = 'none';
         item.style.transform = `translate(${pushX}px, ${pushY}px) scale(${scale})`;
+        item._pushed = true;
       } else {
-        if (item.style.transform) {
+        if (item._pushed) {
+          item._pushed = false;
+          item.style.transition = 'transform 0.4s cubic-bezier(0.25, 1.5, 0.4, 1)';
           item.style.transform = '';
-          item.style.animation = '';
+          // Restore animation after spring-back
+          setTimeout(() => {
+            item.style.transition = '';
+            item.style.animation = '';
+          }, 400);
         }
       }
     });
@@ -1253,10 +1261,10 @@ function renderEditGrid() {
     isDragging = false;
     cancelAnimationFrame(rafId);
 
-    // Clear all transforms and restore wiggle
-    items.forEach((item, i) => {
-      item.style.transform = '';
+    // Restore wiggle on all items
+    items.forEach((item) => {
       item.style.animation = '';
+      item.style.transform = '';
       item.classList.remove('edit-dragging');
     });
 
@@ -1269,10 +1277,66 @@ function renderEditGrid() {
     // Find drop target
     const dropIndex = findDropTarget();
     if (dropIndex !== null && dropIndex !== dragSrcIndex) {
+      // FLIP animation: capture old positions
+      const oldRects = items.map(item => item.getBoundingClientRect());
+
+      // Reorder the array
       const temp = currentPhotos[dragSrcIndex];
       currentPhotos.splice(dragSrcIndex, 1);
       currentPhotos.splice(dropIndex, 0, temp);
-      renderEditGrid();
+
+      // Re-render grid (new DOM)
+      renderGrid();
+
+      // Get new items and their positions
+      const newItems = Array.from(document.getElementById('grid').querySelectorAll('.grid-item'));
+
+      // Map old items to new positions by photo reference
+      // Since we know the exact reorder, animate each item from old pos to new pos
+      newItems.forEach((newItem, newIdx) => {
+        // Figure out where this item was before
+        let oldIdx;
+        if (newIdx < Math.min(dragSrcIndex, dropIndex) || newIdx > Math.max(dragSrcIndex, dropIndex)) {
+          oldIdx = newIdx; // Unchanged
+        } else if (dragSrcIndex < dropIndex) {
+          if (newIdx === dropIndex) {
+            oldIdx = dragSrcIndex;
+          } else {
+            oldIdx = newIdx + 1;
+          }
+        } else {
+          if (newIdx === dropIndex) {
+            oldIdx = dragSrcIndex;
+          } else {
+            oldIdx = newIdx - 1;
+          }
+        }
+
+        if (oldIdx < oldRects.length && oldIdx !== newIdx) {
+          const oldRect = oldRects[oldIdx];
+          const newRect = newItem.getBoundingClientRect();
+          const dx = oldRect.left - newRect.left;
+          const dy = oldRect.top - newRect.top;
+
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            newItem.style.transition = 'none';
+            newItem.style.transform = `translate(${dx}px, ${dy}px)`;
+            newItem.offsetHeight; // Force reflow
+
+            newItem.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+            newItem.style.transform = '';
+
+            newItem.addEventListener('transitionend', function handler() {
+              newItem.style.transition = '';
+              newItem.style.transform = '';
+              newItem.removeEventListener('transitionend', handler);
+            });
+          }
+        }
+      });
+
+      // Re-init edit mode on new DOM
+      setTimeout(() => renderEditGrid(), 370);
     }
 
     dragSrcIndex = null;
