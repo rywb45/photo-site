@@ -1212,8 +1212,6 @@ function renderEditGrid() {
         }
       }
     });
-      }
-    });
 
     return closest;
   }
