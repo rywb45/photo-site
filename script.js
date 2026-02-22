@@ -2384,24 +2384,62 @@ function startTrayDrag(unsortedIndex, e) {
   document.addEventListener('mouseup', onUp);
 }
 
-function showTrayPreview(unsortedIndex) {
-  const photo = albums._unsorted[unsortedIndex];
-  if (!photo) return;
+function showTrayPreview(startIndex) {
+  const unsorted = albums._unsorted;
+  if (!unsorted || unsorted.length === 0) return;
+
+  let idx = startIndex;
 
   const overlay = document.createElement('div');
   overlay.className = 'tray-preview-overlay';
 
   const img = document.createElement('img');
-  img.src = unsortedPreviews.get(photo.grid) || `photos/${photo.src}`;
   img.className = 'tray-preview-img';
   overlay.appendChild(img);
 
-  overlay.addEventListener('click', () => {
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'lb-btn lb-close tray-preview-btn';
+  closeBtn.addEventListener('click', close);
+  overlay.appendChild(closeBtn);
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'lb-btn lb-prev tray-preview-btn';
+  prevBtn.addEventListener('click', () => go(idx - 1));
+  overlay.appendChild(prevBtn);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'lb-btn lb-next tray-preview-btn';
+  nextBtn.addEventListener('click', () => go(idx + 1));
+  overlay.appendChild(nextBtn);
+
+  function go(i) {
+    if (i < 0 || i >= unsorted.length) return;
+    idx = i;
+    const p = unsorted[idx];
+    img.src = unsortedPreviews.get(p.grid) || `photos/${p.src}`;
+    prevBtn.style.display = idx === 0 ? 'none' : 'block';
+    nextBtn.style.display = idx === unsorted.length - 1 ? 'none' : 'block';
+  }
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 200);
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') go(idx - 1);
+    if (e.key === 'ArrowRight') go(idx + 1);
+  }
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
   });
 
+  document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
+  go(idx);
   requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 }
 

@@ -1114,3 +1114,7 @@ body.inverted .tray-preview-overlay {
   object-fit: contain;
   border-radius: 2px;
 }
+
+.tray-preview-btn {
+  z-index: 10004;
+}
