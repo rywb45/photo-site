@@ -3081,15 +3081,8 @@ async function uploadSinglePhoto(file, token) {
   // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
   unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
-  // Save only the _unsorted change to photos.json (fetch current remote state first
-  // to avoid overwriting in-progress edits from other albums)
-  const remote = await fetchFileFromGitHub('photos.json', token);
-  let remoteAlbums = {};
-  if (remote) {
-    try { remoteAlbums = JSON.parse(remote.content); } catch(e) {}
-  }
-  remoteAlbums._unsorted = albums._unsorted;
-  await saveFileToGitHub('photos.json', JSON.stringify(remoteAlbums, null, 2), token);
+  // Save updated photos.json
+  await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
 
   // Re-render tray
   renderUnsortedTray();
