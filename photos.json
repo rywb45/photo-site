@@ -37,24 +37,6 @@
       "grid": "01-people/grid/003.webp",
       "w": 2048,
       "h": 1365
-    },
-    {
-      "src": "unsorted/002.webp",
-      "grid": "unsorted/grid/002.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/001.webp",
-      "grid": "unsorted/grid/001.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/003.webp",
-      "grid": "unsorted/grid/003.webp",
-      "w": 2048,
-      "h": 1152
     }
   ],
   "mix": [
