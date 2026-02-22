@@ -26,8 +26,11 @@ async function loadAlbums() {
     const response = await fetch('photos.json');
     albums = await response.json();
 
+    // Ensure _unsorted exists
+    if (!albums._unsorted) albums._unsorted = [];
+
     const nav = document.getElementById('albumNav');
-    const albumNames = Object.keys(albums);
+    const albumNames = Object.keys(albums).filter(n => n !== '_unsorted');
 
     albumNames.forEach((albumName) => {
       const link = document.createElement('a');
@@ -1006,6 +1009,7 @@ function enterEditMode() {
   preEditAlbumOrder = Object.keys(albums);
 
   // INSTANT: activate edit mode
+  rebuildAlbumNav();
   renderEditGrid();
   setupEditSidebar();
   showEditBar();
@@ -1137,14 +1141,16 @@ function setupEditSidebar() {
         navLinks.forEach(l => { l.style.transition = ''; l.style.transform = ''; });
 
         if (hasDragged && currentHoverIdx !== -1 && currentHoverIdx !== myIdx) {
-          // Reorder
-          const keys = Object.keys(albums);
+          // Reorder - only visible albums
+          const keys = Object.keys(albums).filter(n => n !== '_unsorted');
           const name = keys[myIdx];
           keys.splice(myIdx, 1);
           keys.splice(currentHoverIdx, 0, name);
 
+          // Rebuild with _unsorted preserved
           const newAlbums = {};
           keys.forEach(k => { newAlbums[k] = albums[k]; });
+          if (albums._unsorted) newAlbums._unsorted = albums._unsorted;
           albums = newAlbums;
 
           rebuildAlbumNav();
@@ -1226,10 +1232,43 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 function rebuildAlbumNav() {
   const nav = document.getElementById('albumNav');
   nav.innerHTML = '';
-  Object.keys(albums).forEach((albumName) => {
+  Object.keys(albums).filter(n => n !== '_unsorted').forEach((albumName) => {
     const link = document.createElement('a');
-    link.textContent = albumName.toUpperCase();
     link.dataset.album = albumName;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = albumName.toUpperCase();
+    link.appendChild(nameSpan);
+
+    if (editMode) {
+      const actions = document.createElement('span');
+      actions.className = 'album-actions';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'album-action-btn';
+      renameBtn.textContent = '✎';
+      renameBtn.title = 'Rename';
+      renameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        renameAlbum(albumName);
+      });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'album-action-btn delete';
+      deleteBtn.textContent = '×';
+      deleteBtn.title = 'Delete album';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        deleteAlbum(albumName);
+      });
+
+      actions.appendChild(renameBtn);
+      actions.appendChild(deleteBtn);
+      link.appendChild(actions);
+    }
+
     if (albumName === currentAlbum) link.classList.add('active');
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1238,6 +1277,98 @@ function rebuildAlbumNav() {
     });
     nav.appendChild(link);
   });
+
+  // Add "new album" button in edit mode
+  if (editMode) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-album-btn';
+    addBtn.textContent = '+ NEW ALBUM';
+    addBtn.addEventListener('click', () => createAlbum());
+    nav.appendChild(addBtn);
+  }
+}
+
+// ============================================
+// Album Management: Create, Rename, Delete
+// ============================================
+function createAlbum() {
+  const name = prompt('New album name:');
+  if (!name || !name.trim()) return;
+
+  const key = name.trim().toLowerCase().replace(/\s+/g, '-');
+  if (albums[key]) {
+    alert('Album already exists.');
+    return;
+  }
+
+  albums[key] = [];
+  rebuildAlbumNav();
+  setupEditSidebar();
+  switchAlbum(key);
+}
+
+function renameAlbum(oldName) {
+  const newName = prompt('Rename album:', oldName);
+  if (!newName || !newName.trim() || newName.trim().toLowerCase() === oldName) return;
+
+  const newKey = newName.trim().toLowerCase().replace(/\s+/g, '-');
+  if (albums[newKey]) {
+    alert('Album with that name already exists.');
+    return;
+  }
+
+  // Rebuild albums object preserving order
+  const newAlbums = {};
+  for (const [key, val] of Object.entries(albums)) {
+    if (key === oldName) {
+      newAlbums[newKey] = val;
+    } else {
+      newAlbums[key] = val;
+    }
+  }
+  albums = newAlbums;
+
+  // Update currentAlbum if renamed
+  if (currentAlbum === oldName) {
+    currentAlbum = newKey;
+  }
+
+  rebuildAlbumNav();
+  setupEditSidebar();
+}
+
+function deleteAlbum(albumName) {
+  const photos = albums[albumName] || [];
+  const msg = photos.length > 0
+    ? `Delete "${albumName}"? ${photos.length} photo(s) will be moved to unsorted.`
+    : `Delete empty album "${albumName}"?`;
+
+  if (!confirm(msg)) return;
+
+  // Move photos to _unsorted
+  if (photos.length > 0) {
+    albums._unsorted = albums._unsorted || [];
+    albums._unsorted.push(...photos);
+    updateUnsortedBadge();
+  }
+
+  // Remove album
+  delete albums[albumName];
+
+  // If we just deleted the current album, switch to first available
+  if (currentAlbum === albumName) {
+    const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
+    if (remaining.length > 0) {
+      switchAlbum(remaining[0]);
+    } else {
+      currentAlbum = null;
+      currentPhotos = [];
+      document.getElementById('grid').innerHTML = '';
+    }
+  }
+
+  rebuildAlbumNav();
+  setupEditSidebar();
 }
 
 function exitEditMode(saved) {
@@ -1268,6 +1399,10 @@ function exitEditMode(saved) {
     bar.classList.remove('visible');
     setTimeout(() => bar.remove(), 350);
   }
+
+  // Remove tray
+  const tray = document.getElementById('unsortedTray');
+  if (tray) tray.remove();
 
   // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
   if (!saved && preEditAlbums) {
@@ -1309,6 +1444,7 @@ function exitEditMode(saved) {
   preEditAlbumOrder = null;
   pendingMoves = [];
 
+  rebuildAlbumNav();
   renderGrid();
 
   // DECORATIVE: typewriter out
@@ -1587,6 +1723,15 @@ function renderEditGrid() {
         link.classList.remove('edit-album-photo-target');
       }
     });
+
+    // Check if hovering over unsorted button
+    const unsortedBtn = document.getElementById('unsortedBtn');
+    if (unsortedBtn) {
+      const rect = unsortedBtn.getBoundingClientRect();
+      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      unsortedBtn.classList.toggle('drag-target', over);
+    }
   }
 
   function onMouseUp(e) {
@@ -1607,8 +1752,23 @@ function renderEditGrid() {
       clone = null;
     }
 
-    // Clear album highlights
+    // Clear highlights
     document.querySelectorAll('#albumNav a').forEach(l => l.classList.remove('edit-album-photo-target'));
+    const unsortedBtn = document.getElementById('unsortedBtn');
+    if (unsortedBtn) unsortedBtn.classList.remove('drag-target');
+
+    // Check if dropped on unsorted button
+    if (unsortedBtn && dragSrcIndex !== null) {
+      const rect = unsortedBtn.getBoundingClientRect();
+      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      if (over) {
+        movePhotoToAlbum(dragSrcIndex, '_unsorted');
+        renderUnsortedTray();
+        dragSrcIndex = null;
+        return;
+      }
+    }
 
     // Check if dropped on a sidebar album link
     const navLinks = document.querySelectorAll('#albumNav a');
@@ -1702,8 +1862,22 @@ function showEditBar() {
   const bar = document.createElement('div');
   bar.id = 'editBar';
   bar.className = 'edit-bar';
+
+  const unsortedCount = (albums._unsorted || []).length;
+  const badgeDisplay = unsortedCount > 0 ? '' : 'display:none';
+
   bar.innerHTML = `
-    <span class="edit-bar-label">EDIT MODE</span>
+    <div class="edit-bar-left">
+      <span class="edit-bar-label">EDIT MODE</span>
+      <button class="unsorted-btn" id="unsortedBtn" onclick="toggleUnsortedTray()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <span class="unsorted-badge" id="unsortedBadge" style="${badgeDisplay}">${unsortedCount}</span>
+      </button>
+    </div>
     <div class="edit-bar-actions">
       <label class="edit-bar-btn edit-upload-label">
         UPLOAD
@@ -1714,11 +1888,211 @@ function showEditBar() {
     </div>
   `;
   document.body.appendChild(bar);
+
+  // Build tray
+  const tray = document.createElement('div');
+  tray.id = 'unsortedTray';
+  tray.className = 'unsorted-tray';
+  tray.innerHTML = `
+    <div class="unsorted-tray-header">
+      <span class="unsorted-tray-title">UNSORTED</span>
+      <button class="unsorted-tray-close" onclick="toggleUnsortedTray()">×</button>
+    </div>
+    <div class="unsorted-tray-strip" id="unsortedStrip"></div>
+    <div class="unsorted-empty" id="unsortedEmpty" style="display:none">
+      No unsorted photos. Deleted albums move their photos here.
+    </div>
+  `;
+  document.body.appendChild(tray);
+  renderUnsortedTray();
+
   bar.offsetHeight;
   bar.classList.add('visible');
 
-  // Set up upload handler
   document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
+}
+
+function toggleUnsortedTray() {
+  const tray = document.getElementById('unsortedTray');
+  const btn = document.getElementById('unsortedBtn');
+  if (!tray) return;
+  tray.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+
+function renderUnsortedTray() {
+  const strip = document.getElementById('unsortedStrip');
+  const empty = document.getElementById('unsortedEmpty');
+  if (!strip) return;
+
+  const unsorted = albums._unsorted || [];
+  strip.innerHTML = '';
+
+  if (unsorted.length === 0) {
+    strip.style.display = 'none';
+    if (empty) empty.style.display = '';
+    return;
+  }
+
+  strip.style.display = '';
+  if (empty) empty.style.display = 'none';
+
+  unsorted.forEach((photo, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'unsorted-thumb';
+
+    const img = document.createElement('img');
+    img.src = `photos/${photo.grid}`;
+    img.draggable = false;
+    thumb.appendChild(img);
+
+    const del = document.createElement('button');
+    del.className = 'unsorted-thumb-del';
+    del.textContent = '×';
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteUnsortedPhoto(i);
+    });
+    thumb.appendChild(del);
+
+    thumb.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      startTrayDrag(i, e);
+    });
+
+    strip.appendChild(thumb);
+  });
+
+  updateUnsortedBadge();
+}
+
+function updateUnsortedBadge() {
+  const badge = document.getElementById('unsortedBadge');
+  if (!badge) return;
+  const count = (albums._unsorted || []).length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? '' : 'none';
+}
+
+async function deleteUnsortedPhoto(index) {
+  if (!confirm('Permanently delete this photo?')) return;
+
+  const token = localStorage.getItem('gh_token');
+  if (!token) { alert('No token found.'); return; }
+
+  const photo = albums._unsorted[index];
+  const bar = document.getElementById('editBar');
+  const label = bar.querySelector('.edit-bar-label');
+  label.textContent = 'DELETING...';
+
+  try {
+    await deleteFileFromGitHub(`photos/${photo.src}`, token);
+    await deleteFileFromGitHub(`photos/${photo.grid}`, token);
+    albums._unsorted.splice(index, 1);
+    await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+    renderUnsortedTray();
+    label.textContent = 'EDIT MODE';
+  } catch (err) {
+    console.error('Delete unsorted failed:', err);
+    alert('Delete failed: ' + err.message);
+    label.textContent = 'EDIT MODE';
+  }
+}
+
+function startTrayDrag(unsortedIndex, e) {
+  const photo = albums._unsorted[unsortedIndex];
+  const imgSrc = `photos/${photo.grid}`;
+
+  let mouseX = e.clientX;
+  let mouseY = e.clientY;
+  let clone = null;
+  let hasDragged = false;
+  const startX = e.clientX;
+  const startY = e.clientY;
+
+  function onMove(ev) {
+    mouseX = ev.clientX;
+    mouseY = ev.clientY;
+    const dist = Math.sqrt(Math.pow(mouseX - startX, 2) + Math.pow(mouseY - startY, 2));
+    if (!hasDragged && dist < 6) return;
+
+    if (!hasDragged) {
+      hasDragged = true;
+      clone = document.createElement('div');
+      clone.style.cssText = `
+        position: fixed; left: 0; top: 0;
+        width: 90px; height: 64px;
+        z-index: 10002; pointer-events: none;
+        opacity: 0.85;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        border-radius: 3px; overflow: hidden;
+        will-change: transform;
+        background-image: url('${imgSrc}');
+        background-size: cover; background-position: center;
+      `;
+      document.body.appendChild(clone);
+    }
+
+    clone.style.transform = `translate(${mouseX - 45}px, ${mouseY - 32}px)`;
+
+    document.querySelectorAll('#albumNav a').forEach(link => {
+      const rect = link.getBoundingClientRect();
+      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      link.classList.toggle('edit-album-photo-target', over);
+    });
+  }
+
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (clone) { clone.remove(); }
+    document.querySelectorAll('#albumNav a').forEach(l => l.classList.remove('edit-album-photo-target'));
+    if (!hasDragged) return;
+
+    let droppedAlbum = null;
+    document.querySelectorAll('#albumNav a').forEach(link => {
+      const rect = link.getBoundingClientRect();
+      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      if (over) droppedAlbum = link.dataset.album;
+    });
+
+    if (!droppedAlbum) {
+      const grid = document.getElementById('grid');
+      if (grid) {
+        const rect = grid.getBoundingClientRect();
+        if (mouseX >= rect.left && mouseX <= rect.right && mouseY >= rect.top && mouseY <= rect.bottom) {
+          droppedAlbum = currentAlbum;
+        }
+      }
+    }
+
+    if (droppedAlbum && droppedAlbum !== '_unsorted') {
+      moveFromUnsortedToAlbum(unsortedIndex, droppedAlbum);
+    }
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
+  const photo = albums._unsorted[unsortedIndex];
+  albums._unsorted.splice(unsortedIndex, 1);
+  albums[targetAlbum].push(photo);
+
+  if (targetAlbum === currentAlbum) {
+    currentPhotos.push({
+      full: `photos/${photo.src}`,
+      grid: `photos/${photo.grid}`,
+      width: photo.w,
+      height: photo.h
+    });
+    renderEditGrid();
+  }
+
+  renderUnsortedTray();
 }
 
 // ============================================
