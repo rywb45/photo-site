@@ -197,6 +197,7 @@ function buildCarousel() {
     slide.className = 'lb-slide';
     const img = document.createElement('img');
     img.alt = '';
+    img.decoding = 'async';
     slide.appendChild(img);
     lbTrack.appendChild(slide);
     virtualSlides.push(slide);
@@ -215,9 +216,38 @@ function updateVirtualSlides() {
     const img = virtualSlides[s].querySelector('img');
     const idx = slots[s];
     if (idx >= 0 && idx < currentPhotos.length) {
-      img.src = currentPhotos[idx].full;
+      const newSrc = currentPhotos[idx].full;
+      if (img.getAttribute('src') !== newSrc) img.src = newSrc;
     } else {
-      img.removeAttribute('src');
+      if (img.hasAttribute('src')) img.removeAttribute('src');
+    }
+  }
+  // Preload 2 ahead in each direction
+  preloadNearby(currentIndex);
+}
+
+const _preloadCache = new Map();
+function preloadNearby(idx) {
+  for (let offset = -2; offset <= 2; offset++) {
+    const i = idx + offset;
+    if (i < 0 || i >= currentPhotos.length) continue;
+    const src = currentPhotos[i].full;
+    if (!_preloadCache.has(src)) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = src;
+      _preloadCache.set(src, img);
+    }
+  }
+  // Evict entries far from current view to limit memory
+  if (_preloadCache.size > 10) {
+    const activeSrcs = new Set();
+    for (let offset = -3; offset <= 3; offset++) {
+      const i = idx + offset;
+      if (i >= 0 && i < currentPhotos.length) activeSrcs.add(currentPhotos[i].full);
+    }
+    for (const key of _preloadCache.keys()) {
+      if (!activeSrcs.has(key)) _preloadCache.delete(key);
     }
   }
 }
@@ -281,6 +311,8 @@ function updateDots() {
   track.style.transform = `translateX(${-windowStart * 10}px)`;
 }
 
+let snapTimer = null;
+
 function goToSlide(index, animate = true) {
   resetZoom();
   // If navigating away from original photo, clear morph source
@@ -293,14 +325,25 @@ function goToSlide(index, animate = true) {
   const centerOffset = -1 * window.innerWidth;
 
   if (animate && index !== currentIndex) {
-    // If a snap is pending, complete it immediately
+    // If a snap is pending, fast-forward it without loading images
     if (isSnapping) {
-      completeSnap();
+      if (snapTimer) { clearTimeout(snapTimer); snapTimer = null; }
+      isSnapping = false;
+      lbTrack.style.transition = 'none';
+      lbTrack.style.transform = `translateX(${centerOffset}px)`;
+      // Force style recalc before starting next animation
+      lbTrack.offsetHeight;
     }
 
     const direction = index > currentIndex ? 2 : 0; // slot 2 = next, slot 0 = prev
-    const targetOffset = -direction * window.innerWidth;
 
+    // Pre-set the slide we're about to reveal
+    const revealSlot = direction === 2 ? 2 : 0;
+    const revealImg = virtualSlides[revealSlot].querySelector('img');
+    const newSrc = currentPhotos[index].full;
+    if (revealImg.getAttribute('src') !== newSrc) revealImg.src = newSrc;
+
+    const targetOffset = -direction * window.innerWidth;
     lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     lbTrack.style.transform = `translateX(${targetOffset}px)`;
     isSnapping = true;
@@ -309,7 +352,8 @@ function goToSlide(index, animate = true) {
     updateDots();
 
     // After animation, snap back to center with updated slides
-    setTimeout(() => {
+    snapTimer = setTimeout(() => {
+      snapTimer = null;
       completeSnap();
     }, 310);
   } else {
