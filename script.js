@@ -1488,8 +1488,20 @@ function exitEditMode(saved) {
   preEditAlbumOrder = null;
   pendingMoves = [];
 
-  rebuildAlbumNav();
-  renderGrid();
+  // Animate out the add-album elements before rebuilding
+  const addSep = document.querySelector('.add-album-separator');
+  const addBtn = document.querySelector('.add-album-btn');
+  if (addSep) addSep.classList.remove('visible');
+  if (addBtn) addBtn.classList.remove('visible');
+
+  // Also remove album action kebabs immediately
+  document.querySelectorAll('.album-actions').forEach(a => a.style.opacity = '0');
+
+  // Delay rebuild to let animation finish
+  setTimeout(() => {
+    rebuildAlbumNav();
+    renderGrid();
+  }, 350);
 
   // DECORATIVE: typewriter out
   const nameText = document.getElementById('nameText');
@@ -1706,47 +1718,70 @@ function renderEditGrid() {
 
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      dragSrcIndex = i;
-      startX = e.clientX;
-      startY = e.clientY;
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      const downX = e.clientX;
+      const downY = e.clientY;
+      const downIndex = i;
+      let activated = false;
 
-      const rect = item.getBoundingClientRect();
-      const imgEl = item.querySelector('img');
-      const imgSrc = imgEl ? imgEl.src : '';
+      function onFirstMove(ev) {
+        const dist = Math.sqrt(Math.pow(ev.clientX - downX, 2) + Math.pow(ev.clientY - downY, 2));
+        if (dist < 8) return;
 
-      clone = document.createElement('div');
-      clone._startLeft = rect.left;
-      clone._startTop = rect.top;
-      clone._offsetX = e.clientX - rect.left;
-      clone._offsetY = e.clientY - rect.top;
-      clone._shown = false;
-      clone.style.cssText = `
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: ${rect.width}px;
-        height: ${rect.height}px;
-        z-index: 10000;
-        pointer-events: none;
-        visibility: hidden;
-        opacity: 0.85;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-        border-radius: 4px;
-        overflow: hidden;
-        will-change: transform;
-        background-image: url('${imgSrc}');
-        background-size: cover;
-        background-position: center;
-        transform: translate(${rect.left}px, ${rect.top}px);
-      `;
-      document.body.appendChild(clone);
+        // Passed threshold — start real drag
+        activated = true;
+        document.removeEventListener('mousemove', onFirstMove);
 
-      item.classList.add('edit-dragging');
-      isDragging = true;
-      cachePositions();
-      rafId = requestAnimationFrame(animationLoop);
+        dragSrcIndex = downIndex;
+        startX = downX;
+        startY = downY;
+        mouseX = ev.clientX;
+        mouseY = ev.clientY;
+
+        const rect = item.getBoundingClientRect();
+        const imgEl = item.querySelector('img');
+        const imgSrc = imgEl ? imgEl.src : '';
+
+        clone = document.createElement('div');
+        clone._startLeft = rect.left;
+        clone._startTop = rect.top;
+        clone._offsetX = downX - rect.left;
+        clone._offsetY = downY - rect.top;
+        clone._shown = false;
+        clone.style.cssText = `
+          position: fixed;
+          left: 0;
+          top: 0;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          z-index: 10000;
+          pointer-events: none;
+          visibility: hidden;
+          opacity: 0.85;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+          border-radius: 4px;
+          overflow: hidden;
+          will-change: transform;
+          background-image: url('${imgSrc}');
+          background-size: cover;
+          background-position: center;
+          transform: translate(${rect.left}px, ${rect.top}px);
+        `;
+        document.body.appendChild(clone);
+
+        item.classList.add('edit-dragging');
+        isDragging = true;
+        cachePositions();
+        rafId = requestAnimationFrame(animationLoop);
+      }
+
+      function onFirstUp() {
+        document.removeEventListener('mousemove', onFirstMove);
+        document.removeEventListener('mouseup', onFirstUp);
+        // If we never activated, it was just a click — do nothing
+      }
+
+      document.addEventListener('mousemove', onFirstMove);
+      document.addEventListener('mouseup', onFirstUp);
     });
   });
 
