@@ -1823,20 +1823,26 @@ function renderEditGrid() {
         const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
         scale = 1 - t * 0.65; // shrink to ~35% size
       }
+      // Shrink clone when near unsorted tray (distance-based like sidebar)
       const _unsortedBtn = document.getElementById('unsortedBtn');
       const _unsortedTray = document.getElementById('unsortedTray');
-      let _overTray = false;
+      let trayDist = Infinity;
       if (_unsortedBtn) {
         const r = _unsortedBtn.getBoundingClientRect();
-        _overTray = mouseX >= r.left - 20 && mouseX <= r.right + 20 &&
-                    mouseY >= r.top - 15 && mouseY <= r.bottom + 15;
+        const cxr = Math.max(r.left, Math.min(r.right, mouseX));
+        const cyr = Math.max(r.top, Math.min(r.bottom, mouseY));
+        trayDist = Math.sqrt(Math.pow(mouseX - cxr, 2) + Math.pow(mouseY - cyr, 2));
       }
-      if (!_overTray && _unsortedTray && _unsortedTray.classList.contains('open')) {
+      if (_unsortedTray && _unsortedTray.classList.contains('open')) {
         const r = _unsortedTray.getBoundingClientRect();
-        _overTray = mouseX >= r.left - 10 && mouseX <= r.right + 10 &&
-                    mouseY >= r.top - 10 && mouseY <= r.bottom + 10;
+        const cxr = Math.max(r.left, Math.min(r.right, mouseX));
+        const cyr = Math.max(r.top, Math.min(r.bottom, mouseY));
+        trayDist = Math.min(trayDist, Math.sqrt(Math.pow(mouseX - cxr, 2) + Math.pow(mouseY - cyr, 2)));
       }
-      if (_overTray) scale = Math.min(scale, 0.35);
+      if (trayDist < 120) {
+        const t = Math.max(0, Math.min(1, 1 - trayDist / 120));
+        scale = Math.min(scale, 1 - t * 0.65);
+      }
 
       clone.style.transform = `translate(${cx}px, ${cy}px) scale(${scale})`;
       if (!clone._shown) {
