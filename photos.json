@@ -1,16 +1,28 @@
 {
   "chinatown": [
     {
-      "src": "01-people/008.webp",
-      "grid": "01-people/grid/008.webp",
+      "src": "unsorted/001.webp",
+      "grid": "unsorted/grid/001.webp",
       "w": 2048,
-      "h": 1338
+      "h": 1365
     },
     {
       "src": "01-people/003.webp",
       "grid": "01-people/grid/003.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "unsorted/002.webp",
+      "grid": "unsorted/grid/002.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/003.webp",
+      "grid": "unsorted/grid/003.webp",
+      "w": 2048,
+      "h": 1152
     }
   ],
   "buildings": [
@@ -127,24 +139,5 @@
       "h": 3940
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/001.webp",
-      "grid": "unsorted/grid/001.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/002.webp",
-      "grid": "unsorted/grid/002.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/003.webp",
-      "grid": "unsorted/grid/003.webp",
-      "w": 2048,
-      "h": 1152
-    }
-  ]
+  "_unsorted": []
 }
