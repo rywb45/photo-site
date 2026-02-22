@@ -674,18 +674,6 @@ body.edit-mode #albumNav a.edit-album-dragging {
   opacity: 0.2;
 }
 
-.edit-album-indicator {
-  height: 2px;
-  background: #fff;
-  margin: 4px 0;
-  border-radius: 1px;
-  opacity: 0.6;
-}
-
-body:not(.inverted) .edit-album-indicator {
-  background: #000;
-}
-
 body.edit-mode #albumNav a.edit-album-photo-target {
   background: rgba(255, 255, 255, 0.15);
   transform: scale(1.05);
