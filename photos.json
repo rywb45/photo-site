@@ -61,12 +61,6 @@
       "grid": "02-buildings/grid/007.webp",
       "w": 1365,
       "h": 2048
-    },
-    {
-      "src": "02-buildings/008.webp",
-      "grid": "02-buildings/grid/008.webp",
-      "w": 7728,
-      "h": 5152
     }
   ],
   "people": [
