@@ -322,8 +322,9 @@ function openLightbox(index, sourceImg) {
       lightbox.style.opacity = '1';
     });
 
-    // After animation, reveal real lightbox and remove clone
-    setTimeout(() => {
+    // Preload the full-res image so we don't flash black
+    const fullImg = lbTrack.querySelectorAll('.lb-slide')[index]?.querySelector('img');
+    const revealLightbox = () => {
       lbTrack.style.opacity = '1';
       lightbox.style.transition = '';
 
@@ -336,7 +337,24 @@ function openLightbox(index, sourceImg) {
         lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
         lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
       }
-    }, 320);
+    };
+
+    // Wait for both the morph animation (320ms) and the full-res image to load
+    const morphDone = new Promise(r => setTimeout(r, 320));
+    const imgLoaded = new Promise(r => {
+      if (fullImg && fullImg.complete && fullImg.naturalWidth > 0) {
+        r();
+      } else if (fullImg) {
+        fullImg.onload = r;
+        fullImg.onerror = r;
+        // Safety timeout — don't wait forever
+        setTimeout(r, 3000);
+      } else {
+        r();
+      }
+    });
+
+    Promise.all([morphDone, imgLoaded]).then(revealLightbox);
 
   } else {
     // No source — instant open (e.g. keyboard or programmatic)
@@ -440,10 +458,39 @@ lbNext.addEventListener('click', () => {
   if (currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
 });
 
-// Click anywhere on lightbox backdrop to close (not on image or buttons)
+// Click/double-click handling for lightbox
+let lbClickTimer = null;
 lightbox.addEventListener('click', (e) => {
   if (e.target === lightbox || e.target.classList.contains('lb-slide')) {
-    closeLightbox();
+    // If zoomed, single click shouldn't close — just reset zoom
+    if (zoomScale > 1) {
+      return;
+    }
+    // Delay close to detect double-click
+    if (lbClickTimer) return;
+    lbClickTimer = setTimeout(() => {
+      lbClickTimer = null;
+      closeLightbox();
+    }, 250);
+  }
+});
+
+lightbox.addEventListener('dblclick', (e) => {
+  if (!(e.target === lightbox || e.target.classList.contains('lb-slide'))) return;
+  // Cancel the pending single-click close
+  if (lbClickTimer) { clearTimeout(lbClickTimer); lbClickTimer = null; }
+  const img = getCurrentSlideImg();
+  if (!img) return;
+  e.preventDefault();
+  if (zoomScale > 1) {
+    resetZoom();
+  } else {
+    zoomScale = 2.5;
+    panOffsetX = (window.innerWidth / 2 - e.clientX) * (zoomScale - 1);
+    panOffsetY = (window.innerHeight / 2 - e.clientY) * (zoomScale - 1);
+    img.style.transition = 'transform 0.3s ease';
+    applyZoom(img);
+    setTimeout(() => { img.style.transition = ''; }, 300);
   }
 });
 
@@ -469,6 +516,47 @@ let lastWheelTime = 0;
 lightbox.addEventListener('wheel', (e) => {
   if (!lightbox.classList.contains('active')) return;
   e.preventDefault();
+
+  // Trackpad pinch-to-zoom (ctrlKey is set for pinch gestures on Mac)
+  if (e.ctrlKey) {
+    const img = getCurrentSlideImg();
+    if (!img) return;
+
+    const zoomDelta = -e.deltaY * 0.01;
+    const prevScale = zoomScale;
+    zoomScale = Math.max(1, Math.min(zoomScale * (1 + zoomDelta), 5));
+
+    if (zoomScale <= 1) {
+      zoomScale = 1;
+      panOffsetX = 0;
+      panOffsetY = 0;
+      img.style.transition = 'transform 0.2s ease';
+      img.style.transform = '';
+      setTimeout(() => { img.style.transition = ''; }, 200);
+    } else {
+      // Zoom toward cursor position
+      const rect = img.getBoundingClientRect();
+      const cx = e.clientX - (rect.left + rect.width / 2);
+      const cy = e.clientY - (rect.top + rect.height / 2);
+      const scaleFactor = zoomScale / prevScale;
+      panOffsetX = cx - scaleFactor * (cx - panOffsetX);
+      panOffsetY = cy - scaleFactor * (cy - panOffsetY);
+      img.style.transition = '';
+      applyZoom(img);
+    }
+    return;
+  }
+
+  // If zoomed in, pan with two-finger scroll
+  if (zoomScale > 1) {
+    const img = getCurrentSlideImg();
+    if (!img) return;
+    panOffsetX -= e.deltaX * 1.5;
+    panOffsetY -= e.deltaY * 1.5;
+    img.style.transition = '';
+    applyZoom(img);
+    return;
+  }
 
   const now = Date.now();
   const timeDelta = now - lastWheelTime;
