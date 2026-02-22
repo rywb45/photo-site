@@ -19,12 +19,6 @@
       "h": 1338
     },
     {
-      "src": "unsorted/001.webp",
-      "grid": "unsorted/grid/001.webp",
-      "w": 7728,
-      "h": 5152
-    },
-    {
       "src": "01-people/004.webp",
       "grid": "01-people/grid/004.webp",
       "w": 2048,
@@ -157,5 +151,12 @@
       "h": 3940
     }
   ],
-  "_unsorted": []
+  "_unsorted": [
+    {
+      "src": "unsorted/001.webp",
+      "grid": "unsorted/grid/001.webp",
+      "w": 3888,
+      "h": 2592
+    }
+  ]
 }
