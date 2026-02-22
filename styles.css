@@ -837,16 +837,8 @@ body.inverted .edit-upload-label {
   opacity: 0.8;
 }
 
-.edit-mobile-btn.active {
-  color: #fff;
-}
-
 body.inverted .edit-mobile-btn {
   color: #999;
-}
-
-body.inverted .edit-mobile-btn.active {
-  color: #000;
 }
 
 body.mobile-preview .main {
