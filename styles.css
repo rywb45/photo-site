@@ -997,6 +997,13 @@ body:not(.inverted) .album-action-btn.delete:hover { color: #d44; }
   width: 100%;
 }
 
+.inline-rename-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
 .inline-rename-input {
   background: none;
   border: none;
@@ -1008,48 +1015,42 @@ body:not(.inverted) .album-action-btn.delete:hover { color: #d44; }
   letter-spacing: 0.3px;
   text-transform: uppercase;
   outline: none;
-  width: 130px;
-  padding: 0 0 2px 0;
+  width: 140px;
+  padding: 0 0 4px 0;
   transition: border-color 0.2s;
 }
 
+.inline-rename-input.glow {
+  border-bottom: 1px solid #fff;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.3);
+}
+
 .inline-rename-input:focus { border-color: #888; }
+.inline-rename-input.glow:focus { border-color: #fff; }
 .inline-rename-input::placeholder { color: #333; }
 
 body:not(.inverted) .inline-rename-input {
   color: #000;
   border-color: #ccc;
 }
+body:not(.inverted) .inline-rename-input.glow {
+  border-color: #000;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
 body:not(.inverted) .inline-rename-input:focus { border-color: #888; }
+body:not(.inverted) .inline-rename-input.glow:focus { border-color: #000; }
 body:not(.inverted) .inline-rename-input::placeholder { color: #ccc; }
 
-.inline-rename-ok,
-.inline-rename-cancel {
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 0;
-  transition: color 0.15s;
-  line-height: 1;
+.inline-rename-hint {
+  font-size: 9px;
+  color: #333;
+  letter-spacing: 1px;
 }
 
-.inline-rename-ok { color: #555; }
-.inline-rename-ok:hover { color: #fff; }
-.inline-rename-ok.delete { color: #555; }
-.inline-rename-ok.delete:hover { color: #d44; }
-.inline-rename-cancel { color: #333; }
-.inline-rename-cancel:hover { color: #888; }
-
-body:not(.inverted) .inline-rename-ok { color: #bbb; }
-body:not(.inverted) .inline-rename-ok:hover { color: #000; }
-body:not(.inverted) .inline-rename-ok.delete:hover { color: #d44; }
-body:not(.inverted) .inline-rename-cancel { color: #ccc; }
-body:not(.inverted) .inline-rename-cancel:hover { color: #666; }
+body:not(.inverted) .inline-rename-hint { color: #bbb; }
 
 .inline-delete-msg {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 1px;
   color: #d44;
