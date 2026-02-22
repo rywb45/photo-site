@@ -820,6 +820,48 @@ body.inverted .edit-upload-label {
   color: #999;
 }
 
+.edit-mobile-btn {
+  background: none;
+  color: #666;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.edit-mobile-btn:hover {
+  opacity: 0.8;
+}
+
+.edit-mobile-btn.active {
+  color: #000;
+}
+
+body.inverted .edit-mobile-btn {
+  color: #999;
+}
+
+body.inverted .edit-mobile-btn.active {
+  color: #fff;
+}
+
+body.mobile-preview .main {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
+  border-left: 1px solid rgba(128,128,128,0.15);
+  border-right: 1px solid rgba(128,128,128,0.15);
+}
+
+body.mobile-preview #grid {
+  padding: 20px;
+}
+
 .edit-save {
   background: #fff;
   color: #000;

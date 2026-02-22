@@ -1298,6 +1298,7 @@ if (mobileClose) {
 // Edit Mode: Hidden login + drag reorder + save
 // ============================================
 let editMode = false;
+let mobilePreview = false;
 let sortableInstance = null;
 let nameClickCount = 0;
 let nameClickTimer = null;
@@ -1812,6 +1813,8 @@ function deleteAlbum(albumName) {
 
 function exitEditMode(saved) {
   editMode = false;
+  mobilePreview = false;
+  document.body.classList.remove('mobile-preview');
 
   const grid = document.getElementById('grid');
   if (grid._editCleanup) {
@@ -2444,6 +2447,12 @@ function showEditBar() {
       </button>
     </div>
     <div class="edit-bar-actions">
+      <button class="edit-bar-btn edit-mobile-btn" id="mobilePreviewBtn" onclick="toggleMobilePreview()" title="Mobile preview">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      </button>
       <label class="edit-bar-btn edit-upload-label" title="Upload photos">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -2486,6 +2495,14 @@ function showEditBar() {
   }, 400);
 
   document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
+}
+
+function toggleMobilePreview() {
+  mobilePreview = !mobilePreview;
+  document.body.classList.toggle('mobile-preview', mobilePreview);
+  document.getElementById('mobilePreviewBtn').classList.toggle('active', mobilePreview);
+  renderEditGrid();
+  document.getElementById('grid').scrollTop = 0;
 }
 
 function toggleUnsortedTray() {
