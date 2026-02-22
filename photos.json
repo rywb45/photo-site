@@ -151,5 +151,18 @@
       "h": 3940
     }
   ],
-  "_unsorted": []
+  "_unsorted": [
+    {
+      "src": "01-people/006.webp",
+      "grid": "01-people/grid/006.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "01-people/006.webp",
+      "grid": "01-people/grid/006.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ]
 }
