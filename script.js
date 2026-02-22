@@ -159,7 +159,7 @@ function renderGrid() {
         itemDiv.style.height = `${adjustedHeight}px`;
 
         const img = document.createElement('img');
-        img.src = item.grid;
+        img.src = itemWidth > GRID_MAX_WIDTH ? item.full : item.grid;
         img.alt = '';
         img.loading = 'lazy';
         img.width = Math.round(itemWidth);
