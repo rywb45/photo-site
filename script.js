@@ -1281,6 +1281,10 @@ function rebuildAlbumNav() {
 
   // Add "new album" button in edit mode
   if (editMode) {
+    const sep = document.createElement('div');
+    sep.className = 'add-album-separator';
+    nav.appendChild(sep);
+
     const addBtn = document.createElement('button');
     addBtn.className = 'add-album-btn';
     addBtn.textContent = '+ NEW ALBUM';
