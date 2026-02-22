@@ -629,21 +629,18 @@ body:not(.inverted) #grid.edit-drop-active {
 .edit-delete-btn {
   position: absolute;
   top: 6px;
-  right: 6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  right: 8px;
   border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 16px;
-  line-height: 20px;
-  text-align: center;
+  background: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s, background 0.15s;
+  transition: opacity 0.15s, color 0.15s;
   padding: 0;
   z-index: 10;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 body.edit-mode .edit-item:hover .edit-delete-btn {
@@ -651,7 +648,7 @@ body.edit-mode .edit-item:hover .edit-delete-btn {
 }
 
 .edit-delete-btn:hover {
-  background: rgba(220, 40, 40, 0.85);
+  color: rgba(220, 40, 40, 0.9);
 }
 
 /* Edit mode drag states */

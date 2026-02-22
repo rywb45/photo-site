@@ -2259,7 +2259,6 @@ async function deletePhoto(photoIndex) {
   const photo = currentPhotos[photoIndex];
   const filename = photo.full.replace('photos/', '').split('/').pop();
 
-  if (!confirm(`Delete this photo? This cannot be undone.`)) return;
 
   const token = localStorage.getItem('gh_token');
   if (!token) {
