@@ -1150,13 +1150,13 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 
   const photo = currentPhotos[photoIndex];
 
-  // Get paths
+  // Get original paths (keep them as-is so the image still displays)
   const fullPath = photo.full.replace('photos/', '');
   const gridPath = photo.grid.replace('photos/', '');
   const filename = fullPath.split('/').pop();
   const srcFolder = fullPath.split('/')[0];
 
-  // Find target album's folder prefix from its existing photos
+  // Find target album's folder prefix for the move record
   const targetPhotos = albums[targetAlbum];
   let targetFolderPrefix = targetAlbum;
   if (targetPhotos.length > 0) {
@@ -1170,18 +1170,19 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
     to: targetFolderPrefix
   });
 
-  // Build new paths
+  // Keep original src/grid paths so images still load correctly
+  // The upload script will move the actual files and re-generate photos.json
   const newPhotoData = {
-    src: targetFolderPrefix + '/' + filename,
-    grid: targetFolderPrefix + '/grid/' + filename,
+    src: fullPath,
+    grid: gridPath,
     w: photo.width,
     h: photo.height
   };
 
-  // Remove from current album's currentPhotos
+  // Remove from current album
   currentPhotos.splice(photoIndex, 1);
 
-  // Sync currentPhotos back to albums
+  // Sync current album back
   albums[currentAlbum] = currentPhotos.map(p => ({
     src: p.full.replace('photos/', ''),
     grid: p.grid.replace('photos/', ''),
@@ -1189,7 +1190,7 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
     h: p.height
   }));
 
-  // Add to target album
+  // Add to target album (with original paths)
   albums[targetAlbum].push(newPhotoData);
 
   renderEditGrid();
@@ -1234,10 +1235,38 @@ function exitEditMode(saved) {
     setTimeout(() => bar.remove(), 350);
   }
 
-  // If cancelled, restore original order
-  if (!saved && preEditPhotos) {
-    currentPhotos = preEditPhotos;
+  // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
+  if (!saved && preEditAlbums) {
+    // Find any photos that were uploaded during this session (not in pre-edit state)
+    const uploadedPhotos = {};
+    for (const [albumName, photos] of Object.entries(albums)) {
+      const prePhotos = preEditAlbums[albumName] || [];
+      const preSrcs = new Set(prePhotos.map(p => p.src));
+      const newPhotos = photos.filter(p => !preSrcs.has(p.src));
+      if (newPhotos.length > 0) {
+        uploadedPhotos[albumName] = newPhotos;
+      }
+    }
+
+    // Restore pre-edit state
     albums = preEditAlbums;
+
+    // Merge back uploaded photos
+    for (const [albumName, photos] of Object.entries(uploadedPhotos)) {
+      if (!albums[albumName]) albums[albumName] = [];
+      albums[albumName].push(...photos);
+    }
+
+    // Restore currentPhotos from restored album
+    if (currentAlbum && albums[currentAlbum]) {
+      currentPhotos = albums[currentAlbum].map(p => ({
+        full: `photos/${p.src}`,
+        grid: `photos/${p.grid}`,
+        width: p.w,
+        height: p.h
+      }));
+    }
+
     rebuildAlbumNav();
   }
 
@@ -1307,6 +1336,34 @@ function renderEditGrid() {
   renderGrid();
 
   const grid = document.getElementById('grid');
+
+  // Add drag-and-drop file upload zone
+  if (editMode) {
+    grid.addEventListener('dragover', (e) => {
+      // Only handle file drops, not photo reorder
+      if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+        e.preventDefault();
+        e.stopPropagation();
+        grid.classList.add('edit-drop-active');
+      }
+    });
+
+    grid.addEventListener('dragleave', (e) => {
+      if (!grid.contains(e.relatedTarget)) {
+        grid.classList.remove('edit-drop-active');
+      }
+    });
+
+    grid.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        grid.classList.remove('edit-drop-active');
+        handlePhotoUpload({ target: { files: e.dataTransfer.files, value: '' } });
+      }
+    });
+  }
+
   const items = Array.from(grid.querySelectorAll('.grid-item'));
   let dragSrcIndex = null;
   let isDragging = false;
@@ -1416,6 +1473,17 @@ function renderEditGrid() {
     img.replaceWith(newImg);
     newImg.style.pointerEvents = 'none';
     newImg.style.userSelect = 'none';
+
+    // Add delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'edit-delete-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      deletePhoto(i);
+    });
+    item.appendChild(deleteBtn);
 
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -1588,14 +1656,286 @@ function showEditBar() {
   bar.innerHTML = `
     <span class="edit-bar-label">EDIT MODE</span>
     <div class="edit-bar-actions">
+      <label class="edit-bar-btn edit-upload-label">
+        UPLOAD
+        <input type="file" id="editUploadInput" accept="image/*" multiple style="display:none">
+      </label>
       <button class="edit-bar-btn edit-cancel" onclick="exitEditMode()">CANCEL</button>
       <button class="edit-bar-btn edit-save" onclick="saveOrder()">SAVE</button>
     </div>
   `;
   document.body.appendChild(bar);
-  // Force reflow then animate in
   bar.offsetHeight;
   bar.classList.add('visible');
+
+  // Set up upload handler
+  document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
+}
+
+// ============================================
+// Photo Delete
+// ============================================
+async function deletePhoto(photoIndex) {
+  const photo = currentPhotos[photoIndex];
+  const filename = photo.full.replace('photos/', '').split('/').pop();
+
+  if (!confirm(`Delete this photo? This cannot be undone.`)) return;
+
+  const token = localStorage.getItem('gh_token');
+  if (!token) {
+    alert('No token found. Please log in again.');
+    return;
+  }
+
+  const bar = document.getElementById('editBar');
+  const label = bar.querySelector('.edit-bar-label');
+  label.textContent = 'DELETING...';
+
+  try {
+    const fullPath = `photos/${photo.full.replace('photos/', '')}`;
+    const gridPath = `photos/${photo.grid.replace('photos/', '')}`;
+
+    // Delete full-res from GitHub
+    await deleteFileFromGitHub(fullPath, token);
+    // Delete grid thumbnail from GitHub
+    await deleteFileFromGitHub(gridPath, token);
+
+    // Remove from current album
+    currentPhotos.splice(photoIndex, 1);
+
+    // Sync back to albums
+    albums[currentAlbum] = currentPhotos.map(p => ({
+      src: p.full.replace('photos/', ''),
+      grid: p.grid.replace('photos/', ''),
+      w: p.width,
+      h: p.height
+    }));
+
+    // Save updated photos.json
+    await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+
+    // Re-render
+    carouselBuiltForAlbum = null;
+    renderEditGrid();
+
+    label.textContent = 'EDIT MODE';
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Delete failed: ' + err.message);
+    label.textContent = 'EDIT MODE';
+  }
+}
+
+async function deleteFileFromGitHub(path, token) {
+  // Get SHA first
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  });
+
+  if (res.status === 404) return; // Already gone
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+
+  const data = await res.json();
+
+  const delRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: `Delete ${path}`,
+      sha: data.sha
+    })
+  });
+
+  if (!delRes.ok) {
+    const err = await delRes.json();
+    throw new Error(`GitHub delete failed (${delRes.status}): ${err.message}`);
+  }
+}
+
+// ============================================
+// Photo Upload System
+// ============================================
+const GRID_MAX_WIDTH = 1000;
+const WEBP_QUALITY = 0.82;
+
+async function handlePhotoUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  const token = localStorage.getItem('gh_token');
+  if (!token) {
+    alert('No token found. Please log in again.');
+    return;
+  }
+
+  if (!currentAlbum) {
+    alert('Please select an album first.');
+    return;
+  }
+
+  // Show progress
+  const bar = document.getElementById('editBar');
+  const label = bar.querySelector('.edit-bar-label');
+  const originalLabel = label.textContent;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    label.textContent = `UPLOADING ${i + 1}/${files.length}...`;
+
+    try {
+      await uploadSinglePhoto(file, token);
+    } catch (err) {
+      console.error('Upload failed for', file.name, err);
+      alert(`Failed to upload ${file.name}: ${err.message}`);
+    }
+  }
+
+  label.textContent = originalLabel;
+  e.target.value = ''; // Reset file input
+}
+
+async function uploadSinglePhoto(file, token) {
+  // Load image
+  const img = await loadImage(file);
+  const origW = img.naturalWidth;
+  const origH = img.naturalHeight;
+
+  // Determine the next filename number
+  const albumPhotos = albums[currentAlbum] || [];
+  const existingNums = albumPhotos.map(p => {
+    const name = p.src.split('/').pop().replace('.webp', '');
+    return parseInt(name) || 0;
+  });
+  const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
+  const paddedNum = String(nextNum).padStart(3, '0');
+
+  // Get album folder prefix from existing photos
+  let folderPrefix;
+  if (albumPhotos.length > 0) {
+    folderPrefix = albumPhotos[0].src.split('/')[0];
+  } else {
+    folderPrefix = currentAlbum;
+  }
+
+  // Generate full-res WebP
+  const fullWebP = await imageToWebP(img, origW, origH);
+
+  // Generate grid thumbnail WebP
+  let gridW = origW;
+  let gridH = origH;
+  if (origW > GRID_MAX_WIDTH) {
+    gridW = GRID_MAX_WIDTH;
+    gridH = Math.round(origH * (GRID_MAX_WIDTH / origW));
+  }
+  const gridWebP = await imageToWebP(img, gridW, gridH);
+
+  // Upload full-res to GitHub
+  const fullPath = `photos/${folderPrefix}/${paddedNum}.webp`;
+  await uploadFileToGitHub(fullPath, fullWebP, token);
+
+  // Upload grid to GitHub
+  const gridPath = `photos/${folderPrefix}/grid/${paddedNum}.webp`;
+  await uploadFileToGitHub(gridPath, gridWebP, token);
+
+  // Add to albums data
+  const newPhotoData = {
+    src: `${folderPrefix}/${paddedNum}.webp`,
+    grid: `${folderPrefix}/grid/${paddedNum}.webp`,
+    w: origW,
+    h: origH
+  };
+  albums[currentAlbum].push(newPhotoData);
+
+  // Update currentPhotos
+  currentPhotos.push({
+    full: `photos/${newPhotoData.src}`,
+    grid: `photos/${newPhotoData.grid}`,
+    width: origW,
+    height: origH
+  });
+
+  // Save updated photos.json
+  await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+
+  // Re-render
+  carouselBuiltForAlbum = null;
+  renderEditGrid();
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function imageToWebP(img, targetW, targetH) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+
+    // Draw image (this strips EXIF)
+    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+    canvas.toBlob((blob) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Return base64 without the data:... prefix
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      };
+      reader.readAsDataURL(blob);
+    }, 'image/webp', WEBP_QUALITY);
+  });
+}
+
+async function uploadFileToGitHub(path, base64Content, token) {
+  // Check if file already exists (need SHA for update)
+  let sha = null;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      sha = data.sha;
+    }
+  } catch(e) {}
+
+  const body = {
+    message: `Upload ${path}`,
+    content: base64Content
+  };
+  if (sha) body.sha = sha;
+
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(`GitHub upload failed (${res.status}): ${err.message}`);
+  }
 }
 
 async function saveOrder() {
