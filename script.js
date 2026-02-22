@@ -56,15 +56,21 @@ async function loadAlbums() {
   }
 }
 
-function switchAlbum(albumName, clickedElement = null) {
-  // If in edit mode, save current album's reorder before switching
-  if (editMode && currentAlbum && currentPhotos.length) {
+function syncCurrentAlbum() {
+  if (currentAlbum && albums[currentAlbum] !== undefined) {
     albums[currentAlbum] = currentPhotos.map(p => ({
       src: p.full.replace('photos/', ''),
       grid: p.grid.replace('photos/', ''),
       w: p.width,
       h: p.height
     }));
+  }
+}
+
+function switchAlbum(albumName, clickedElement = null) {
+  // If in edit mode, save current album's reorder before switching
+  if (editMode && currentAlbum) {
+    syncCurrentAlbum();
   }
 
   currentAlbum = albumName;
@@ -1572,8 +1578,8 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 
   // Find target album's folder prefix for the move record
   const targetPhotos = albums[targetAlbum];
-  let targetFolderPrefix = targetAlbum;
-  if (targetPhotos.length > 0) {
+  let targetFolderPrefix = targetAlbum === '_unsorted' ? 'unsorted' : targetAlbum;
+  if (targetPhotos && targetPhotos.length > 0) {
     targetFolderPrefix = targetPhotos[0].src.split('/')[0];
   }
 
@@ -1595,14 +1601,7 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 
   // Remove from current album
   currentPhotos.splice(photoIndex, 1);
-
-  // Sync current album back
-  albums[currentAlbum] = currentPhotos.map(p => ({
-    src: p.full.replace('photos/', ''),
-    grid: p.grid.replace('photos/', ''),
-    w: p.width,
-    h: p.height
-  }));
+  syncCurrentAlbum();
 
   // Add to target album (with original paths)
   albums[targetAlbum].push(newPhotoData);
@@ -2745,6 +2744,7 @@ async function deleteUnsortedPhoto(index) {
     await deleteFileFromGitHub(`photos/${photo.src}`, token);
     await deleteFileFromGitHub(`photos/${photo.grid}`, token);
     albums._unsorted.splice(index, 1);
+    syncCurrentAlbum();
     await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
     renderUnsortedTray();
     label.textContent = 'EDIT MODE';
@@ -2889,6 +2889,23 @@ function hideTrayHover() {
 
 function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
   const photo = albums._unsorted[unsortedIndex];
+  const filename = photo.src.split('/').pop();
+  const srcFolder = photo.src.split('/')[0];
+
+  // Find target folder prefix
+  const targetPhotos = albums[targetAlbum];
+  let targetFolderPrefix = targetAlbum;
+  if (targetPhotos && targetPhotos.length > 0) {
+    targetFolderPrefix = targetPhotos[0].src.split('/')[0];
+  }
+
+  // Record the move for the server-side script
+  pendingMoves.push({
+    file: filename,
+    from: srcFolder,
+    to: targetFolderPrefix
+  });
+
   albums._unsorted.splice(unsortedIndex, 1);
   albums[targetAlbum].push(photo);
 
@@ -2919,13 +2936,7 @@ function deletePhoto(photoIndex) {
 
   // Remove from local state
   currentPhotos.splice(photoIndex, 1);
-
-  albums[currentAlbum] = currentPhotos.map(p => ({
-    src: p.full.replace('photos/', ''),
-    grid: p.grid.replace('photos/', ''),
-    w: p.width,
-    h: p.height
-  }));
+  syncCurrentAlbum();
 
   carouselBuiltForAlbum = null;
   renderEditGrid();
@@ -3081,6 +3092,9 @@ async function uploadSinglePhoto(file, token) {
   // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
   unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
+  // Sync current album state before saving (so in-progress reorders are included)
+  syncCurrentAlbum();
+
   // Save updated photos.json
   await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
 
@@ -3171,14 +3185,7 @@ async function saveOrder() {
 
   try {
     // Sync current album's photos back into albums
-    if (currentAlbum && albums[currentAlbum] !== undefined) {
-      albums[currentAlbum] = currentPhotos.map(p => ({
-        src: p.full.replace('photos/', ''),
-        grid: p.grid.replace('photos/', ''),
-        w: p.width,
-        h: p.height
-      }));
-    }
+    syncCurrentAlbum();
 
     // Strip deleted photos from albums BEFORE saving anything
     if (pendingDeletes.length > 0) {
