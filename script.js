@@ -945,33 +945,6 @@ lightbox.addEventListener('touchstart', (e) => {
   // Skip if pinch just ended (prevents glitch from leftover finger)
   if (pinchJustEnded) return;
 
-  // Double-tap to zoom
-  const now = Date.now();
-  const timeSinceLastTap = now - lastTapTime;
-  lastTapTime = now;
-
-  if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
-    e.preventDefault();
-    const img = getCurrentSlideImg();
-    if (!img) return;
-
-    if (zoomScale > 1) {
-      resetZoom();
-    } else {
-      zoomScale = 2.5;
-      const tapX = e.touches[0].clientX;
-      const tapY = e.touches[0].clientY;
-      panOffsetX = (window.innerWidth / 2 - tapX) * (zoomScale - 1);
-      panOffsetY = (window.innerHeight / 2 - tapY) * (zoomScale - 1);
-      clampPan();
-      img.style.transition = 'transform 0.3s ease';
-      applyZoom(img);
-      setTimeout(() => { img.style.transition = ''; }, 300);
-    }
-    isDragging = false;
-    return;
-  }
-
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
   touchCurrentX = touchStartX;
@@ -1124,10 +1097,49 @@ lightbox.addEventListener('touchend', (e) => {
         setTimeout(() => { img.style.transition = ''; }, 300);
       }
     }
+    // Check double-tap even while zoomed (to zoom out)
+    const moveDist = Math.abs(touchCurrentX - touchStartX) + Math.abs(touchCurrentY - touchStartY);
+    if (moveDist < 15) {
+      const now = Date.now();
+      if (now - lastTapTime < 300 && lastTapTime > 0) {
+        lastTapTime = 0;
+        resetZoom();
+        return;
+      }
+      lastTapTime = now;
+    } else {
+      lastTapTime = 0;
+    }
     return;
   }
 
-  if (!isDragging) return;
+  // Double-tap detection: only count as tap if minimal movement
+  const wasTap = !gestureDirection && Math.abs(touchCurrentX - touchStartX) + Math.abs(touchCurrentY - touchStartY) < 15;
+
+  if (!isDragging) {
+    // Still check for double-tap on non-drag touches
+    if (wasTap) {
+      const now = Date.now();
+      if (now - lastTapTime < 300 && lastTapTime > 0) {
+        lastTapTime = 0;
+        const img = getCurrentSlideImg();
+        if (img) {
+          zoomScale = 2.5;
+          panOffsetX = (window.innerWidth / 2 - touchStartX) * (zoomScale - 1);
+          panOffsetY = (window.innerHeight / 2 - touchStartY) * (zoomScale - 1);
+          clampPan();
+          img.style.transition = 'transform 0.3s ease';
+          applyZoom(img);
+          setTimeout(() => { img.style.transition = ''; }, 300);
+        }
+        return;
+      }
+      lastTapTime = now;
+    } else {
+      lastTapTime = 0;
+    }
+    return;
+  }
   isDragging = false;
 
   const deltaX = touchCurrentX - touchStartX;
@@ -1167,6 +1179,13 @@ lightbox.addEventListener('touchend', (e) => {
       lbTrack.style.transform = `translateX(${baseOffset}px) translateY(0) scale(1)`;
       lightbox.style.background = '';
     }
+  }
+
+  // Only count as a tap for double-tap if there was no real gesture
+  if (wasTap) {
+    lastTapTime = Date.now();
+  } else {
+    lastTapTime = 0;
   }
 
   gestureDirection = null;
