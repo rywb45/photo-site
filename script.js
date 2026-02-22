@@ -2281,6 +2281,19 @@ function renderEditGrid() {
     });
     item.appendChild(deleteBtn);
 
+    // Add unsort button (send back to unsorted)
+    const unsortBtn = document.createElement('button');
+    unsortBtn.className = 'edit-unsort-btn';
+    unsortBtn.style.fontSize = `${btnSize}px`;
+    unsortBtn.innerHTML = '↩';
+    unsortBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      movePhotoToAlbum(i, '_unsorted');
+      renderUnsortedTray();
+    });
+    item.appendChild(unsortBtn);
+
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
       const downX = e.clientX;
@@ -2703,13 +2716,13 @@ function renderUnsortedTray() {
 
     thumb.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      startTrayDrag(i, e.clientX, e.clientY, false);
+      startTrayDrag(i, e.clientX, e.clientY);
     });
 
-    thumb.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) return;
-      const touch = e.touches[0];
-      startTrayDrag(i, touch.clientX, touch.clientY, true);
+    thumb.addEventListener('click', (e) => {
+      if (thumb._dragged) return;
+      if (!currentAlbum) return;
+      moveFromUnsortedToAlbum(i, currentAlbum);
     });
 
     thumb.addEventListener('mouseenter', () => showTrayHover(photo, thumb));
@@ -2742,9 +2755,10 @@ async function deleteUnsortedPhoto(index) {
   }
 }
 
-function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
+function startTrayDrag(unsortedIndex, initX, initY) {
   const photo = albums._unsorted[unsortedIndex];
   const imgSrc = `photos/${photo.grid}`;
+  const thumb = document.querySelectorAll('.unsorted-thumb')[unsortedIndex];
 
   let mx = initX;
   let my = initY;
@@ -2753,21 +2767,15 @@ function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
   const startX = initX;
   const startY = initY;
 
-  function updateDrag(cx, cy) {
-    mx = cx;
-    my = cy;
+  function onMove(ev) {
+    mx = ev.clientX;
+    my = ev.clientY;
+    const dist = Math.sqrt(Math.pow(mx - startX, 2) + Math.pow(my - startY, 2));
+    if (!hasDragged && dist < 6) return;
+
     if (!hasDragged) {
-      const dx = Math.abs(mx - startX);
-      const dy = Math.abs(my - startY);
-      // Require upward movement and primarily vertical to distinguish from tray scroll
-      if (isTouch) {
-        if (dx > 10 && dx > dy) return -1; // horizontal — let tray scroll
-        if (dy < 10) return 0; // not enough movement yet
-      } else {
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 6) return 0;
-      }
       hasDragged = true;
+      if (thumb) thumb._dragged = true;
       hideTrayHover();
       clone = document.createElement('div');
       clone.style.cssText = `
@@ -2791,7 +2799,7 @@ function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
       const trayRect = trayEl.getBoundingClientRect();
       const distFromTray = Math.max(0, trayRect.top - my);
       const growT = Math.min(1, distFromTray / 200);
-      scale = 1 + growT * 1.2; // grow up to ~2.2x from thumbnail size
+      scale = 1 + growT * 1.2;
     }
     const sidebarEdge = 280;
     if (mx < sidebarEdge + 100) {
@@ -2808,10 +2816,14 @@ function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
     });
   }
 
-  function finishTrayDrop() {
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
     if (clone) { clone.remove(); }
     document.querySelectorAll('#albumNav a').forEach(l => l.classList.remove('edit-album-photo-target'));
     if (!hasDragged) return;
+    // Clear dragged flag after click event fires
+    setTimeout(() => { if (thumb) thumb._dragged = false; }, 0);
 
     let droppedAlbum = null;
     document.querySelectorAll('#albumNav a').forEach(link => {
@@ -2822,7 +2834,6 @@ function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
     });
 
     if (!droppedAlbum) {
-      // Accept drops anywhere in the main content area (above the edit bar)
       const editBar = document.getElementById('editBar');
       const barTop = editBar ? editBar.getBoundingClientRect().top : window.innerHeight;
       if (my < barTop && currentAlbum) {
@@ -2835,40 +2846,8 @@ function startTrayDrag(unsortedIndex, initX, initY, isTouch) {
     }
   }
 
-  if (isTouch) {
-    let cancelled = false;
-    function onTouchMove(ev) {
-      if (cancelled || !ev.touches.length) return;
-      const t = ev.touches[0];
-      const result = updateDrag(t.clientX, t.clientY);
-      if (result === -1) {
-        // Horizontal movement — cancel drag, let tray scroll
-        cancelled = true;
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onTouchEnd);
-        return;
-      }
-      if (hasDragged) ev.preventDefault();
-    }
-    function onTouchEnd() {
-      document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend', onTouchEnd);
-      if (!cancelled) finishTrayDrop();
-    }
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend', onTouchEnd);
-  } else {
-    function onMouseMove(ev) {
-      updateDrag(ev.clientX, ev.clientY);
-    }
-    function onMouseUp() {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      finishTrayDrop();
-    }
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 }
 
 let trayHoverEl = null;
