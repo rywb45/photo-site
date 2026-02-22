@@ -795,29 +795,44 @@ body.inverted .edit-save {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   background: none;
-  border: 1px solid #888;
-  color: #888;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  padding: 6px 10px;
+  border: none;
+  color: #666;
+  padding: 6px;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 }
 
-.unsorted-btn:hover { border-color: #555; color: #bbb; }
-.unsorted-btn.active { border-color: #666; color: #fff; background: #1a1a1a; }
-.unsorted-btn.drag-target { border-color: #fff; color: #fff; background: #222; box-shadow: 0 0 0 1px rgba(255,255,255,0.3); }
+.unsorted-btn:hover { opacity: 0.8; }
+.unsorted-btn.active { color: #fff; }
+.unsorted-btn.drag-target { color: #fff; background: #222; }
 
-body:not(.inverted) .unsorted-btn { border-color: #ccc; color: #666; }
-body:not(.inverted) .unsorted-btn:hover { border-color: #999; color: #444; }
-body:not(.inverted) .unsorted-btn.active { border-color: #999; color: #000; background: #f0f0f0; }
+body:not(.inverted) .unsorted-btn { color: #666; }
+body:not(.inverted) .unsorted-btn.active { color: #000; }
 
-.unsorted-btn svg { width: 14px; height: 14px; opacity: 0.7; }
+.unsorted-btn svg { width: 14px; height: 14px; }
+
+/* Unsorted badge */
+.unsorted-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  background: #d44;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  padding: 0 4px;
+  display: none;
+}
+
+.unsorted-badge.visible { display: block; }
 
 /* Unsorted tray */
 .unsorted-tray {
@@ -923,15 +938,6 @@ body:not(.inverted) .unsorted-tray-title { color: #999; }
 .unsorted-thumb:hover .unsorted-thumb-del { opacity: 1; }
 .unsorted-thumb-del:hover { background: rgba(220,40,40,0.85); }
 
-.unsorted-empty {
-  padding: 16px 24px 20px;
-  text-align: center;
-  color: #333;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
-body:not(.inverted) .unsorted-empty { color: #bbb; }
 
 /* Album actions (pencil + x) */
 body.edit-mode #albumNav a {

@@ -2014,15 +2014,16 @@ function showEditBar() {
   bar.innerHTML = `
     <div class="edit-bar-left">
       <span class="edit-bar-label">EDIT MODE</span>
+    </div>
+    <div class="edit-bar-actions">
       <button class="unsorted-btn" id="unsortedBtn" onclick="toggleUnsortedTray()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <path d="M21 15l-5-5L5 21"/>
         </svg>
+        <span class="unsorted-badge" id="unsortedBadge"></span>
       </button>
-    </div>
-    <div class="edit-bar-actions">
       <label class="edit-bar-btn edit-upload-label" title="Upload photos">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -2047,9 +2048,6 @@ function showEditBar() {
       <button class="unsorted-tray-close" onclick="toggleUnsortedTray()">×</button>
     </div>
     <div class="unsorted-tray-strip" id="unsortedStrip"></div>
-    <div class="unsorted-empty" id="unsortedEmpty" style="display:none">
-      No unsorted photos. Deleted albums move their photos here.
-    </div>
   `;
   document.body.appendChild(tray);
   renderUnsortedTray();
@@ -2073,22 +2071,22 @@ function toggleUnsortedTray() {
   btn.classList.toggle('active');
 }
 
+function updateUnsortedBadge() {
+  const badge = document.getElementById('unsortedBadge');
+  if (!badge) return;
+  const count = (albums._unsorted || []).length;
+  badge.textContent = count;
+  badge.classList.toggle('visible', count > 0);
+}
+
 function renderUnsortedTray() {
   const strip = document.getElementById('unsortedStrip');
-  const empty = document.getElementById('unsortedEmpty');
   if (!strip) return;
 
   const unsorted = albums._unsorted || [];
   strip.innerHTML = '';
 
-  if (unsorted.length === 0) {
-    strip.style.display = 'none';
-    if (empty) empty.style.display = '';
-    return;
-  }
-
-  strip.style.display = '';
-  if (empty) empty.style.display = 'none';
+  updateUnsortedBadge();
 
   unsorted.forEach((photo, i) => {
     const thumb = document.createElement('div');
@@ -2339,11 +2337,6 @@ async function handlePhotoUpload(e) {
     return;
   }
 
-  if (!currentAlbum) {
-    alert('Please select an album first.');
-    return;
-  }
-
   // Show progress
   const bar = document.getElementById('editBar');
   const label = bar.querySelector('.edit-bar-label');
@@ -2371,22 +2364,16 @@ async function uploadSinglePhoto(file, token) {
   const origW = img.naturalWidth;
   const origH = img.naturalHeight;
 
-  // Determine the next filename number
-  const albumPhotos = albums[currentAlbum] || [];
-  const existingNums = albumPhotos.map(p => {
+  // Determine the next filename number from unsorted
+  const unsortedPhotos = albums._unsorted || [];
+  const existingNums = unsortedPhotos.map(p => {
     const name = p.src.split('/').pop().replace('.webp', '');
     return parseInt(name) || 0;
   });
   const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
   const paddedNum = String(nextNum).padStart(3, '0');
 
-  // Get album folder prefix from existing photos
-  let folderPrefix;
-  if (albumPhotos.length > 0) {
-    folderPrefix = albumPhotos[0].src.split('/')[0];
-  } else {
-    folderPrefix = currentAlbum;
-  }
+  const folderPrefix = 'unsorted';
 
   // Generate full-res WebP
   const fullWebP = await imageToWebP(img, origW, origH);
@@ -2408,29 +2395,20 @@ async function uploadSinglePhoto(file, token) {
   const gridPath = `photos/${folderPrefix}/grid/${paddedNum}.webp`;
   await uploadFileToGitHub(gridPath, gridWebP, token);
 
-  // Add to albums data
+  // Add to unsorted tray
   const newPhotoData = {
     src: `${folderPrefix}/${paddedNum}.webp`,
     grid: `${folderPrefix}/grid/${paddedNum}.webp`,
     w: origW,
     h: origH
   };
-  albums[currentAlbum].push(newPhotoData);
-
-  // Update currentPhotos
-  currentPhotos.push({
-    full: `photos/${newPhotoData.src}`,
-    grid: `photos/${newPhotoData.grid}`,
-    width: origW,
-    height: origH
-  });
+  albums._unsorted.push(newPhotoData);
 
   // Save updated photos.json
   await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
 
-  // Re-render
-  carouselBuiltForAlbum = null;
-  renderEditGrid();
+  // Re-render tray
+  renderUnsortedTray();
 }
 
 function loadImage(file) {
