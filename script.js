@@ -6,6 +6,7 @@ let albums = {};
 let currentAlbum = null;
 let currentPhotos = [];
 let currentIndex = 0;
+const unsortedPreviews = new Map();
 
 // Performance: Track which album carousel is built for
 let carouselBuiltForAlbum = null;
@@ -159,7 +160,8 @@ function renderGrid() {
         itemDiv.style.height = `${adjustedHeight}px`;
 
         const img = document.createElement('img');
-        img.src = itemWidth > GRID_MAX_WIDTH ? item.full : item.grid;
+        const gridKey = item.grid.replace('photos/', '');
+        img.src = unsortedPreviews.get(gridKey) || (itemWidth > GRID_MAX_WIDTH ? item.full : item.grid);
         img.alt = '';
         img.loading = 'lazy';
         img.width = Math.round(itemWidth);
@@ -2109,7 +2111,7 @@ function renderUnsortedTray() {
     thumb.className = 'unsorted-thumb';
 
     const img = document.createElement('img');
-    img.src = `photos/${photo.grid}`;
+    img.src = unsortedPreviews.get(photo.grid) || `photos/${photo.grid}`;
     img.draggable = false;
     thumb.appendChild(img);
 
@@ -2419,6 +2421,9 @@ async function uploadSinglePhoto(file, token) {
     h: origH
   };
   albums._unsorted.push(newPhotoData);
+
+  // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
+  unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
   // Save updated photos.json
   await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
