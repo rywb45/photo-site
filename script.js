@@ -3067,12 +3067,17 @@ async function uploadSinglePhoto(file, token) {
     throw new Error(`invalid dimensions (${origW}x${origH})`);
   }
 
-  // Determine the next filename number from unsorted
-  const unsortedPhotos = albums._unsorted || [];
-  const existingNums = unsortedPhotos.map(p => {
-    const name = p.src.split('/').pop().replace('.webp', '');
-    return parseInt(name) || 0;
-  });
+  // Determine the next filename number by scanning ALL albums for unsorted/ paths
+  // (photos moved to albums keep their unsorted/ paths until server-side move runs)
+  const existingNums = [];
+  for (const photos of Object.values(albums)) {
+    for (const p of photos) {
+      if (p.src.startsWith('unsorted/')) {
+        const num = parseInt(p.src.split('/').pop().replace('.webp', '')) || 0;
+        existingNums.push(num);
+      }
+    }
+  }
   const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
   const paddedNum = String(nextNum).padStart(3, '0');
 
