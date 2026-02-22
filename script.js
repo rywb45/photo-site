@@ -1331,13 +1331,53 @@ document.querySelector('.sidebar h1').addEventListener('click', () => {
 function attemptLogin() {
   let token = localStorage.getItem('gh_token');
 
-  if (!token) {
-    token = prompt('GitHub Personal Access Token:');
-    if (!token) return;
-    localStorage.setItem('gh_token', token);
+  if (token) {
+    enterEditMode();
+    return;
   }
 
-  enterEditMode();
+  // Show custom login modal
+  const backdrop = document.createElement('div');
+  backdrop.className = 'login-modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="login-modal">
+      <div class="login-modal-title">GitHub Token</div>
+      <input type="password" class="login-modal-input" placeholder="Personal Access Token" autocomplete="off" spellcheck="false">
+      <div class="login-modal-buttons">
+        <button class="login-modal-btn login-modal-cancel">CANCEL</button>
+        <button class="login-modal-btn login-modal-submit">SUBMIT</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const input = backdrop.querySelector('.login-modal-input');
+  const cancelBtn = backdrop.querySelector('.login-modal-cancel');
+  const submitBtn = backdrop.querySelector('.login-modal-submit');
+
+  requestAnimationFrame(() => input.focus());
+
+  function dismiss() {
+    backdrop.remove();
+  }
+
+  function submit() {
+    const val = input.value.trim();
+    if (!val) return;
+    localStorage.setItem('gh_token', val);
+    dismiss();
+    enterEditMode();
+  }
+
+  cancelBtn.addEventListener('click', dismiss);
+  submitBtn.addEventListener('click', submit);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) dismiss();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submit();
+    if (e.key === 'Escape') dismiss();
+  });
 }
 
 function enterEditMode() {
@@ -2007,6 +2047,13 @@ function renderEditGrid() {
   let rafId = null;
   let itemRects = [];
 
+  // Touch drag state
+  let touchLongPressTimer = null;
+  let touchDragActive = false;
+  let touchStartX = 0, touchStartY = 0;
+  let touchLongPressItem = null;
+  let touchLongPressIndex = null;
+
   // Cached DOM refs for drag loop (avoid per-frame getElementById)
   let cachedNavLinks = null;
   let cachedUnsortedBtn = null;
@@ -2029,6 +2076,50 @@ function renderEditGrid() {
         h: rect.height
       };
     });
+  }
+
+  function startDrag(item, index, x, y) {
+    dragSrcIndex = index;
+    startX = x;
+    startY = y;
+    mouseX = x;
+    mouseY = y;
+
+    const rect = item.getBoundingClientRect();
+    const imgEl = item.querySelector('img');
+    const imgSrc = imgEl ? imgEl.src : '';
+
+    clone = document.createElement('div');
+    clone._startLeft = rect.left;
+    clone._startTop = rect.top;
+    clone._offsetX = x - rect.left;
+    clone._offsetY = y - rect.top;
+    clone._shown = false;
+    clone.style.cssText = `
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: ${rect.width}px;
+      height: ${rect.height}px;
+      z-index: 10000;
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0.85;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+      border-radius: 4px;
+      overflow: hidden;
+      will-change: transform;
+      background-image: url('${imgSrc}');
+      background-size: cover;
+      background-position: center;
+      transform: translate(${rect.left}px, ${rect.top}px);
+    `;
+    document.body.appendChild(clone);
+
+    item.classList.add('edit-dragging');
+    isDragging = true;
+    cachePositions();
+    rafId = requestAnimationFrame(animationLoop);
   }
 
   function animationLoop() {
@@ -2195,68 +2286,49 @@ function renderEditGrid() {
       const downX = e.clientX;
       const downY = e.clientY;
       const downIndex = i;
-      let activated = false;
 
       function onFirstMove(ev) {
         const dist = Math.sqrt(Math.pow(ev.clientX - downX, 2) + Math.pow(ev.clientY - downY, 2));
         if (dist < 8) return;
 
-        // Passed threshold — start real drag
-        activated = true;
         document.removeEventListener('mousemove', onFirstMove);
-
-        dragSrcIndex = downIndex;
-        startX = downX;
-        startY = downY;
+        startDrag(item, downIndex, downX, downY);
         mouseX = ev.clientX;
         mouseY = ev.clientY;
-
-        const rect = item.getBoundingClientRect();
-        const imgEl = item.querySelector('img');
-        const imgSrc = imgEl ? imgEl.src : '';
-
-        clone = document.createElement('div');
-        clone._startLeft = rect.left;
-        clone._startTop = rect.top;
-        clone._offsetX = downX - rect.left;
-        clone._offsetY = downY - rect.top;
-        clone._shown = false;
-        clone.style.cssText = `
-          position: fixed;
-          left: 0;
-          top: 0;
-          width: ${rect.width}px;
-          height: ${rect.height}px;
-          z-index: 10000;
-          pointer-events: none;
-          visibility: hidden;
-          opacity: 0.85;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-          border-radius: 4px;
-          overflow: hidden;
-          will-change: transform;
-          background-image: url('${imgSrc}');
-          background-size: cover;
-          background-position: center;
-          transform: translate(${rect.left}px, ${rect.top}px);
-        `;
-        document.body.appendChild(clone);
-
-        item.classList.add('edit-dragging');
-        isDragging = true;
-        cachePositions();
-        rafId = requestAnimationFrame(animationLoop);
       }
 
       function onFirstUp() {
         document.removeEventListener('mousemove', onFirstMove);
         document.removeEventListener('mouseup', onFirstUp);
-        // If we never activated, it was just a click — do nothing
       }
 
       document.addEventListener('mousemove', onFirstMove);
       document.addEventListener('mouseup', onFirstUp);
     });
+
+    // Touch: long-press to drag
+    item.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const downX = touch.clientX;
+      const downY = touch.clientY;
+      const downIndex = i;
+
+      touchLongPressItem = item;
+      touchLongPressIndex = downIndex;
+      touchStartX = downX;
+      touchStartY = downY;
+      touchDragActive = false;
+
+      item.classList.add('touch-lifting');
+
+      touchLongPressTimer = setTimeout(() => {
+        touchDragActive = true;
+        item.classList.remove('touch-lifting');
+        if (navigator.vibrate) navigator.vibrate(50);
+        startDrag(item, downIndex, downX, downY);
+      }, 400);
+    }, { passive: true });
   });
 
   function onMouseMove(e) {
@@ -2291,7 +2363,7 @@ function renderEditGrid() {
     if (cachedUnsortedBtn) cachedUnsortedBtn.classList.toggle('drag-target', overUnsorted);
   }
 
-  function onMouseUp(e) {
+  function finishDrop() {
     if (!isDragging) return;
     isDragging = false;
     cancelAnimationFrame(rafId);
@@ -2414,16 +2486,87 @@ function renderEditGrid() {
     dragSrcIndex = null;
   }
 
+  function onMouseUp(e) {
+    finishDrop();
+  }
+
+  function onTouchMove(e) {
+    if (touchLongPressTimer && !touchDragActive) {
+      // Check if finger moved too far — cancel long-press
+      const touch = e.touches[0];
+      const dx = touch.clientX - touchStartX;
+      const dy = touch.clientY - touchStartY;
+      if (dx * dx + dy * dy > 100) { // 10px threshold
+        clearTimeout(touchLongPressTimer);
+        touchLongPressTimer = null;
+        if (touchLongPressItem) touchLongPressItem.classList.remove('touch-lifting');
+      }
+      return;
+    }
+
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    mouseX = touch.clientX;
+    mouseY = touch.clientY;
+
+    // Check sidebar album links (same as onMouseMove)
+    cachedNavLinks.forEach(link => {
+      const rect = link.getBoundingClientRect();
+      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      if (over && link.dataset.album !== currentAlbum) {
+        link.classList.add('edit-album-photo-target');
+      } else {
+        link.classList.remove('edit-album-photo-target');
+      }
+    });
+
+    let overUnsorted = false;
+    if (cachedUnsortedBtn) {
+      const rect = cachedUnsortedBtn.getBoundingClientRect();
+      overUnsorted = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                     mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+    }
+    if (!overUnsorted && cachedUnsortedTray && cachedUnsortedTray.classList.contains('open')) {
+      const rect = cachedUnsortedTray.getBoundingClientRect();
+      overUnsorted = mouseX >= rect.left && mouseX <= rect.right &&
+                     mouseY >= rect.top && mouseY <= rect.bottom;
+    }
+    if (cachedUnsortedBtn) cachedUnsortedBtn.classList.toggle('drag-target', overUnsorted);
+  }
+
+  function onTouchEnd(e) {
+    if (touchLongPressTimer) {
+      clearTimeout(touchLongPressTimer);
+      touchLongPressTimer = null;
+    }
+    if (touchLongPressItem) {
+      touchLongPressItem.classList.remove('touch-lifting');
+      touchLongPressItem = null;
+    }
+
+    if (touchDragActive) {
+      finishDrop();
+      touchDragActive = false;
+    }
+  }
+
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd);
 
   grid._editCleanup = () => {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
     grid.removeEventListener('dragover', handleDragOver);
     grid.removeEventListener('dragleave', handleDragLeave);
     grid.removeEventListener('drop', handleDrop);
     cancelAnimationFrame(rafId);
+    if (touchLongPressTimer) clearTimeout(touchLongPressTimer);
   };
 }
 
