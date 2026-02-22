@@ -1774,7 +1774,7 @@ function renderEditGrid() {
     // Add delete button
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'edit-delete-btn';
-    deleteBtn.innerHTML = '×';
+    deleteBtn.innerHTML = '✕';
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -2348,6 +2348,7 @@ async function deleteFileFromGitHub(path, token) {
     })
   });
 
+  if (delRes.status === 404) return; // Already gone
   if (!delRes.ok) {
     const err = await delRes.json();
     throw new Error(`GitHub delete failed (${delRes.status}): ${err.message}`);
