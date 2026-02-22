@@ -497,7 +497,7 @@ lightbox.addEventListener('dblclick', (e) => {
   if (zoomScale > 1) {
     resetZoom();
   } else {
-    zoomScale = 2.5;
+    zoomScale = 2;
     panOffsetX = (window.innerWidth / 2 - e.clientX) * (zoomScale - 1);
     panOffsetY = (window.innerHeight / 2 - e.clientY) * (zoomScale - 1);
     img.style.transition = 'transform 0.3s ease';
@@ -536,7 +536,7 @@ lightbox.addEventListener('wheel', (e) => {
 
     const prevScale = zoomScale;
     // Exponential scaling for smooth continuous zoom
-    zoomScale = Math.max(1, Math.min(zoomScale * Math.exp(-e.deltaY * 0.005), 5));
+    zoomScale = Math.max(1, Math.min(zoomScale * Math.exp(-e.deltaY * 0.005), 2));
 
     // Zoom toward cursor position
     const rect = img.getBoundingClientRect();
@@ -781,7 +781,7 @@ lightbox.addEventListener('touchstart', (e) => {
     if (zoomScale > 1) {
       resetZoom();
     } else {
-      zoomScale = 2.5;
+      zoomScale = 2;
       panOffsetX = 0;
       panOffsetY = 0;
       img.style.transition = 'transform 0.3s ease';
@@ -819,7 +819,7 @@ lightbox.addEventListener('touchmove', (e) => {
   if (isPinching && e.touches.length === 2) {
     e.preventDefault();
     const dist = getDistance(e.touches[0], e.touches[1]);
-    zoomScale = Math.max(1, Math.min(initialPinchScale * (dist / initialPinchDist), 5));
+    zoomScale = Math.max(1, Math.min(initialPinchScale * (dist / initialPinchDist), 2));
 
     const img = getCurrentSlideImg();
     if (img) {
