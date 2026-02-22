@@ -13,10 +13,22 @@
       "h": 1365
     },
     {
+      "src": "01-people/002.webp",
+      "grid": "01-people/grid/002.webp",
+      "w": 2048,
+      "h": 1463
+    },
+    {
       "src": "01-people/008.webp",
       "grid": "01-people/grid/008.webp",
       "w": 2048,
       "h": 1338
+    },
+    {
+      "src": "unsorted/006.webp",
+      "grid": "unsorted/grid/006.webp",
+      "w": 5472,
+      "h": 3648
     }
   ],
   "buildings": [
@@ -157,12 +169,6 @@
       "grid": "unsorted/grid/005.webp",
       "w": 3888,
       "h": 2592
-    },
-    {
-      "src": "unsorted/006.webp",
-      "grid": "unsorted/grid/006.webp",
-      "w": 5472,
-      "h": 3648
     }
   ]
 }
