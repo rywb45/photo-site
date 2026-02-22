@@ -838,7 +838,7 @@ body.inverted .edit-upload-label {
 }
 
 .edit-mobile-btn.active {
-  color: #000;
+  color: #fff;
 }
 
 body.inverted .edit-mobile-btn {
@@ -846,7 +846,7 @@ body.inverted .edit-mobile-btn {
 }
 
 body.inverted .edit-mobile-btn.active {
-  color: #fff;
+  color: #000;
 }
 
 body.mobile-preview .main {
