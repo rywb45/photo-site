@@ -951,7 +951,7 @@ body:not(.inverted) .unsorted-tray-title { color: #999; }
 
 body:not(.inverted) .unsorted-empty { color: #bbb; }
 
-/* Album actions (kebab menu) */
+/* Album actions (pencil + x) */
 body.edit-mode #albumNav a {
   display: flex;
   align-items: center;
@@ -960,67 +960,101 @@ body.edit-mode #albumNav a {
 }
 
 .album-actions {
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity 0.15s;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 4px;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
 body.edit-mode #albumNav a:hover .album-actions { opacity: 1; }
 
-.album-actions .kebab-dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #555;
-  transition: background 0.15s;
-}
-
-.album-actions:hover .kebab-dot { background: #999; }
-
-body:not(.inverted) .album-actions .kebab-dot { background: #bbb; }
-body:not(.inverted) .album-actions:hover .kebab-dot { background: #666; }
-
-/* Album context menu - pill */
-.album-context-menu {
-  position: fixed;
-  background: #1a1a1a;
-  border-radius: 20px;
-  padding: 4px;
-  z-index: 10010;
-  display: flex;
-  gap: 2px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-body:not(.inverted) .album-context-menu {
-  background: #eee;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-}
-
-.album-context-menu button {
+.album-action-btn {
   background: none;
   border: none;
-  color: #888;
-  font-family: inherit;
-  font-size: 11px;
-  padding: 6px 14px;
-  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  transition: color 0.15s;
 }
 
-.album-context-menu button:hover { background: #222; color: #fff; }
-.album-context-menu button.delete-option:hover { background: #2a1515; color: #d44; }
+.album-action-btn svg { width: 12px; height: 12px; }
+.album-action-btn:hover { color: #aaa; }
+.album-action-btn.delete:hover { color: #d44; }
 
-body:not(.inverted) .album-context-menu button { color: #666; }
-body:not(.inverted) .album-context-menu button:hover { background: #ddd; color: #000; }
-body:not(.inverted) .album-context-menu button.delete-option:hover { background: #fde8e8; color: #d44; }
+body:not(.inverted) .album-action-btn { color: #bbb; }
+body:not(.inverted) .album-action-btn:hover { color: #555; }
+body:not(.inverted) .album-action-btn.delete:hover { color: #d44; }
+
+/* Inline rename/delete input */
+.inline-rename-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.inline-rename-input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid #444;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  outline: none;
+  width: 130px;
+  padding: 0 0 2px 0;
+  transition: border-color 0.2s;
+}
+
+.inline-rename-input:focus { border-color: #888; }
+.inline-rename-input::placeholder { color: #333; }
+
+body:not(.inverted) .inline-rename-input {
+  color: #000;
+  border-color: #ccc;
+}
+body:not(.inverted) .inline-rename-input:focus { border-color: #888; }
+body:not(.inverted) .inline-rename-input::placeholder { color: #ccc; }
+
+.inline-rename-ok,
+.inline-rename-cancel {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.inline-rename-ok { color: #555; }
+.inline-rename-ok:hover { color: #fff; }
+.inline-rename-ok.delete { color: #555; }
+.inline-rename-ok.delete:hover { color: #d44; }
+.inline-rename-cancel { color: #333; }
+.inline-rename-cancel:hover { color: #888; }
+
+body:not(.inverted) .inline-rename-ok { color: #bbb; }
+body:not(.inverted) .inline-rename-ok:hover { color: #000; }
+body:not(.inverted) .inline-rename-ok.delete:hover { color: #d44; }
+body:not(.inverted) .inline-rename-cancel { color: #ccc; }
+body:not(.inverted) .inline-rename-cancel:hover { color: #666; }
+
+.inline-delete-msg {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #d44;
+  white-space: nowrap;
+}
 
 /* Add album button */
 .add-album-separator {
