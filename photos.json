@@ -63,6 +63,24 @@
       "grid": "01-people/grid/001.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "unsorted/002.webp",
+      "grid": "unsorted/grid/002.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/003.webp",
+      "grid": "unsorted/grid/003.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/001.webp",
+      "grid": "unsorted/grid/001.webp",
+      "w": 1365,
+      "h": 2048
     }
   ],
   "archive": [
@@ -139,24 +157,5 @@
       "h": 3940
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/001.webp",
-      "grid": "unsorted/grid/001.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/002.webp",
-      "grid": "unsorted/grid/002.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/003.webp",
-      "grid": "unsorted/grid/003.webp",
-      "w": 2048,
-      "h": 1365
-    }
-  ]
+  "_unsorted": []
 }
