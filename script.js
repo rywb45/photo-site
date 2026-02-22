@@ -1778,7 +1778,23 @@ function renderEditGrid() {
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-      deletePhoto(i);
+
+      // Show inline confirmation overlay
+      if (item.querySelector('.edit-delete-confirm')) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'edit-delete-confirm';
+      overlay.innerHTML = '<span>DELETE</span>';
+      item.appendChild(overlay);
+
+      const dismiss = () => { if (overlay.parentNode) overlay.remove(); };
+      const timer = setTimeout(dismiss, 3000);
+
+      overlay.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        clearTimeout(timer);
+        overlay.remove();
+        deletePhoto(i);
+      });
     });
     item.appendChild(deleteBtn);
 
