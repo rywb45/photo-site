@@ -176,6 +176,9 @@ function renderGrid() {
         img.loading = 'lazy';
         img.width = Math.round(itemWidth);
         img.height = Math.round(adjustedHeight);
+        img.onerror = function() {
+          if (this.src !== item.full) { this.src = item.full; }
+        };
         img.addEventListener('click', (e) => openLightbox(item.index, e.currentTarget));
 
         itemDiv.appendChild(img);
@@ -2724,6 +2727,10 @@ function renderUnsortedTray() {
     const img = document.createElement('img');
     img.src = unsortedPreviews.get(photo.grid) || `photos/${photo.grid}`;
     img.draggable = false;
+    img.onerror = function() {
+      const fullSrc = `photos/${photo.src}`;
+      if (this.src !== fullSrc) { this.src = fullSrc; }
+    };
     thumb.appendChild(img);
 
     const del = document.createElement('button');
@@ -3076,6 +3083,14 @@ async function uploadSinglePhoto(file, token) {
         const num = parseInt(p.src.split('/').pop().replace('.webp', '')) || 0;
         existingNums.push(num);
       }
+    }
+  }
+  // Also include pending deletes (files still on server until save)
+  for (const d of pendingDeletes) {
+    const src = d.full.replace('photos/', '');
+    if (src.startsWith('unsorted/')) {
+      const num = parseInt(src.split('/').pop().replace('.webp', '')) || 0;
+      existingNums.push(num);
     }
   }
   const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
