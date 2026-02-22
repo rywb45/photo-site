@@ -141,12 +141,6 @@
   ],
   "_unsorted": [
     {
-      "src": "unsorted/001.webp",
-      "grid": "unsorted/grid/001.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
       "src": "unsorted/002.webp",
       "grid": "unsorted/grid/002.webp",
       "w": 2048,
