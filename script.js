@@ -1248,7 +1248,7 @@ function rebuildAlbumNav() {
       actions.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        showAlbumContextMenu(albumName, e.clientX, e.clientY);
+        showAlbumContextMenu(albumName, actions);
       });
       link.appendChild(actions);
     }
@@ -1282,8 +1282,7 @@ function rebuildAlbumNav() {
   }
 }
 
-function showAlbumContextMenu(albumName, x, y) {
-  // Remove existing menu
+function showAlbumContextMenu(albumName, kebabEl) {
   closeAlbumContextMenu();
 
   const menu = document.createElement('div');
@@ -1291,7 +1290,7 @@ function showAlbumContextMenu(albumName, x, y) {
   menu.id = 'albumContextMenu';
 
   const renameBtn = document.createElement('button');
-  renameBtn.textContent = 'Rename';
+  renameBtn.textContent = 'rename';
   renameBtn.addEventListener('click', () => {
     closeAlbumContextMenu();
     renameAlbum(albumName);
@@ -1299,7 +1298,7 @@ function showAlbumContextMenu(albumName, x, y) {
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'delete-option';
-  deleteBtn.textContent = 'Delete';
+  deleteBtn.textContent = 'delete';
   deleteBtn.addEventListener('click', () => {
     closeAlbumContextMenu();
     deleteAlbum(albumName);
@@ -1307,18 +1306,19 @@ function showAlbumContextMenu(albumName, x, y) {
 
   menu.appendChild(renameBtn);
   menu.appendChild(deleteBtn);
-
-  // Position near click
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
   document.body.appendChild(menu);
 
-  // Adjust if off-screen
-  const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) menu.style.left = (x - rect.width) + 'px';
-  if (rect.bottom > window.innerHeight) menu.style.top = (y - rect.height) + 'px';
+  // Position pill to the right of the kebab dots
+  const kebabRect = kebabEl.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  menu.style.left = (kebabRect.right + 8) + 'px';
+  menu.style.top = (kebabRect.top + kebabRect.height / 2 - menuRect.height / 2) + 'px';
 
-  // Close on click outside
+  const finalRect = menu.getBoundingClientRect();
+  if (finalRect.right > window.innerWidth - 10) {
+    menu.style.left = (kebabRect.left - menuRect.width - 8) + 'px';
+  }
+
   setTimeout(() => {
     document.addEventListener('click', closeAlbumContextMenu, { once: true });
   }, 10);
@@ -1494,8 +1494,11 @@ function exitEditMode(saved) {
   if (addSep) addSep.classList.remove('visible');
   if (addBtn) addBtn.classList.remove('visible');
 
-  // Also remove album action kebabs immediately
-  document.querySelectorAll('.album-actions').forEach(a => a.style.opacity = '0');
+  // Also remove album action kebabs smoothly
+  document.querySelectorAll('.album-actions').forEach(a => {
+    a.style.transition = 'opacity 0.3s ease';
+    a.style.opacity = '0';
+  });
 
   // Delay rebuild to let animation finish
   setTimeout(() => {
@@ -1658,7 +1661,16 @@ function renderEditGrid() {
     if (clone) {
       const cx = mouseX - clone._offsetX;
       const cy = mouseY - clone._offsetY;
-      clone.style.transform = `translate(${cx}px, ${cy}px)`;
+
+      // Shrink clone when near sidebar (left 280px)
+      const sidebarEdge = 280;
+      let scale = 1;
+      if (mouseX < sidebarEdge + 100) {
+        const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
+        scale = 1 - t * 0.65; // shrink to ~35% size
+      }
+
+      clone.style.transform = `translate(${cx}px, ${cy}px) scale(${scale})`;
       if (!clone._shown) {
         clone._shown = true;
         clone.style.visibility = 'visible';
@@ -1958,8 +1970,12 @@ function showEditBar() {
       </button>
     </div>
     <div class="edit-bar-actions">
-      <label class="edit-bar-btn edit-upload-label">
-        UPLOAD
+      <label class="edit-bar-btn edit-upload-label" title="Upload photos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
         <input type="file" id="editUploadInput" accept="image/*" multiple style="display:none">
       </label>
       <button class="edit-bar-btn edit-cancel" onclick="exitEditMode()">CANCEL</button>
