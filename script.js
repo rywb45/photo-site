@@ -11,6 +11,10 @@ const unsortedPreviews = new Map();
 // Performance: Track which album carousel is built for
 let carouselBuiltForAlbum = null;
 
+// Virtual carousel: only 3 slides in DOM [prev, current, next]
+let virtualSlides = [];
+let isSnapping = false;
+
 // DOM elements
 const lightbox = document.getElementById('lightbox');
 const lbTrack = document.getElementById('lbTrack');
@@ -187,36 +191,51 @@ function buildCarousel() {
   if (carouselBuiltForAlbum === currentAlbum) return;
 
   lbTrack.innerHTML = '';
-  currentPhotos.forEach((photo) => {
+  virtualSlides = [];
+  for (let i = 0; i < 3; i++) {
     const slide = document.createElement('div');
     slide.className = 'lb-slide';
     const img = document.createElement('img');
-    img.src = photo.full;
     img.alt = '';
     slide.appendChild(img);
     lbTrack.appendChild(slide);
-  });
+    virtualSlides.push(slide);
+  }
+  updateVirtualSlides();
 
   buildDots();
   carouselBuiltForAlbum = currentAlbum;
 }
 
+function updateVirtualSlides() {
+  const prevIdx = currentIndex - 1;
+  const nextIdx = currentIndex + 1;
+  const slots = [prevIdx, currentIndex, nextIdx];
+  for (let s = 0; s < 3; s++) {
+    const img = virtualSlides[s].querySelector('img');
+    const idx = slots[s];
+    if (idx >= 0 && idx < currentPhotos.length) {
+      img.src = currentPhotos[idx].full;
+    } else {
+      img.removeAttribute('src');
+    }
+  }
+}
+
 function buildDots() {
   const dotsContainer = document.getElementById('lbDots');
   dotsContainer.innerHTML = '';
-  currentPhotos.forEach((_, index) => {
-    const dot = document.createElement('div');
-    dot.className = 'lb-dot';
-    dot.dataset.index = index;
-    dotsContainer.appendChild(dot);
-  });
+  const counter = document.createElement('span');
+  counter.className = 'lb-counter';
+  counter.textContent = `${currentIndex + 1} / ${currentPhotos.length}`;
+  dotsContainer.appendChild(counter);
 }
 
 function updateDots() {
-  const dots = document.querySelectorAll('.lb-dot');
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === currentIndex);
-  });
+  const counter = document.querySelector('.lb-counter');
+  if (counter) {
+    counter.textContent = `${currentIndex + 1} / ${currentPhotos.length}`;
+  }
 }
 
 function goToSlide(index, animate = true) {
@@ -227,20 +246,48 @@ function goToSlide(index, animate = true) {
     morphSource = null;
     morphRect = null;
   }
-  currentIndex = index;
-  const offset = -currentIndex * window.innerWidth;
-  if (animate) {
+
+  const centerOffset = -1 * window.innerWidth;
+
+  if (animate && index !== currentIndex) {
+    // If a snap is pending, complete it immediately
+    if (isSnapping) {
+      completeSnap();
+    }
+
+    const direction = index > currentIndex ? 2 : 0; // slot 2 = next, slot 0 = prev
+    const targetOffset = -direction * window.innerWidth;
+
     lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    lbTrack.style.transform = `translateX(${targetOffset}px)`;
+    isSnapping = true;
+
+    currentIndex = index;
+    updateDots();
+
+    // After animation, snap back to center with updated slides
+    setTimeout(() => {
+      completeSnap();
+    }, 310);
   } else {
+    currentIndex = index;
+    updateVirtualSlides();
     lbTrack.style.transition = 'none';
+    lbTrack.style.transform = `translateX(${centerOffset}px)`;
+    updateDots();
   }
-  lbTrack.style.transform = `translateX(${offset}px)`;
-  updateDots();
 
   if (window.innerWidth > 768) {
     lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
     lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
   }
+}
+
+function completeSnap() {
+  isSnapping = false;
+  updateVirtualSlides();
+  lbTrack.style.transition = 'none';
+  lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px)`;
 }
 
 // Morph transition state
@@ -288,7 +335,7 @@ function openLightbox(index, sourceImg) {
 
     // Set up the slide position now while hidden
     goToSlide(index, false);
-    lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+    lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
 
     // Force reflow
     morphClone.offsetHeight;
@@ -323,7 +370,7 @@ function openLightbox(index, sourceImg) {
     });
 
     // Preload the full-res image so we don't flash black
-    const fullImg = lbTrack.querySelectorAll('.lb-slide')[index]?.querySelector('img');
+    const fullImg = virtualSlides[1]?.querySelector('img');
     const openClone = morphClone; // capture reference for cleanup
     const revealLightbox = () => {
       // Guard: if lightbox was closed before image loaded, just clean up
@@ -367,7 +414,7 @@ function openLightbox(index, sourceImg) {
     goToSlide(index, false);
     lightbox.classList.add('active');
     lightbox.style.opacity = '1';
-    lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+    lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
     document.body.style.overflow = 'hidden';
 
     if (window.innerWidth > 768) {
@@ -595,7 +642,7 @@ lightbox.addEventListener('wheel', (e) => {
       const absDelta = Math.abs(wheelDeltaY);
       const progress = Math.min(absDelta / 300, 1);
       const opacity = 1 - (progress * 0.5);
-      const currentOffset = -currentIndex * window.innerWidth;
+      const currentOffset = -1 * window.innerWidth;
       lbTrack.style.transition = 'none';
       lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${absDelta}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
@@ -615,7 +662,7 @@ lightbox.addEventListener('wheel', (e) => {
 
         lbTrack.style.transition = 'transform 0.2s ease-out';
         lightbox.style.transition = 'background 0.2s ease-out';
-        lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
+        lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(${window.innerHeight}px)`;
         lightbox.style.background = 'rgba(255, 255, 255, 0)';
         setTimeout(() => {
           // Direct teardown — no closeLightbox to avoid pop-back
@@ -627,12 +674,12 @@ lightbox.addEventListener('wheel', (e) => {
           lightbox.style.transition = '';
           lbTrack.style.opacity = '';
           lbTrack.style.transition = 'none';
-          lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(0)`;
+          lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
         }, 210);
       } else {
         lbTrack.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         lightbox.style.transition = 'background 0.3s ease';
-        const currentOffset = -currentIndex * window.innerWidth;
+        const currentOffset = -1 * window.innerWidth;
         lbTrack.style.transform = `translateX(${currentOffset}px) translateY(0)`;
         lightbox.style.background = '';
         wheelDeltaY = 0;
@@ -658,7 +705,7 @@ lightbox.addEventListener('wheel', (e) => {
       wheelVelocity = e.deltaX / timeDelta;
     }
 
-    const baseOffset = -currentIndex * window.innerWidth;
+    const baseOffset = -1 * window.innerWidth;
     lbTrack.style.transform = `translateX(${baseOffset - wheelDeltaX}px)`;
 
     if (wheelTimeout) clearTimeout(wheelTimeout);
@@ -719,9 +766,8 @@ function getDistance(t1, t2) {
 }
 
 function getCurrentSlideImg() {
-  const slides = lbTrack.querySelectorAll('.lb-slide');
-  if (slides[currentIndex]) {
-    return slides[currentIndex].querySelector('img');
+  if (virtualSlides.length >= 2) {
+    return virtualSlides[1].querySelector('img');
   }
   return null;
 }
@@ -797,7 +843,7 @@ lightbox.addEventListener('touchstart', (e) => {
   touchCurrentX = touchStartX;
   touchCurrentY = touchStartY;
   startTime = Date.now();
-  baseOffset = -currentIndex * window.innerWidth;
+  baseOffset = -1 * window.innerWidth;
   gestureDirection = null;
 
   // If zoomed, start panning
@@ -879,7 +925,7 @@ lightbox.addEventListener('touchmove', (e) => {
     if (deltaY > 0) {
       const progress = Math.min(deltaY / 300, 1);
       const opacity = 1 - (progress * 0.5);
-      const currentOffset = -currentIndex * window.innerWidth;
+      const currentOffset = -1 * window.innerWidth;
       lbTrack.style.transform = `translateX(${currentOffset}px) translateY(${deltaY}px)`;
       lightbox.style.background = `rgba(255, 255, 255, ${0.7 * opacity})`;
     }
@@ -935,7 +981,7 @@ lightbox.addEventListener('touchend', (e) => {
     if (shouldDismiss) {
       lbTrack.style.transition = 'transform 0.3s ease-out';
       lightbox.style.transition = 'background 0.3s ease-out';
-      lbTrack.style.transform = `translateX(${-currentIndex * window.innerWidth}px) translateY(${window.innerHeight}px)`;
+      lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(${window.innerHeight}px)`;
       lightbox.style.background = 'rgba(255, 255, 255, 0)';
 
       setTimeout(() => {
@@ -1405,6 +1451,14 @@ function rebuildAlbumNav() {
 // ============================================
 // Album Management: Create, Rename, Delete
 // ============================================
+const RESERVED_ALBUM_NAMES = ['_unsorted', 'photos', 'grid'];
+
+function sanitizeAlbumKey(name) {
+  let key = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  key = key.replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
+  if (!key || RESERVED_ALBUM_NAMES.includes(key)) return '';
+  return key;
+}
 function createAlbum() {
   const addBtn = document.querySelector('.add-album-btn');
   if (!addBtn) return;
@@ -1430,7 +1484,8 @@ function createAlbum() {
     const name = input.value.trim();
     if (!name) { revert(); return; }
 
-    const key = name.toLowerCase().replace(/\s+/g, '-');
+    const key = sanitizeAlbumKey(name);
+    if (!key) { revert(); return; }
     if (albums[key]) {
       input.style.borderColor = '#d44';
       return;
@@ -1487,7 +1542,8 @@ function renameAlbum(oldName) {
     const newName = input.value.trim();
     if (!newName || newName.toLowerCase() === oldName) { revert(); return; }
 
-    const newKey = newName.toLowerCase().replace(/\s+/g, '-');
+    const newKey = sanitizeAlbumKey(newName);
+    if (!newKey) { revert(); return; }
     if (albums[newKey]) {
       input.style.borderColor = '#d44';
       return;
@@ -1756,6 +1812,18 @@ function renderEditGrid() {
   let rafId = null;
   let itemRects = [];
 
+  // Cached DOM refs for drag loop (avoid per-frame getElementById)
+  let cachedNavLinks = null;
+  let cachedUnsortedBtn = null;
+  let cachedUnsortedTray = null;
+
+  function refreshDragCaches() {
+    cachedNavLinks = document.querySelectorAll('#albumNav a');
+    cachedUnsortedBtn = document.getElementById('unsortedBtn');
+    cachedUnsortedTray = document.getElementById('unsortedTray');
+  }
+  refreshDragCaches();
+
   function cachePositions() {
     itemRects = items.map(item => {
       const rect = item.getBoundingClientRect();
@@ -1772,19 +1840,27 @@ function renderEditGrid() {
     if (!isDragging) return;
 
     const radius = 300;
+    const radiusSq = radius * radius;
     const strength = 50;
+    const vpTop = -300;
+    const vpBottom = window.innerHeight + 300;
 
-    items.forEach((item, i) => {
-      if (i === dragSrcIndex) return;
+    for (let i = 0; i < items.length; i++) {
+      if (i === dragSrcIndex) continue;
 
       const r = itemRects[i];
-      if (!r) return;
+      if (!r) continue;
+
+      // Viewport culling — skip items far off screen
+      if (r.cy < vpTop || r.cy > vpBottom) continue;
 
       const dx = r.cx - mouseX;
       const dy = r.cy - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const distSq = dx * dx + dy * dy;
+      const item = items[i];
 
-      if (dist < radius && dist > 0) {
+      if (distSq < radiusSq && distSq > 0) {
+        const dist = Math.sqrt(distSq);
         const t = 1 - dist / radius;
         const easedT = t * t;
         const force = easedT * strength;
@@ -1802,14 +1878,13 @@ function renderEditGrid() {
           item._pushed = false;
           item.style.transition = 'transform 0.4s cubic-bezier(0.25, 1.5, 0.4, 1)';
           item.style.transform = '';
-          // Restore animation after spring-back
           setTimeout(() => {
             item.style.transition = '';
             item.style.animation = '';
           }, 400);
         }
       }
-    });
+    }
 
     // Move clone with cursor
     if (clone) {
@@ -1821,23 +1896,20 @@ function renderEditGrid() {
       let scale = 1;
       if (mouseX < sidebarEdge + 100) {
         const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
-        scale = 1 - t * 0.65; // shrink to ~35% size
+        scale = 1 - t * 0.65;
       }
-      // Shrink clone when near unsorted tray (distance-based like sidebar)
-      const _unsortedBtn = document.getElementById('unsortedBtn');
-      const _unsortedTray = document.getElementById('unsortedTray');
       let trayDist = Infinity;
-      if (_unsortedBtn) {
-        const r = _unsortedBtn.getBoundingClientRect();
+      if (cachedUnsortedBtn) {
+        const r = cachedUnsortedBtn.getBoundingClientRect();
         const cxr = Math.max(r.left, Math.min(r.right, mouseX));
         const cyr = Math.max(r.top, Math.min(r.bottom, mouseY));
-        trayDist = Math.sqrt(Math.pow(mouseX - cxr, 2) + Math.pow(mouseY - cyr, 2));
+        trayDist = Math.sqrt((mouseX - cxr) ** 2 + (mouseY - cyr) ** 2);
       }
-      if (_unsortedTray && _unsortedTray.classList.contains('open')) {
-        const r = _unsortedTray.getBoundingClientRect();
+      if (cachedUnsortedTray && cachedUnsortedTray.classList.contains('open')) {
+        const r = cachedUnsortedTray.getBoundingClientRect();
         const cxr = Math.max(r.left, Math.min(r.right, mouseX));
         const cyr = Math.max(r.top, Math.min(r.bottom, mouseY));
-        trayDist = Math.min(trayDist, Math.sqrt(Math.pow(mouseX - cxr, 2) + Math.pow(mouseY - cyr, 2)));
+        trayDist = Math.min(trayDist, Math.sqrt((mouseX - cxr) ** 2 + (mouseY - cyr) ** 2));
       }
       if (trayDist < 120) {
         const t = Math.max(0, Math.min(1, 1 - trayDist / 120));
@@ -1856,27 +1928,28 @@ function renderEditGrid() {
 
   function findDropTarget() {
     let closest = null;
-    let closestDist = Infinity;
+    let closestDistSq = Infinity;
+    const thresholdSq = 350 * 350;
 
-    items.forEach((item, i) => {
-      if (i === dragSrcIndex) return;
+    for (let i = 0; i < items.length; i++) {
+      if (i === dragSrcIndex) continue;
       const r = itemRects[i];
-      
-      // Check if cursor is within or near the item's bounds
-      const withinX = mouseX >= r.cx - r.w / 2 - 40 && mouseX <= r.cx + r.w / 2 + 40;
-      const withinY = mouseY >= r.cy - r.h / 2 - 40 && mouseY <= r.cy + r.h / 2 + 40;
-      
+      if (!r) continue;
+
       const dx = r.cx - mouseX;
       const dy = r.cy - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      
-      if ((withinX && withinY) || dist < 350) {
-        if (dist < closestDist) {
-          closestDist = dist;
+      const distSq = dx * dx + dy * dy;
+
+      const withinX = mouseX >= r.cx - r.w / 2 - 40 && mouseX <= r.cx + r.w / 2 + 40;
+      const withinY = mouseY >= r.cy - r.h / 2 - 40 && mouseY <= r.cy + r.h / 2 + 40;
+
+      if ((withinX && withinY) || distSq < thresholdSq) {
+        if (distSq < closestDistSq) {
+          closestDistSq = distSq;
           closest = i;
         }
       }
-    });
+    }
 
     return closest;
   }
@@ -1996,9 +2069,8 @@ function renderEditGrid() {
     mouseX = e.clientX;
     mouseY = e.clientY;
 
-    // Check if hovering over a sidebar album link
-    const navLinks = document.querySelectorAll('#albumNav a');
-    navLinks.forEach(link => {
+    // Check if hovering over a sidebar album link (cached refs)
+    cachedNavLinks.forEach(link => {
       const rect = link.getBoundingClientRect();
       const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
                    mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
@@ -2009,21 +2081,19 @@ function renderEditGrid() {
       }
     });
 
-    // Check if hovering over unsorted button or open tray
-    const unsortedBtn = document.getElementById('unsortedBtn');
-    const unsortedTray = document.getElementById('unsortedTray');
+    // Check if hovering over unsorted button or open tray (cached refs)
     let overUnsorted = false;
-    if (unsortedBtn) {
-      const rect = unsortedBtn.getBoundingClientRect();
+    if (cachedUnsortedBtn) {
+      const rect = cachedUnsortedBtn.getBoundingClientRect();
       overUnsorted = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
                      mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
     }
-    if (!overUnsorted && unsortedTray && unsortedTray.classList.contains('open')) {
-      const rect = unsortedTray.getBoundingClientRect();
+    if (!overUnsorted && cachedUnsortedTray && cachedUnsortedTray.classList.contains('open')) {
+      const rect = cachedUnsortedTray.getBoundingClientRect();
       overUnsorted = mouseX >= rect.left && mouseX <= rect.right &&
                      mouseY >= rect.top && mouseY <= rect.bottom;
     }
-    if (unsortedBtn) unsortedBtn.classList.toggle('drag-target', overUnsorted);
+    if (cachedUnsortedBtn) cachedUnsortedBtn.classList.toggle('drag-target', overUnsorted);
   }
 
   function onMouseUp(e) {
@@ -2517,15 +2587,41 @@ async function deleteFileFromGitHub(path, token) {
 const GRID_MAX_WIDTH = 1000;
 const WEBP_QUALITY = 0.82;
 
+const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/tiff'];
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_DIMENSION = 20000;
+
 async function handlePhotoUpload(e) {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
+  const allFiles = Array.from(e.target.files);
+  if (!allFiles.length) return;
 
   const token = localStorage.getItem('gh_token');
   if (!token) {
     alert('No token found. Please log in again.');
     return;
   }
+
+  // Validate files
+  const rejected = [];
+  const validFiles = [];
+  for (const file of allFiles) {
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      rejected.push(`${file.name}: unsupported type (${file.type || 'unknown'})`);
+      continue;
+    }
+    if (file.size > MAX_UPLOAD_SIZE) {
+      rejected.push(`${file.name}: exceeds 50MB (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      continue;
+    }
+    validFiles.push(file);
+  }
+
+  if (rejected.length > 0) {
+    alert('Rejected files:\n' + rejected.join('\n'));
+  }
+
+  const files = validFiles;
+  if (!files.length) return;
 
   // Show progress
   const bar = document.getElementById('editBar');
@@ -2553,6 +2649,10 @@ async function uploadSinglePhoto(file, token) {
   const img = await loadImage(file);
   const origW = img.naturalWidth;
   const origH = img.naturalHeight;
+
+  if (origW <= 0 || origH <= 0 || origW > MAX_DIMENSION || origH > MAX_DIMENSION) {
+    throw new Error(`invalid dimensions (${origW}x${origH})`);
+  }
 
   // Determine the next filename number from unsorted
   const unsortedPhotos = albums._unsorted || [];
