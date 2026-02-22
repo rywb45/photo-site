@@ -800,7 +800,7 @@ body.inverted .edit-save {
   align-items: center;
   gap: 6px;
   background: none;
-  border: 1px solid #333;
+  border: 1px solid #555;
   color: #888;
   font-family: inherit;
   font-size: 12px;
