@@ -1602,35 +1602,44 @@ function playTypewriterOut(el) {
 }
 
 function renderEditGrid() {
-  renderGrid();
-
   const grid = document.getElementById('grid');
 
+  // Clean up previous edit handlers before rebuilding
+  if (grid._editCleanup) {
+    grid._editCleanup();
+    grid._editCleanup = null;
+  }
+
+  renderGrid();
+
   // Add drag-and-drop file upload zone
+  function handleDragOver(e) {
+    if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      e.stopPropagation();
+      grid.classList.add('edit-drop-active');
+    }
+  }
+
+  function handleDragLeave(e) {
+    if (!grid.contains(e.relatedTarget)) {
+      grid.classList.remove('edit-drop-active');
+    }
+  }
+
+  function handleDrop(e) {
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      grid.classList.remove('edit-drop-active');
+      handlePhotoUpload({ target: { files: e.dataTransfer.files, value: '' } });
+    }
+  }
+
   if (editMode) {
-    grid.addEventListener('dragover', (e) => {
-      // Only handle file drops, not photo reorder
-      if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
-        e.preventDefault();
-        e.stopPropagation();
-        grid.classList.add('edit-drop-active');
-      }
-    });
-
-    grid.addEventListener('dragleave', (e) => {
-      if (!grid.contains(e.relatedTarget)) {
-        grid.classList.remove('edit-drop-active');
-      }
-    });
-
-    grid.addEventListener('drop', (e) => {
-      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        grid.classList.remove('edit-drop-active');
-        handlePhotoUpload({ target: { files: e.dataTransfer.files, value: '' } });
-      }
-    });
+    grid.addEventListener('dragover', handleDragOver);
+    grid.addEventListener('dragleave', handleDragLeave);
+    grid.addEventListener('drop', handleDrop);
   }
 
   const items = Array.from(grid.querySelectorAll('.grid-item'));
@@ -1985,6 +1994,9 @@ function renderEditGrid() {
   grid._editCleanup = () => {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+    grid.removeEventListener('dragover', handleDragOver);
+    grid.removeEventListener('dragleave', handleDragLeave);
+    grid.removeEventListener('drop', handleDrop);
     cancelAnimationFrame(rafId);
   };
 }
@@ -2103,8 +2115,6 @@ function renderUnsortedTray() {
 }
 
 async function deleteUnsortedPhoto(index) {
-  if (!confirm('Permanently delete this photo?')) return;
-
   const token = localStorage.getItem('gh_token');
   if (!token) { alert('No token found.'); return; }
 
