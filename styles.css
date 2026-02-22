@@ -494,9 +494,7 @@ body.inverted {
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    justify-content: center;
     overflow: hidden;
-    width: 70px;
     z-index: 10;
   }
 
