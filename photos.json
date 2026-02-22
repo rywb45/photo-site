@@ -164,12 +164,6 @@
       "grid": "01-people/grid/006.webp",
       "w": 2048,
       "h": 1365
-    },
-    {
-      "src": "01-people/007.webp",
-      "grid": "01-people/grid/007.webp",
-      "w": 7728,
-      "h": 5152
     }
   ]
 }
