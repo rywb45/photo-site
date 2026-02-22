@@ -756,13 +756,10 @@ body.inverted .edit-cancel {
   background: none;
   color: #666;
   cursor: pointer;
-  display: inline-block;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 8px 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   border: none;
   border-radius: 4px;
   transition: opacity 0.2s;
@@ -800,7 +797,7 @@ body.inverted .edit-save {
   align-items: center;
   gap: 6px;
   background: none;
-  border: 1px solid #555;
+  border: 1px solid #888;
   color: #888;
   font-family: inherit;
   font-size: 12px;
@@ -987,43 +984,42 @@ body.edit-mode #albumNav a:hover .album-actions { opacity: 1; }
 body:not(.inverted) .album-actions .kebab-dot { background: #bbb; }
 body:not(.inverted) .album-actions:hover .kebab-dot { background: #666; }
 
-/* Album context menu */
+/* Album context menu - pill */
 .album-context-menu {
   position: fixed;
   background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 4px 0;
+  border-radius: 20px;
+  padding: 4px;
   z-index: 10010;
-  min-width: 120px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 body:not(.inverted) .album-context-menu {
-  background: #fff;
-  border-color: #ddd;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  background: #eee;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
 }
 
 .album-context-menu button {
-  display: block;
-  width: 100%;
   background: none;
   border: none;
-  color: #ccc;
+  color: #888;
   font-family: inherit;
-  font-size: 12px;
-  padding: 8px 16px;
-  text-align: left;
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .album-context-menu button:hover { background: #222; color: #fff; }
 .album-context-menu button.delete-option:hover { background: #2a1515; color: #d44; }
 
-body:not(.inverted) .album-context-menu button { color: #333; }
-body:not(.inverted) .album-context-menu button:hover { background: #f5f5f5; color: #000; }
+body:not(.inverted) .album-context-menu button { color: #666; }
+body:not(.inverted) .album-context-menu button:hover { background: #ddd; color: #000; }
 body:not(.inverted) .album-context-menu button.delete-option:hover { background: #fde8e8; color: #d44; }
 
 /* Add album button */
