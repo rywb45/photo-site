@@ -3069,7 +3069,7 @@ async function uploadSinglePhoto(file, token) {
   const gridPath = `photos/${folderPrefix}/grid/${paddedNum}.webp`;
   await uploadFileToGitHub(gridPath, gridWebP, token);
 
-  // Add to unsorted tray
+  // Add to local unsorted tray
   const newPhotoData = {
     src: `${folderPrefix}/${paddedNum}.webp`,
     grid: `${folderPrefix}/grid/${paddedNum}.webp`,
@@ -3081,8 +3081,15 @@ async function uploadSinglePhoto(file, token) {
   // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
   unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
-  // Save updated photos.json
-  await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+  // Save only the _unsorted change to photos.json (fetch current remote state first
+  // to avoid overwriting in-progress edits from other albums)
+  const remote = await fetchFileFromGitHub('photos.json', token);
+  let remoteAlbums = {};
+  if (remote) {
+    try { remoteAlbums = JSON.parse(remote.content); } catch(e) {}
+  }
+  remoteAlbums._unsorted = albums._unsorted;
+  await saveFileToGitHub('photos.json', JSON.stringify(remoteAlbums, null, 2), token);
 
   // Re-render tray
   renderUnsortedTray();
@@ -3170,7 +3177,7 @@ async function saveOrder() {
   saveBtn.disabled = true;
 
   try {
-    // Save current album's photos back
+    // Sync current album's photos back into albums
     if (currentAlbum && albums[currentAlbum] !== undefined) {
       albums[currentAlbum] = currentPhotos.map(p => ({
         src: p.full.replace('photos/', ''),
@@ -3180,23 +3187,7 @@ async function saveOrder() {
       }));
     }
 
-    // Build order.json
-    let orderData = {};
-    try {
-      const existingOrder = await fetchFileFromGitHub('order.json', token);
-      if (existingOrder) {
-        orderData = JSON.parse(existingOrder.content);
-      }
-    } catch(e) {}
-
-    for (const [albumName, photos] of Object.entries(albums)) {
-      orderData[albumName] = photos.map(p => {
-        const parts = p.src.split('/');
-        return parts[parts.length - 1].replace('.webp', '');
-      });
-    }
-
-    // Safety: strip any photos whose files are queued for deletion
+    // Strip deleted photos from albums BEFORE saving anything
     if (pendingDeletes.length > 0) {
       const deletePaths = new Set(pendingDeletes.map(d => d.full.replace('photos/', '')));
       for (const [albumName, photos] of Object.entries(albums)) {
@@ -3204,7 +3195,16 @@ async function saveOrder() {
       }
     }
 
-    // Save photos.json, order.json, and moves.json if needed
+    // Build order.json fresh (don't merge with stale remote data)
+    const orderData = {};
+    for (const [albumName, photos] of Object.entries(albums)) {
+      orderData[albumName] = photos.map(p => {
+        const parts = p.src.split('/');
+        return parts[parts.length - 1].replace('.webp', '');
+      });
+    }
+
+    // Save photos.json, order.json, and moves.json
     await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
     await saveFileToGitHub('order.json', JSON.stringify(orderData, null, 2), token);
 
@@ -3213,7 +3213,7 @@ async function saveOrder() {
       pendingMoves = [];
     }
 
-    // Process pending deletes
+    // Delete files from GitHub
     for (const del of pendingDeletes) {
       await deleteFileFromGitHub(del.full, token);
       await deleteFileFromGitHub(del.grid, token);
