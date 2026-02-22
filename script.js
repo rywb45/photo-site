@@ -1244,12 +1244,27 @@ function rebuildAlbumNav() {
     if (editMode) {
       const actions = document.createElement('span');
       actions.className = 'album-actions';
-      actions.innerHTML = '<span class="kebab-dot"></span><span class="kebab-dot"></span><span class="kebab-dot"></span>';
-      actions.addEventListener('click', (e) => {
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'album-action-btn';
+      renameBtn.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5L10.5 4 4 10.5 1 11l.5-3z"/></svg>';
+      renameBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        showAlbumContextMenu(albumName, actions);
+        renameAlbum(albumName);
       });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'album-action-btn delete';
+      deleteBtn.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg>';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        deleteAlbum(albumName);
+      });
+
+      actions.appendChild(renameBtn);
+      actions.appendChild(deleteBtn);
       link.appendChild(actions);
     }
 
@@ -1282,134 +1297,212 @@ function rebuildAlbumNav() {
   }
 }
 
-function showAlbumContextMenu(albumName, kebabEl) {
-  closeAlbumContextMenu();
-
-  const menu = document.createElement('div');
-  menu.className = 'album-context-menu';
-  menu.id = 'albumContextMenu';
-
-  const renameBtn = document.createElement('button');
-  renameBtn.textContent = 'rename';
-  renameBtn.addEventListener('click', () => {
-    closeAlbumContextMenu();
-    renameAlbum(albumName);
-  });
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'delete-option';
-  deleteBtn.textContent = 'delete';
-  deleteBtn.addEventListener('click', () => {
-    closeAlbumContextMenu();
-    deleteAlbum(albumName);
-  });
-
-  menu.appendChild(renameBtn);
-  menu.appendChild(deleteBtn);
-  document.body.appendChild(menu);
-
-  // Position pill to the right of the kebab dots
-  const kebabRect = kebabEl.getBoundingClientRect();
-  const menuRect = menu.getBoundingClientRect();
-  menu.style.left = (kebabRect.right + 8) + 'px';
-  menu.style.top = (kebabRect.top + kebabRect.height / 2 - menuRect.height / 2) + 'px';
-
-  const finalRect = menu.getBoundingClientRect();
-  if (finalRect.right > window.innerWidth - 10) {
-    menu.style.left = (kebabRect.left - menuRect.width - 8) + 'px';
-  }
-
-  setTimeout(() => {
-    document.addEventListener('click', closeAlbumContextMenu, { once: true });
-  }, 10);
-}
-
-function closeAlbumContextMenu() {
-  const existing = document.getElementById('albumContextMenu');
-  if (existing) existing.remove();
-}
-
 // ============================================
 // Album Management: Create, Rename, Delete
 // ============================================
 function createAlbum() {
-  const name = prompt('New album name:');
-  if (!name || !name.trim()) return;
+  // Replace the + NEW ALBUM button with an inline input
+  const addBtn = document.querySelector('.add-album-btn');
+  if (!addBtn) return;
 
-  const key = name.trim().toLowerCase().replace(/\s+/g, '-');
-  if (albums[key]) {
-    alert('Album already exists.');
-    return;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'inline-rename-row';
+
+  const input = document.createElement('input');
+  input.className = 'inline-rename-input';
+  input.value = '';
+  input.placeholder = 'ALBUM NAME';
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'inline-rename-ok';
+  confirmBtn.textContent = '✓';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'inline-rename-cancel';
+  cancelBtn.textContent = '✕';
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(confirmBtn);
+  wrapper.appendChild(cancelBtn);
+
+  addBtn.replaceWith(wrapper);
+  input.focus();
+
+  function commit() {
+    const name = input.value.trim();
+    if (!name) { revert(); return; }
+
+    const key = name.toLowerCase().replace(/\s+/g, '-');
+    if (albums[key]) {
+      input.style.borderColor = '#d44';
+      return;
+    }
+
+    albums[key] = [];
+    rebuildAlbumNav();
+    setupEditSidebar();
+    switchAlbum(key);
   }
 
-  albums[key] = [];
-  rebuildAlbumNav();
-  setupEditSidebar();
-  switchAlbum(key);
+  function revert() {
+    rebuildAlbumNav();
+    setupEditSidebar();
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    if (e.key === 'Escape') revert();
+  });
+  confirmBtn.addEventListener('click', commit);
+  cancelBtn.addEventListener('click', revert);
 }
 
 function renameAlbum(oldName) {
-  const newName = prompt('Rename album:', oldName);
-  if (!newName || !newName.trim() || newName.trim().toLowerCase() === oldName) return;
+  // Find the link for this album and replace the name span with an input
+  const nav = document.getElementById('albumNav');
+  const link = nav.querySelector(`a[data-album="${oldName}"]`);
+  if (!link) return;
 
-  const newKey = newName.trim().toLowerCase().replace(/\s+/g, '-');
-  if (albums[newKey]) {
-    alert('Album with that name already exists.');
-    return;
-  }
+  const nameSpan = link.querySelector('span:first-child');
+  const actions = link.querySelector('.album-actions');
+  if (actions) actions.style.display = 'none';
 
-  // Rebuild albums object preserving order
-  const newAlbums = {};
-  for (const [key, val] of Object.entries(albums)) {
-    if (key === oldName) {
-      newAlbums[newKey] = val;
-    } else {
-      newAlbums[key] = val;
+  const wrapper = document.createElement('span');
+  wrapper.className = 'inline-rename-row';
+
+  const input = document.createElement('input');
+  input.className = 'inline-rename-input';
+  input.value = oldName.toUpperCase();
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'inline-rename-ok';
+  confirmBtn.textContent = '✓';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'inline-rename-cancel';
+  cancelBtn.textContent = '✕';
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(confirmBtn);
+  wrapper.appendChild(cancelBtn);
+
+  nameSpan.replaceWith(wrapper);
+  input.focus();
+  input.select();
+
+  function commit() {
+    const newName = input.value.trim();
+    if (!newName || newName.toLowerCase() === oldName) { revert(); return; }
+
+    const newKey = newName.toLowerCase().replace(/\s+/g, '-');
+    if (albums[newKey]) {
+      input.style.borderColor = '#d44';
+      return;
     }
-  }
-  albums = newAlbums;
 
-  // Update currentAlbum if renamed
-  if (currentAlbum === oldName) {
-    currentAlbum = newKey;
+    const newAlbums = {};
+    for (const [key, val] of Object.entries(albums)) {
+      if (key === oldName) {
+        newAlbums[newKey] = val;
+      } else {
+        newAlbums[key] = val;
+      }
+    }
+    albums = newAlbums;
+
+    if (currentAlbum === oldName) {
+      currentAlbum = newKey;
+    }
+
+    rebuildAlbumNav();
+    setupEditSidebar();
   }
 
-  rebuildAlbumNav();
-  setupEditSidebar();
+  function revert() {
+    wrapper.replaceWith(nameSpan);
+    if (actions) actions.style.display = '';
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    if (e.key === 'Escape') revert();
+  });
+  confirmBtn.addEventListener('click', commit);
+  cancelBtn.addEventListener('click', revert);
+
+  // Prevent the link click from firing
+  link.addEventListener('click', (e) => {
+    if (wrapper.isConnected) e.preventDefault();
+  }, { capture: true });
 }
 
 function deleteAlbum(albumName) {
+  const nav = document.getElementById('albumNav');
+  const link = nav.querySelector(`a[data-album="${albumName}"]`);
+  if (!link) return;
+
+  const nameSpan = link.querySelector('span:first-child');
+  const actions = link.querySelector('.album-actions');
+  if (actions) actions.style.display = 'none';
+
   const photos = albums[albumName] || [];
-  const msg = photos.length > 0
-    ? `Delete "${albumName}"? ${photos.length} photo(s) will be moved to unsorted.`
-    : `Delete empty album "${albumName}"?`;
 
-  if (!confirm(msg)) return;
+  // Replace name with inline confirmation
+  const wrapper = document.createElement('span');
+  wrapper.className = 'inline-rename-row';
 
-  // Move photos to _unsorted
-  if (photos.length > 0) {
-    albums._unsorted = albums._unsorted || [];
-    albums._unsorted.push(...photos);
-    updateUnsortedBadge();
-  }
+  const msg = document.createElement('span');
+  msg.className = 'inline-delete-msg';
+  msg.textContent = photos.length > 0 ? `DELETE? (${photos.length} → unsorted)` : 'DELETE?';
 
-  // Remove album
-  delete albums[albumName];
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'inline-rename-ok delete';
+  confirmBtn.textContent = '✓';
 
-  // If we just deleted the current album, switch to first available
-  if (currentAlbum === albumName) {
-    const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
-    if (remaining.length > 0) {
-      switchAlbum(remaining[0]);
-    } else {
-      currentAlbum = null;
-      currentPhotos = [];
-      document.getElementById('grid').innerHTML = '';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'inline-rename-cancel';
+  cancelBtn.textContent = '✕';
+
+  wrapper.appendChild(msg);
+  wrapper.appendChild(confirmBtn);
+  wrapper.appendChild(cancelBtn);
+  nameSpan.replaceWith(wrapper);
+
+  function doDelete() {
+    if (photos.length > 0) {
+      albums._unsorted = albums._unsorted || [];
+      albums._unsorted.push(...photos);
+      updateUnsortedBadge();
     }
+
+    delete albums[albumName];
+
+    if (currentAlbum === albumName) {
+      const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
+      if (remaining.length > 0) {
+        switchAlbum(remaining[0]);
+      } else {
+        currentAlbum = null;
+        currentPhotos = [];
+        document.getElementById('grid').innerHTML = '';
+      }
+    }
+
+    rebuildAlbumNav();
+    setupEditSidebar();
   }
 
-  rebuildAlbumNav();
-  setupEditSidebar();
+  function revert() {
+    wrapper.replaceWith(nameSpan);
+    if (actions) actions.style.display = '';
+  }
+
+  confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); doDelete(); });
+  cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); revert(); });
+
+  link.addEventListener('click', (e) => {
+    if (wrapper.isConnected) e.preventDefault();
+  }, { capture: true });
 }
 
 function exitEditMode(saved) {
@@ -1445,66 +1538,61 @@ function exitEditMode(saved) {
   const tray = document.getElementById('unsortedTray');
   if (tray) tray.remove();
 
-  // Close any context menu
-  closeAlbumContextMenu();
-
-  // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
-  if (!saved && preEditAlbums) {
-    // Find any photos that were uploaded during this session (not in pre-edit state)
-    const uploadedPhotos = {};
-    for (const [albumName, photos] of Object.entries(albums)) {
-      const prePhotos = preEditAlbums[albumName] || [];
-      const preSrcs = new Set(prePhotos.map(p => p.src));
-      const newPhotos = photos.filter(p => !preSrcs.has(p.src));
-      if (newPhotos.length > 0) {
-        uploadedPhotos[albumName] = newPhotos;
-      }
-    }
-
-    // Restore pre-edit state
-    albums = preEditAlbums;
-
-    // Merge back uploaded photos
-    for (const [albumName, photos] of Object.entries(uploadedPhotos)) {
-      if (!albums[albumName]) albums[albumName] = [];
-      albums[albumName].push(...photos);
-    }
-
-    // Restore currentPhotos from restored album
-    if (currentAlbum && albums[currentAlbum]) {
-      currentPhotos = albums[currentAlbum].map(p => ({
-        full: `photos/${p.src}`,
-        grid: `photos/${p.grid}`,
-        width: p.w,
-        height: p.h
-      }));
-    }
-
-    rebuildAlbumNav();
-  }
-
-  preEditPhotos = null;
-  preEditAlbums = null;
-  preEditAlbumOrder = null;
-  pendingMoves = [];
-
-  // Animate out the add-album elements before rebuilding
+  // Animate out the add-album elements FIRST (before any rebuild)
   const addSep = document.querySelector('.add-album-separator');
   const addBtn = document.querySelector('.add-album-btn');
   if (addSep) addSep.classList.remove('visible');
   if (addBtn) addBtn.classList.remove('visible');
 
-  // Also remove album action kebabs smoothly
+  // Also fade out album action kebabs
   document.querySelectorAll('.album-actions').forEach(a => {
     a.style.transition = 'opacity 0.3s ease';
     a.style.opacity = '0';
   });
 
+  // Store what we need for the delayed rebuild
+  const wasCancelled = !saved && preEditAlbums;
+  const savedPreEditAlbums = preEditAlbums;
+
   // Delay rebuild to let animation finish
   setTimeout(() => {
+    // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
+    if (wasCancelled) {
+      const uploadedPhotos = {};
+      for (const [albumName, photos] of Object.entries(albums)) {
+        const prePhotos = savedPreEditAlbums[albumName] || [];
+        const preSrcs = new Set(prePhotos.map(p => p.src));
+        const newPhotos = photos.filter(p => !preSrcs.has(p.src));
+        if (newPhotos.length > 0) {
+          uploadedPhotos[albumName] = newPhotos;
+        }
+      }
+
+      albums = savedPreEditAlbums;
+
+      for (const [albumName, photos] of Object.entries(uploadedPhotos)) {
+        if (!albums[albumName]) albums[albumName] = [];
+        albums[albumName].push(...photos);
+      }
+
+      if (currentAlbum && albums[currentAlbum]) {
+        currentPhotos = albums[currentAlbum].map(p => ({
+          full: `photos/${p.src}`,
+          grid: `photos/${p.grid}`,
+          width: p.w,
+          height: p.h
+        }));
+      }
+    }
+
     rebuildAlbumNav();
     renderGrid();
   }, 350);
+
+  preEditPhotos = null;
+  preEditAlbums = null;
+  preEditAlbumOrder = null;
+  pendingMoves = [];
 
   // DECORATIVE: typewriter out
   const nameText = document.getElementById('nameText');
