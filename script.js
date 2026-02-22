@@ -1867,14 +1867,21 @@ function renderEditGrid() {
       }
     });
 
-    // Check if hovering over unsorted button
+    // Check if hovering over unsorted button or open tray
     const unsortedBtn = document.getElementById('unsortedBtn');
+    const unsortedTray = document.getElementById('unsortedTray');
+    let overUnsorted = false;
     if (unsortedBtn) {
       const rect = unsortedBtn.getBoundingClientRect();
-      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
-                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
-      unsortedBtn.classList.toggle('drag-target', over);
+      overUnsorted = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                     mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
     }
+    if (!overUnsorted && unsortedTray && unsortedTray.classList.contains('open')) {
+      const rect = unsortedTray.getBoundingClientRect();
+      overUnsorted = mouseX >= rect.left && mouseX <= rect.right &&
+                     mouseY >= rect.top && mouseY <= rect.bottom;
+    }
+    if (unsortedBtn) unsortedBtn.classList.toggle('drag-target', overUnsorted);
   }
 
   function onMouseUp(e) {
@@ -1900,12 +1907,21 @@ function renderEditGrid() {
     const unsortedBtn = document.getElementById('unsortedBtn');
     if (unsortedBtn) unsortedBtn.classList.remove('drag-target');
 
-    // Check if dropped on unsorted button
-    if (unsortedBtn && dragSrcIndex !== null) {
-      const rect = unsortedBtn.getBoundingClientRect();
-      const over = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
-                   mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
-      if (over) {
+    // Check if dropped on unsorted button or open tray
+    if (dragSrcIndex !== null) {
+      let overUnsorted = false;
+      if (unsortedBtn) {
+        const rect = unsortedBtn.getBoundingClientRect();
+        overUnsorted = mouseX >= rect.left - 10 && mouseX <= rect.right + 10 &&
+                       mouseY >= rect.top - 5 && mouseY <= rect.bottom + 5;
+      }
+      const unsortedTray = document.getElementById('unsortedTray');
+      if (!overUnsorted && unsortedTray && unsortedTray.classList.contains('open')) {
+        const rect = unsortedTray.getBoundingClientRect();
+        overUnsorted = mouseX >= rect.left && mouseX <= rect.right &&
+                       mouseY >= rect.top && mouseY <= rect.bottom;
+      }
+      if (overUnsorted) {
         movePhotoToAlbum(dragSrcIndex, '_unsorted');
         renderUnsortedTray();
         dragSrcIndex = null;
@@ -2014,8 +2030,6 @@ function showEditBar() {
   bar.innerHTML = `
     <div class="edit-bar-left">
       <span class="edit-bar-label">EDIT MODE</span>
-    </div>
-    <div class="edit-bar-actions">
       <button class="unsorted-btn" id="unsortedBtn" onclick="toggleUnsortedTray()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -2024,6 +2038,8 @@ function showEditBar() {
         </svg>
         <span class="unsorted-badge" id="unsortedBadge"></span>
       </button>
+    </div>
+    <div class="edit-bar-actions">
       <label class="edit-bar-btn edit-upload-label" title="Upload photos">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

@@ -806,31 +806,26 @@ body.inverted .edit-save {
 }
 
 .unsorted-btn:hover { opacity: 0.8; }
-.unsorted-btn.active { color: #fff; }
-.unsorted-btn.drag-target { color: #fff; background: #222; }
+.unsorted-btn.active { color: #999; }
+.unsorted-btn.drag-target { color: #fff; }
 
 body:not(.inverted) .unsorted-btn { color: #666; }
-body:not(.inverted) .unsorted-btn.active { color: #000; }
+body:not(.inverted) .unsorted-btn.active { color: #444; }
 
 .unsorted-btn svg { width: 14px; height: 14px; }
 
 /* Unsorted badge */
 .unsorted-badge {
   position: absolute;
-  top: -2px;
-  right: -4px;
-  min-width: 15px;
-  height: 15px;
-  border-radius: 8px;
-  background: #d44;
-  color: #fff;
+  top: -1px;
+  right: -6px;
   font-size: 9px;
-  font-weight: 700;
-  line-height: 15px;
-  text-align: center;
-  padding: 0 4px;
+  font-weight: 600;
+  color: #999;
   display: none;
 }
+
+body:not(.inverted) .unsorted-badge { color: #666; }
 
 .unsorted-badge.visible { display: block; }
 
