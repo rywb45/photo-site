@@ -1,7 +1,22 @@
 [
   {
-    "file": "005.webp",
-    "from": "02-buildings",
+    "file": "003.webp",
+    "from": "01-people",
+    "to": "chinatown"
+  },
+  {
+    "file": "002.webp",
+    "from": "01-people",
+    "to": "01-people"
+  },
+  {
+    "file": "008.webp",
+    "from": "01-people",
+    "to": "01-people"
+  },
+  {
+    "file": "004.webp",
+    "from": "01-people",
     "to": "01-people"
   }
 ]
