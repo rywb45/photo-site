@@ -324,14 +324,20 @@ function openLightbox(index, sourceImg) {
 
     // Preload the full-res image so we don't flash black
     const fullImg = lbTrack.querySelectorAll('.lb-slide')[index]?.querySelector('img');
+    const openClone = morphClone; // capture reference for cleanup
     const revealLightbox = () => {
+      // Guard: if lightbox was closed before image loaded, just clean up
+      if (!lightbox.classList.contains('active')) {
+        if (openClone && openClone.parentNode) openClone.remove();
+        return;
+      }
       lbTrack.style.opacity = '1';
       lightbox.style.transition = '';
 
-      if (morphClone && morphClone.parentNode) {
-        morphClone.remove();
-        morphClone = null;
+      if (openClone && openClone.parentNode) {
+        openClone.remove();
       }
+      if (morphClone === openClone) morphClone = null;
 
       if (window.innerWidth > 768) {
         lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
@@ -373,6 +379,12 @@ function openLightbox(index, sourceImg) {
 
 function closeLightbox() {
   resetZoom();
+
+  // Clean up any leftover morph clone from open animation
+  if (morphClone && morphClone.parentNode) {
+    morphClone.remove();
+    morphClone = null;
+  }
 
   // If we have a morph source, animate back
   if (morphSource && morphRect) {
@@ -522,28 +534,25 @@ lightbox.addEventListener('wheel', (e) => {
     const img = getCurrentSlideImg();
     if (!img) return;
 
-    const zoomDelta = -e.deltaY * 0.01;
     const prevScale = zoomScale;
-    zoomScale = Math.max(1, Math.min(zoomScale * (1 + zoomDelta), 5));
+    // Exponential scaling for smooth continuous zoom
+    zoomScale = Math.max(1, Math.min(zoomScale * Math.exp(-e.deltaY * 0.005), 5));
+
+    // Zoom toward cursor position
+    const rect = img.getBoundingClientRect();
+    const cx = e.clientX - (rect.left + rect.width / 2);
+    const cy = e.clientY - (rect.top + rect.height / 2);
+    const scaleFactor = zoomScale / prevScale;
+    panOffsetX = cx - scaleFactor * (cx - panOffsetX);
+    panOffsetY = cy - scaleFactor * (cy - panOffsetY);
 
     if (zoomScale <= 1) {
-      zoomScale = 1;
       panOffsetX = 0;
       panOffsetY = 0;
-      img.style.transition = 'transform 0.2s ease';
-      img.style.transform = '';
-      setTimeout(() => { img.style.transition = ''; }, 200);
-    } else {
-      // Zoom toward cursor position
-      const rect = img.getBoundingClientRect();
-      const cx = e.clientX - (rect.left + rect.width / 2);
-      const cy = e.clientY - (rect.top + rect.height / 2);
-      const scaleFactor = zoomScale / prevScale;
-      panOffsetX = cx - scaleFactor * (cx - panOffsetX);
-      panOffsetY = cy - scaleFactor * (cy - panOffsetY);
-      img.style.transition = '';
-      applyZoom(img);
     }
+
+    img.style.transition = 'none';
+    applyZoom(img);
     return;
   }
 
@@ -553,7 +562,7 @@ lightbox.addEventListener('wheel', (e) => {
     if (!img) return;
     panOffsetX -= e.deltaX * 1.5;
     panOffsetY -= e.deltaY * 1.5;
-    img.style.transition = '';
+    img.style.transition = 'none';
     applyZoom(img);
     return;
   }
@@ -598,10 +607,11 @@ lightbox.addEventListener('wheel', (e) => {
       const shouldDismiss = wheelDeltaY < -150;
 
       if (shouldDismiss) {
-        // Clear morph source
+        // Clear morph source and any leftover clone
         if (morphSource) morphSource.style.opacity = '';
         morphSource = null;
         morphRect = null;
+        if (morphClone && morphClone.parentNode) { morphClone.remove(); morphClone = null; }
 
         lbTrack.style.transition = 'transform 0.2s ease-out';
         lightbox.style.transition = 'background 0.2s ease-out';
