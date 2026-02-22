@@ -1279,20 +1279,24 @@ function rebuildAlbumNav() {
 
   // Add "new album" button in edit mode
   if (editMode) {
+    const extras = document.createElement('div');
+    extras.className = 'edit-album-extras';
+
     const sep = document.createElement('div');
     sep.className = 'add-album-separator';
-    nav.appendChild(sep);
+    extras.appendChild(sep);
 
     const addBtn = document.createElement('button');
     addBtn.className = 'add-album-btn';
     addBtn.textContent = '+ NEW ALBUM';
     addBtn.addEventListener('click', () => createAlbum());
-    nav.appendChild(addBtn);
+    extras.appendChild(addBtn);
+
+    nav.appendChild(extras);
 
     // Animate in after a frame
     requestAnimationFrame(() => {
-      sep.classList.add('visible');
-      addBtn.classList.add('visible');
+      extras.classList.add('visible');
     });
   }
 }
@@ -1489,11 +1493,9 @@ function exitEditMode(saved) {
   const tray = document.getElementById('unsortedTray');
   if (tray) tray.remove();
 
-  // Animate out the add-album elements (keep edit-mode class so layout stays stable)
-  const addSep = document.querySelector('.add-album-separator');
-  const addBtn = document.querySelector('.add-album-btn');
-  if (addSep) addSep.classList.remove('visible');
-  if (addBtn) addBtn.classList.remove('visible');
+  // Animate out the add-album extras (keep edit-mode class so layout stays stable)
+  const extras = document.querySelector('.edit-album-extras');
+  if (extras) extras.classList.remove('visible');
 
   // Fade out album action kebabs
   document.querySelectorAll('.album-actions').forEach(a => {
