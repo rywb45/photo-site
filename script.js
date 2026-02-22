@@ -2216,6 +2216,11 @@ function showEditBar() {
   // Delay tray visibility so it doesn't flash during edit bar entrance
   setTimeout(() => {
     tray.classList.add('ready');
+    // Auto-open tray if there are unsorted photos
+    if ((albums._unsorted || []).length > 0) {
+      tray.classList.add('open');
+      document.getElementById('unsortedBtn').classList.add('active');
+    }
   }, 400);
 
   document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
@@ -2374,12 +2379,11 @@ function startTrayDrag(unsortedIndex, e) {
     });
 
     if (!droppedAlbum) {
-      const grid = document.getElementById('grid');
-      if (grid) {
-        const rect = grid.getBoundingClientRect();
-        if (mouseX >= rect.left && mouseX <= rect.right && mouseY >= rect.top && mouseY <= rect.bottom) {
-          droppedAlbum = currentAlbum;
-        }
+      // Accept drops anywhere in the main content area (right of sidebar)
+      const sidebar = document.querySelector('.sidebar');
+      const sidebarRight = sidebar ? sidebar.getBoundingClientRect().right : 280;
+      if (mouseX > sidebarRight && currentAlbum) {
+        droppedAlbum = currentAlbum;
       }
     }
 
@@ -2421,8 +2425,11 @@ function showTrayHover(photo, thumbEl) {
 
 function hideTrayHover() {
   if (trayHoverEl) {
-    trayHoverEl.remove();
+    const el = trayHoverEl;
     trayHoverEl = null;
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => el.remove(), 300);
   }
 }
 
@@ -2705,7 +2712,14 @@ async function saveOrder() {
       });
     }
 
-    // Detect cross-album moves by comparing to pre-edit state
+    // Safety: strip any photos whose files are queued for deletion
+    if (pendingDeletes.length > 0) {
+      const deletePaths = new Set(pendingDeletes.map(d => d.full.replace('photos/', '')));
+      for (const [albumName, photos] of Object.entries(albums)) {
+        albums[albumName] = photos.filter(p => !deletePaths.has(p.src));
+      }
+    }
+
     // Save photos.json, order.json, and moves.json if needed
     await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
     await saveFileToGitHub('order.json', JSON.stringify(orderData, null, 2), token);

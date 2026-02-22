@@ -1095,7 +1095,7 @@ body:not(.inverted) .add-album-btn:hover { color: #888; }
   pointer-events: none;
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
