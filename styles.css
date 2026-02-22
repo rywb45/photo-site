@@ -738,6 +738,9 @@ body:not(.inverted) .edit-cursor {
 body.edit-mode .edit-item {
   position: relative;
   cursor: grab;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 body.edit-mode .edit-item:active {
@@ -1092,6 +1095,9 @@ body:not(.inverted) .unsorted-tray-title { color: #999; }
   border-radius: 3px;
   overflow: hidden;
   cursor: grab;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
 }
