@@ -1244,27 +1244,12 @@ function rebuildAlbumNav() {
     if (editMode) {
       const actions = document.createElement('span');
       actions.className = 'album-actions';
-
-      const renameBtn = document.createElement('button');
-      renameBtn.className = 'album-action-btn';
-      renameBtn.textContent = 'rename';
-      renameBtn.addEventListener('click', (e) => {
+      actions.innerHTML = '<span class="kebab-dot"></span><span class="kebab-dot"></span><span class="kebab-dot"></span>';
+      actions.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        renameAlbum(albumName);
+        showAlbumContextMenu(albumName, e.clientX, e.clientY);
       });
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'album-action-btn delete';
-      deleteBtn.textContent = 'delete';
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        deleteAlbum(albumName);
-      });
-
-      actions.appendChild(renameBtn);
-      actions.appendChild(deleteBtn);
       link.appendChild(actions);
     }
 
@@ -1288,7 +1273,60 @@ function rebuildAlbumNav() {
     addBtn.textContent = '+ NEW ALBUM';
     addBtn.addEventListener('click', () => createAlbum());
     nav.appendChild(addBtn);
+
+    // Animate in after a frame
+    requestAnimationFrame(() => {
+      sep.classList.add('visible');
+      addBtn.classList.add('visible');
+    });
   }
+}
+
+function showAlbumContextMenu(albumName, x, y) {
+  // Remove existing menu
+  closeAlbumContextMenu();
+
+  const menu = document.createElement('div');
+  menu.className = 'album-context-menu';
+  menu.id = 'albumContextMenu';
+
+  const renameBtn = document.createElement('button');
+  renameBtn.textContent = 'Rename';
+  renameBtn.addEventListener('click', () => {
+    closeAlbumContextMenu();
+    renameAlbum(albumName);
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete-option';
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.addEventListener('click', () => {
+    closeAlbumContextMenu();
+    deleteAlbum(albumName);
+  });
+
+  menu.appendChild(renameBtn);
+  menu.appendChild(deleteBtn);
+
+  // Position near click
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  document.body.appendChild(menu);
+
+  // Adjust if off-screen
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) menu.style.left = (x - rect.width) + 'px';
+  if (rect.bottom > window.innerHeight) menu.style.top = (y - rect.height) + 'px';
+
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', closeAlbumContextMenu, { once: true });
+  }, 10);
+}
+
+function closeAlbumContextMenu() {
+  const existing = document.getElementById('albumContextMenu');
+  if (existing) existing.remove();
 }
 
 // ============================================
@@ -1406,6 +1444,9 @@ function exitEditMode(saved) {
   // Remove tray
   const tray = document.getElementById('unsortedTray');
   if (tray) tray.remove();
+
+  // Close any context menu
+  closeAlbumContextMenu();
 
   // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
   if (!saved && preEditAlbums) {
@@ -1911,6 +1952,11 @@ function showEditBar() {
 
   bar.offsetHeight;
   bar.classList.add('visible');
+
+  // Delay tray visibility so it doesn't flash during edit bar entrance
+  setTimeout(() => {
+    tray.classList.add('ready');
+  }, 400);
 
   document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
 }
