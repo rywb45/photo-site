@@ -1314,6 +1314,20 @@ let preEditAlbumOrder = null;
 let pendingMoves = [];
 let pendingDeletes = [];
 
+function recordMove(filename, fromFolder, toFolder) {
+  // If there's already a pending move for this file, update its destination
+  const existing = pendingMoves.find(m => m.file === filename);
+  if (existing) {
+    existing.to = toFolder;
+    // If net effect is no move, remove the entry
+    if (existing.from === existing.to) {
+      pendingMoves.splice(pendingMoves.indexOf(existing), 1);
+    }
+  } else {
+    pendingMoves.push({ file: filename, from: fromFolder, to: toFolder });
+  }
+}
+
 const REPO_OWNER = 'rywb45';
 const REPO_NAME = 'photo-site';
 
@@ -1583,12 +1597,8 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
     targetFolderPrefix = targetPhotos[0].src.split('/')[0];
   }
 
-  // Record the move for the upload script
-  pendingMoves.push({
-    file: filename,
-    from: srcFolder,
-    to: targetFolderPrefix
-  });
+  // Record the move (update existing entry if file was already moved)
+  recordMove(filename, srcFolder, targetFolderPrefix);
 
   // Keep original src/grid paths so images still load correctly
   // The upload script will move the actual files and re-generate photos.json
@@ -2899,12 +2909,8 @@ function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
     targetFolderPrefix = targetPhotos[0].src.split('/')[0];
   }
 
-  // Record the move for the server-side script
-  pendingMoves.push({
-    file: filename,
-    from: srcFolder,
-    to: targetFolderPrefix
-  });
+  // Record the move (update existing entry if file was already moved)
+  recordMove(filename, srcFolder, targetFolderPrefix);
 
   albums._unsorted.splice(unsortedIndex, 1);
   albums[targetAlbum].push(photo);
