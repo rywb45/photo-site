@@ -504,7 +504,7 @@ body.inverted {
     display: flex;
     gap: 4px;
     align-items: center;
-    transition: transform 0.3s ease;
+    transition: transform 0.15s ease;
   }
 
   .lb-dot {
@@ -513,28 +513,24 @@ body.inverted {
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.3);
     flex-shrink: 0;
-    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease;
   }
 
   .lb-dot.active {
-    width: 7px;
-    height: 7px;
+    transform: scale(1.17);
     background: #000;
   }
 
   .lb-dot.small {
-    width: 4px;
-    height: 4px;
+    transform: scale(0.67);
   }
 
   .lb-dot.tiny {
-    width: 3px;
-    height: 3px;
+    transform: scale(0.5);
   }
 
   .lb-dot.hidden {
-    width: 0;
-    height: 0;
+    transform: scale(0);
     opacity: 0;
   }
 }

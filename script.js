@@ -805,13 +805,20 @@ let lastPinchMidY = 0;
 const MAX_ZOOM = 4;
 
 function clampPan() {
+  if (zoomScale <= 1) {
+    panOffsetX = 0;
+    panOffsetY = 0;
+    return;
+  }
+
   const img = getCurrentSlideImg();
   if (!img || !img.naturalWidth) return;
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const maxW = vw * 0.9;
-  const maxH = vh * 0.9;
+  // CSS constraints: max-width:90%, max-height:90vh, but image won't exceed natural size
+  const maxW = Math.min(img.naturalWidth, vw * 0.9);
+  const maxH = Math.min(img.naturalHeight, vh * 0.9);
   const ar = img.naturalWidth / img.naturalHeight;
 
   let baseW, baseH;
@@ -844,7 +851,10 @@ function getCurrentSlideImg() {
 }
 
 function applyZoom(img) {
-  if (zoomScale <= 1) {
+  if (zoomScale < 1.01) {
+    zoomScale = 1;
+    panOffsetX = 0;
+    panOffsetY = 0;
     img.style.transform = '';
   } else {
     img.style.transform = `translate(${panOffsetX}px, ${panOffsetY}px) scale(${zoomScale})`;
@@ -965,7 +975,6 @@ lightbox.addEventListener('touchmove', (e) => {
     lastPinchMidX = midX;
     lastPinchMidY = midY;
 
-    clampPan();
     img.style.transition = 'none';
     applyZoom(img);
     return;
@@ -981,7 +990,6 @@ lightbox.addEventListener('touchmove', (e) => {
     const dy = e.touches[0].clientY - panStartY;
     panOffsetX = lastPanX + dx;
     panOffsetY = lastPanY + dy;
-    clampPan();
 
     const img = getCurrentSlideImg();
     if (img) {
