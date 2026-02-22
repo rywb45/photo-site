@@ -1247,8 +1247,7 @@ function rebuildAlbumNav() {
 
       const renameBtn = document.createElement('button');
       renameBtn.className = 'album-action-btn';
-      renameBtn.textContent = '✎';
-      renameBtn.title = 'Rename';
+      renameBtn.textContent = 'rename';
       renameBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -1257,8 +1256,7 @@ function rebuildAlbumNav() {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'album-action-btn delete';
-      deleteBtn.textContent = '×';
-      deleteBtn.title = 'Delete album';
+      deleteBtn.textContent = 'delete';
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
