@@ -63,7 +63,8 @@ function switchAlbum(albumName, clickedElement = null) {
   }
 
   currentAlbum = albumName;
-  currentPhotos = albums[albumName].map(p => ({
+  const albumData = albums[albumName] || [];
+  currentPhotos = albumData.map(p => ({
     full: `photos/${p.src}`,
     grid: `photos/${p.grid}`,
     width: p.w,
@@ -2375,12 +2376,14 @@ async function saveOrder() {
 
   try {
     // Save current album's photos back
-    albums[currentAlbum] = currentPhotos.map(p => ({
-      src: p.full.replace('photos/', ''),
-      grid: p.grid.replace('photos/', ''),
-      w: p.width,
-      h: p.height
-    }));
+    if (currentAlbum && albums[currentAlbum] !== undefined) {
+      albums[currentAlbum] = currentPhotos.map(p => ({
+        src: p.full.replace('photos/', ''),
+        grid: p.grid.replace('photos/', ''),
+        w: p.width,
+        h: p.height
+      }));
+    }
 
     // Build order.json
     let orderData = {};
