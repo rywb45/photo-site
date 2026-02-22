@@ -575,32 +575,10 @@ body:not(.inverted) .edit-cursor {
   51%, 100% { opacity: 0; }
 }
 
-/* Photo wiggle */
+/* Edit mode items */
 body.edit-mode .edit-item {
   position: relative;
   cursor: grab;
-  will-change: transform;
-  animation: wiggle 0.3s ease-in-out infinite alternate;
-}
-
-body.edit-mode .edit-item:nth-child(odd) {
-  animation-delay: 0s;
-  animation-name: wiggleA;
-}
-
-body.edit-mode .edit-item:nth-child(even) {
-  animation-delay: 0.15s;
-  animation-name: wiggleB;
-}
-
-@keyframes wiggleA {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(0.2px, -0.2px); }
-}
-
-@keyframes wiggleB {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-0.2px, 0.2px); }
 }
 
 body.edit-mode .edit-item:active {
@@ -633,7 +611,6 @@ body:not(.inverted) #grid.edit-drop-active {
   border: none;
   background: none;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 24px;
   font-weight: 300;
   line-height: 1;
   cursor: pointer;

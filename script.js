@@ -1771,9 +1771,12 @@ function renderEditGrid() {
     newImg.style.pointerEvents = 'none';
     newImg.style.userSelect = 'none';
 
-    // Add delete button
+    // Add delete button (sized relative to photo)
+    const itemH = parseFloat(item.style.height) || 200;
+    const btnSize = Math.max(14, Math.min(30, itemH * 0.08));
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'edit-delete-btn';
+    deleteBtn.style.fontSize = `${btnSize}px`;
     deleteBtn.innerHTML = '✕';
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1783,7 +1786,8 @@ function renderEditGrid() {
       if (item.querySelector('.edit-delete-confirm')) return;
       const overlay = document.createElement('div');
       overlay.className = 'edit-delete-confirm';
-      overlay.innerHTML = '<span>DELETE</span>';
+      const labelSize = Math.max(9, Math.min(14, itemH * 0.04));
+      overlay.innerHTML = `<span style="font-size:${labelSize}px">DELETE</span>`;
       item.appendChild(overlay);
 
       const dismiss = () => { if (overlay.parentNode) overlay.remove(); };
