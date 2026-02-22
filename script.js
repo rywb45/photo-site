@@ -1301,7 +1301,6 @@ function rebuildAlbumNav() {
 // Album Management: Create, Rename, Delete
 // ============================================
 function createAlbum() {
-  // Replace the + NEW ALBUM button with an inline input
   const addBtn = document.querySelector('.add-album-btn');
   if (!addBtn) return;
 
@@ -1313,18 +1312,12 @@ function createAlbum() {
   input.value = '';
   input.placeholder = 'ALBUM NAME';
 
-  const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'inline-rename-ok';
-  confirmBtn.textContent = '✓';
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'inline-rename-cancel';
-  cancelBtn.textContent = '✕';
+  const hint = document.createElement('span');
+  hint.className = 'inline-rename-hint';
+  hint.textContent = 'enter · esc';
 
   wrapper.appendChild(input);
-  wrapper.appendChild(confirmBtn);
-  wrapper.appendChild(cancelBtn);
-
+  wrapper.appendChild(hint);
   addBtn.replaceWith(wrapper);
   input.focus();
 
@@ -1353,12 +1346,13 @@ function createAlbum() {
     if (e.key === 'Enter') commit();
     if (e.key === 'Escape') revert();
   });
-  confirmBtn.addEventListener('click', commit);
-  cancelBtn.addEventListener('click', revert);
+  input.addEventListener('blur', () => {
+    // Small delay to allow for click elsewhere
+    setTimeout(() => { if (wrapper.isConnected) revert(); }, 150);
+  });
 }
 
 function renameAlbum(oldName) {
-  // Find the link for this album and replace the name span with an input
   const nav = document.getElementById('albumNav');
   const link = nav.querySelector(`a[data-album="${oldName}"]`);
   if (!link) return;
@@ -1368,24 +1362,18 @@ function renameAlbum(oldName) {
   if (actions) actions.style.display = 'none';
 
   const wrapper = document.createElement('span');
-  wrapper.className = 'inline-rename-row';
+  wrapper.className = 'inline-rename-col';
 
   const input = document.createElement('input');
-  input.className = 'inline-rename-input';
+  input.className = 'inline-rename-input glow';
   input.value = oldName.toUpperCase();
 
-  const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'inline-rename-ok';
-  confirmBtn.textContent = '✓';
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'inline-rename-cancel';
-  cancelBtn.textContent = '✕';
+  const hint = document.createElement('span');
+  hint.className = 'inline-rename-hint';
+  hint.textContent = 'enter · esc';
 
   wrapper.appendChild(input);
-  wrapper.appendChild(confirmBtn);
-  wrapper.appendChild(cancelBtn);
-
+  wrapper.appendChild(hint);
   nameSpan.replaceWith(wrapper);
   input.focus();
   input.select();
@@ -1427,10 +1415,10 @@ function renameAlbum(oldName) {
     if (e.key === 'Enter') commit();
     if (e.key === 'Escape') revert();
   });
-  confirmBtn.addEventListener('click', commit);
-  cancelBtn.addEventListener('click', revert);
+  input.addEventListener('blur', () => {
+    setTimeout(() => { if (wrapper.isConnected) revert(); }, 150);
+  });
 
-  // Prevent the link click from firing
   link.addEventListener('click', (e) => {
     if (wrapper.isConnected) e.preventDefault();
   }, { capture: true });
@@ -1447,32 +1435,32 @@ function deleteAlbum(albumName) {
 
   const photos = albums[albumName] || [];
 
-  // Replace name with inline confirmation
   const wrapper = document.createElement('span');
-  wrapper.className = 'inline-rename-row';
+  wrapper.className = 'inline-rename-col';
 
   const msg = document.createElement('span');
   msg.className = 'inline-delete-msg';
   msg.textContent = photos.length > 0 ? `DELETE? (${photos.length} → unsorted)` : 'DELETE?';
 
-  const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'inline-rename-ok delete';
-  confirmBtn.textContent = '✓';
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'inline-rename-cancel';
-  cancelBtn.textContent = '✕';
+  const hint = document.createElement('span');
+  hint.className = 'inline-rename-hint';
+  hint.textContent = 'enter · esc';
 
   wrapper.appendChild(msg);
-  wrapper.appendChild(confirmBtn);
-  wrapper.appendChild(cancelBtn);
+  wrapper.appendChild(hint);
   nameSpan.replaceWith(wrapper);
+
+  // Focus the link so keyboard works
+  link.setAttribute('tabindex', '0');
+  link.focus();
 
   function doDelete() {
     if (photos.length > 0) {
       albums._unsorted = albums._unsorted || [];
-      albums._unsorted.push(...photos);
-      updateUnsortedBadge();
+      // Deep copy each photo to unsorted
+      photos.forEach(p => {
+        albums._unsorted.push({...p});
+      });
     }
 
     delete albums[albumName];
@@ -1490,19 +1478,30 @@ function deleteAlbum(albumName) {
 
     rebuildAlbumNav();
     setupEditSidebar();
+    renderUnsortedTray();
   }
 
   function revert() {
     wrapper.replaceWith(nameSpan);
     if (actions) actions.style.display = '';
+    link.removeAttribute('tabindex');
   }
 
-  confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); doDelete(); });
-  cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); revert(); });
+  function onKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); doDelete(); link.removeEventListener('keydown', onKey); }
+    if (e.key === 'Escape') { e.preventDefault(); revert(); link.removeEventListener('keydown', onKey); }
+  }
+
+  link.addEventListener('keydown', onKey);
 
   link.addEventListener('click', (e) => {
     if (wrapper.isConnected) e.preventDefault();
   }, { capture: true });
+
+  // Cancel on blur
+  link.addEventListener('blur', () => {
+    setTimeout(() => { if (wrapper.isConnected) revert(); }, 200);
+  }, { once: true });
 }
 
 function exitEditMode(saved) {
