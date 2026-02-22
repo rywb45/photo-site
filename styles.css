@@ -986,23 +986,30 @@ body:not(.inverted) .album-action-btn:hover { color: #000; }
 body:not(.inverted) .album-action-btn.delete:hover { color: #d44; }
 
 /* Add album button */
+.add-album-separator {
+  height: 1px;
+  background: #222;
+  margin: 4px 0;
+}
+
+body:not(.inverted) .add-album-separator { background: #e0e0e0; }
+
 .add-album-btn {
-  background: none;
-  border: 1px dashed #333;
-  color: #555;
-  font-family: inherit;
+  color: #2a2a2a;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
-  padding: 6px 12px;
-  border-radius: 3px;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 8px;
+  font-family: inherit;
+  padding: 2px 0;
+  transition: color 0.2s;
+  text-align: left;
 }
 
-.add-album-btn:hover { border-color: #555; color: #888; }
+.add-album-btn:hover { color: #555; }
 
-body:not(.inverted) .add-album-btn { border-color: #ccc; color: #999; }
-body:not(.inverted) .add-album-btn:hover { border-color: #999; color: #666; }
+body:not(.inverted) .add-album-btn { color: #ccc; }
+body:not(.inverted) .add-album-btn:hover { color: #888; }
