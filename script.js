@@ -1459,7 +1459,6 @@ function deleteAlbum(albumName) {
 
 function exitEditMode(saved) {
   editMode = false;
-  document.body.classList.remove('edit-mode');
 
   const grid = document.getElementById('grid');
   if (grid._editCleanup) {
@@ -1490,13 +1489,13 @@ function exitEditMode(saved) {
   const tray = document.getElementById('unsortedTray');
   if (tray) tray.remove();
 
-  // Animate out the add-album elements FIRST (before any rebuild)
+  // Animate out the add-album elements (keep edit-mode class so layout stays stable)
   const addSep = document.querySelector('.add-album-separator');
   const addBtn = document.querySelector('.add-album-btn');
   if (addSep) addSep.classList.remove('visible');
   if (addBtn) addBtn.classList.remove('visible');
 
-  // Also fade out album action kebabs
+  // Fade out album action kebabs
   document.querySelectorAll('.album-actions').forEach(a => {
     a.style.transition = 'opacity 0.3s ease';
     a.style.opacity = '0';
@@ -1506,8 +1505,10 @@ function exitEditMode(saved) {
   const wasCancelled = !saved && preEditAlbums;
   const savedPreEditAlbums = preEditAlbums;
 
-  // Delay rebuild to let animation finish
+  // Delay rebuild to let animations finish, THEN remove edit-mode class
   setTimeout(() => {
+    document.body.classList.remove('edit-mode');
+
     // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
     if (wasCancelled) {
       const uploadedPhotos = {};
@@ -1539,7 +1540,7 @@ function exitEditMode(saved) {
 
     rebuildAlbumNav();
     renderGrid();
-  }, 350);
+  }, 400);
 
   preEditPhotos = null;
   preEditAlbums = null;
