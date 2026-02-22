@@ -225,17 +225,58 @@ function updateVirtualSlides() {
 function buildDots() {
   const dotsContainer = document.getElementById('lbDots');
   dotsContainer.innerHTML = '';
-  const counter = document.createElement('span');
-  counter.className = 'lb-counter';
-  counter.textContent = `${currentIndex + 1} / ${currentPhotos.length}`;
-  dotsContainer.appendChild(counter);
+  const track = document.createElement('div');
+  track.className = 'lb-dots-track';
+  for (let i = 0; i < currentPhotos.length; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'lb-dot';
+    track.appendChild(dot);
+  }
+  dotsContainer.appendChild(track);
+  updateDots();
 }
 
 function updateDots() {
-  const counter = document.querySelector('.lb-counter');
-  if (counter) {
-    counter.textContent = `${currentIndex + 1} / ${currentPhotos.length}`;
+  const track = document.querySelector('.lb-dots-track');
+  if (!track) return;
+  const dots = track.children;
+  const total = dots.length;
+
+  if (total <= 7) {
+    // Show all dots, no sliding or shrinking
+    track.style.transform = '';
+    for (let i = 0; i < total; i++) {
+      dots[i].className = 'lb-dot' + (i === currentIndex ? ' active' : '');
+    }
+    return;
   }
+
+  const windowStart = Math.max(0, Math.min(currentIndex - 3, total - 7));
+
+  for (let i = 0; i < total; i++) {
+    const posInWindow = i - windowStart;
+    let cls = 'lb-dot';
+
+    if (i === currentIndex) {
+      cls += ' active';
+    }
+
+    if (posInWindow < 0 || posInWindow > 6) {
+      cls += ' hidden';
+    } else if (posInWindow === 0 && windowStart > 0) {
+      cls += ' tiny';
+    } else if (posInWindow === 6 && windowStart < total - 7) {
+      cls += ' tiny';
+    } else if (posInWindow === 1 && windowStart > 0) {
+      cls += ' small';
+    } else if (posInWindow === 5 && windowStart < total - 7) {
+      cls += ' small';
+    }
+
+    dots[i].className = cls;
+  }
+
+  track.style.transform = `translateX(${-windowStart * 10}px)`;
 }
 
 function goToSlide(index, animate = true) {
@@ -544,9 +585,10 @@ lightbox.addEventListener('dblclick', (e) => {
   if (zoomScale > 1) {
     resetZoom();
   } else {
-    zoomScale = 2;
+    zoomScale = 2.5;
     panOffsetX = (window.innerWidth / 2 - e.clientX) * (zoomScale - 1);
     panOffsetY = (window.innerHeight / 2 - e.clientY) * (zoomScale - 1);
+    clampPan();
     img.style.transition = 'transform 0.3s ease';
     applyZoom(img);
     setTimeout(() => { img.style.transition = ''; }, 300);
@@ -583,7 +625,7 @@ lightbox.addEventListener('wheel', (e) => {
 
     const prevScale = zoomScale;
     // Exponential scaling for smooth continuous zoom
-    zoomScale = Math.max(1, Math.min(zoomScale * Math.exp(-e.deltaY * 0.005), 2));
+    zoomScale = Math.max(1, Math.min(zoomScale * Math.exp(-e.deltaY * 0.005), MAX_ZOOM));
 
     // Zoom toward cursor position
     const rect = img.getBoundingClientRect();
@@ -593,11 +635,7 @@ lightbox.addEventListener('wheel', (e) => {
     panOffsetX = cx - scaleFactor * (cx - panOffsetX);
     panOffsetY = cy - scaleFactor * (cy - panOffsetY);
 
-    if (zoomScale <= 1) {
-      panOffsetX = 0;
-      panOffsetY = 0;
-    }
-
+    clampPan();
     img.style.transition = 'none';
     applyZoom(img);
     return;
@@ -609,6 +647,7 @@ lightbox.addEventListener('wheel', (e) => {
     if (!img) return;
     panOffsetX -= e.deltaX * 1.5;
     panOffsetY -= e.deltaY * 1.5;
+    clampPan();
     img.style.transition = 'none';
     applyZoom(img);
     return;
@@ -758,6 +797,38 @@ let lastPanY = 0;
 let lastTapTime = 0;
 let pinchJustEnded = false;
 let pinchEndTimer = null;
+let initialPinchMidX = 0;
+let initialPinchMidY = 0;
+let lastPinchMidX = 0;
+let lastPinchMidY = 0;
+
+const MAX_ZOOM = 4;
+
+function clampPan() {
+  const img = getCurrentSlideImg();
+  if (!img || !img.naturalWidth) return;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const maxW = vw * 0.9;
+  const maxH = vh * 0.9;
+  const ar = img.naturalWidth / img.naturalHeight;
+
+  let baseW, baseH;
+  if (maxW / maxH > ar) {
+    baseH = maxH;
+    baseW = baseH * ar;
+  } else {
+    baseW = maxW;
+    baseH = baseW / ar;
+  }
+
+  const maxPanX = Math.max(0, (baseW * zoomScale - vw) / 2);
+  const maxPanY = Math.max(0, (baseH * zoomScale - vh) / 2);
+
+  panOffsetX = Math.max(-maxPanX, Math.min(maxPanX, panOffsetX));
+  panOffsetY = Math.max(-maxPanY, Math.min(maxPanY, panOffsetY));
+}
 
 function getDistance(t1, t2) {
   const dx = t1.clientX - t2.clientX;
@@ -808,6 +879,10 @@ lightbox.addEventListener('touchstart', (e) => {
     gestureDirection = null;
     initialPinchDist = getDistance(e.touches[0], e.touches[1]);
     initialPinchScale = zoomScale;
+    initialPinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    initialPinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    lastPinchMidX = initialPinchMidX;
+    lastPinchMidY = initialPinchMidY;
     return;
   }
 
@@ -827,9 +902,12 @@ lightbox.addEventListener('touchstart', (e) => {
     if (zoomScale > 1) {
       resetZoom();
     } else {
-      zoomScale = 2;
-      panOffsetX = 0;
-      panOffsetY = 0;
+      zoomScale = 2.5;
+      const tapX = e.touches[0].clientX;
+      const tapY = e.touches[0].clientY;
+      panOffsetX = (window.innerWidth / 2 - tapX) * (zoomScale - 1);
+      panOffsetY = (window.innerHeight / 2 - tapY) * (zoomScale - 1);
+      clampPan();
       img.style.transition = 'transform 0.3s ease';
       applyZoom(img);
       setTimeout(() => { img.style.transition = ''; }, 300);
@@ -861,17 +939,35 @@ lightbox.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 lightbox.addEventListener('touchmove', (e) => {
-  // Pinch zoom
+  // Pinch zoom toward finger midpoint + pan-while-pinching
   if (isPinching && e.touches.length === 2) {
     e.preventDefault();
-    const dist = getDistance(e.touches[0], e.touches[1]);
-    zoomScale = Math.max(1, Math.min(initialPinchScale * (dist / initialPinchDist), 2));
-
     const img = getCurrentSlideImg();
-    if (img) {
-      img.style.transition = 'none';
-      applyZoom(img);
-    }
+    if (!img) return;
+
+    const dist = getDistance(e.touches[0], e.touches[1]);
+    const prevScale = zoomScale;
+    zoomScale = Math.max(1, Math.min(initialPinchScale * (dist / initialPinchDist), MAX_ZOOM));
+
+    // Zoom toward initial pinch center
+    const rect = img.getBoundingClientRect();
+    const cx = initialPinchMidX - (rect.left + rect.width / 2);
+    const cy = initialPinchMidY - (rect.top + rect.height / 2);
+    const scaleFactor = zoomScale / prevScale;
+    panOffsetX = cx - scaleFactor * (cx - panOffsetX);
+    panOffsetY = cy - scaleFactor * (cy - panOffsetY);
+
+    // Pan-while-pinching: track midpoint drift
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    panOffsetX += midX - lastPinchMidX;
+    panOffsetY += midY - lastPinchMidY;
+    lastPinchMidX = midX;
+    lastPinchMidY = midY;
+
+    clampPan();
+    img.style.transition = 'none';
+    applyZoom(img);
     return;
   }
 
@@ -885,6 +981,7 @@ lightbox.addEventListener('touchmove', (e) => {
     const dy = e.touches[0].clientY - panStartY;
     panOffsetX = lastPanX + dx;
     panOffsetY = lastPanY + dy;
+    clampPan();
 
     const img = getCurrentSlideImg();
     if (img) {
@@ -941,6 +1038,18 @@ lightbox.addEventListener('touchend', (e) => {
       setPinchCooldown();
       if (zoomScale < 1.1) {
         resetZoom();
+      } else {
+        // Spring-back: clamp pan and animate if position changed
+        const oldX = panOffsetX, oldY = panOffsetY;
+        clampPan();
+        if (oldX !== panOffsetX || oldY !== panOffsetY) {
+          const img = getCurrentSlideImg();
+          if (img) {
+            img.style.transition = 'transform 0.3s ease';
+            applyZoom(img);
+            setTimeout(() => { img.style.transition = ''; }, 300);
+          }
+        }
       }
     }
     return;
@@ -949,8 +1058,18 @@ lightbox.addEventListener('touchend', (e) => {
   // Ignore if in cooldown
   if (pinchJustEnded) return;
 
-  // End pan while zoomed
+  // End pan while zoomed — spring-back if at edge
   if (zoomScale > 1) {
+    const oldX = panOffsetX, oldY = panOffsetY;
+    clampPan();
+    if (oldX !== panOffsetX || oldY !== panOffsetY) {
+      const img = getCurrentSlideImg();
+      if (img) {
+        img.style.transition = 'transform 0.3s ease';
+        applyZoom(img);
+        setTimeout(() => { img.style.transition = ''; }, 300);
+      }
+    }
     return;
   }
 

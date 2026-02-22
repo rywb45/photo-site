@@ -493,19 +493,49 @@ body.inverted {
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    width: 70px;
     z-index: 10;
   }
 
-  .lb-counter {
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    color: #000;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 4px 12px;
-    border-radius: 12px;
+  .lb-dots-track {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    transition: transform 0.3s ease;
+  }
+
+  .lb-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, opacity 0.3s ease;
+  }
+
+  .lb-dot.active {
+    width: 7px;
+    height: 7px;
+    background: #000;
+  }
+
+  .lb-dot.small {
+    width: 4px;
+    height: 4px;
+  }
+
+  .lb-dot.tiny {
+    width: 3px;
+    height: 3px;
+  }
+
+  .lb-dot.hidden {
+    width: 0;
+    height: 0;
+    opacity: 0;
   }
 }
 
@@ -542,9 +572,12 @@ body.inverted .lb-next::before {
   filter: invert(1);
 }
 
-body.inverted .lb-counter {
-  color: #fff;
-  background: rgba(0, 0, 0, 0.5);
+body.inverted .lb-dot {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+body.inverted .lb-dot.active {
+  background: #fff;
 }
 
 /* ============================================
