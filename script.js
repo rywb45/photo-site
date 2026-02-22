@@ -225,8 +225,8 @@ function updateVirtualSlides() {
 function buildDots() {
   const dotsContainer = document.getElementById('lbDots');
   dotsContainer.innerHTML = '';
-  // Fixed clip window for >7 dots; auto-size for ≤7 so they center naturally
-  dotsContainer.style.width = currentPhotos.length > 7 ? '66px' : '';
+  // Fixed clip window for >7 dots (7 slots × 10px); auto-size for ≤7
+  dotsContainer.style.width = currentPhotos.length > 7 ? '70px' : '';
   const track = document.createElement('div');
   track.className = 'lb-dots-track';
   for (let i = 0; i < currentPhotos.length; i++) {
