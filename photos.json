@@ -21,6 +21,18 @@
       "h": 2048
     },
     {
+      "src": "02-buildings/006.webp",
+      "grid": "02-buildings/grid/006.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "02-buildings/004.webp",
+      "grid": "02-buildings/grid/004.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
       "src": "02-buildings/001.webp",
       "grid": "02-buildings/grid/001.webp",
       "w": 2048,
@@ -31,18 +43,6 @@
       "grid": "02-buildings/grid/003.webp",
       "w": 2048,
       "h": 1365
-    },
-    {
-      "src": "02-buildings/004.webp",
-      "grid": "02-buildings/grid/004.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "02-buildings/006.webp",
-      "grid": "02-buildings/grid/006.webp",
-      "w": 1365,
-      "h": 2048
     }
   ],
   "people": [
