@@ -1,12 +1,6 @@
 {
   "chinatown": [
     {
-      "src": "01-people/002.webp",
-      "grid": "01-people/grid/002.webp",
-      "w": 2048,
-      "h": 1463
-    },
-    {
       "src": "01-people/008.webp",
       "grid": "01-people/grid/008.webp",
       "w": 2048,
