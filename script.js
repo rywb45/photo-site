@@ -1816,13 +1816,27 @@ function renderEditGrid() {
       const cx = mouseX - clone._offsetX;
       const cy = mouseY - clone._offsetY;
 
-      // Shrink clone when near sidebar (left 280px)
+      // Shrink clone when near sidebar or unsorted tray
       const sidebarEdge = 280;
       let scale = 1;
       if (mouseX < sidebarEdge + 100) {
         const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
         scale = 1 - t * 0.65; // shrink to ~35% size
       }
+      const _unsortedBtn = document.getElementById('unsortedBtn');
+      const _unsortedTray = document.getElementById('unsortedTray');
+      let _overTray = false;
+      if (_unsortedBtn) {
+        const r = _unsortedBtn.getBoundingClientRect();
+        _overTray = mouseX >= r.left - 20 && mouseX <= r.right + 20 &&
+                    mouseY >= r.top - 15 && mouseY <= r.bottom + 15;
+      }
+      if (!_overTray && _unsortedTray && _unsortedTray.classList.contains('open')) {
+        const r = _unsortedTray.getBoundingClientRect();
+        _overTray = mouseX >= r.left - 10 && mouseX <= r.right + 10 &&
+                    mouseY >= r.top - 10 && mouseY <= r.bottom + 10;
+      }
+      if (_overTray) scale = Math.min(scale, 0.35);
 
       clone.style.transform = `translate(${cx}px, ${cy}px) scale(${scale})`;
       if (!clone._shown) {
@@ -2310,7 +2324,14 @@ function startTrayDrag(unsortedIndex, e) {
       document.body.appendChild(clone);
     }
 
-    clone.style.transform = `translate(${mouseX - 45}px, ${mouseY - 32}px)`;
+    // Shrink clone when near sidebar
+    const sidebarEdge = 280;
+    let scale = 1;
+    if (mouseX < sidebarEdge + 100) {
+      const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
+      scale = 1 - t * 0.65;
+    }
+    clone.style.transform = `translate(${mouseX - 45}px, ${mouseY - 32}px) scale(${scale})`;
 
     document.querySelectorAll('#albumNav a').forEach(link => {
       const rect = link.getBoundingClientRect();
@@ -2325,7 +2346,10 @@ function startTrayDrag(unsortedIndex, e) {
     document.removeEventListener('mouseup', onUp);
     if (clone) { clone.remove(); }
     document.querySelectorAll('#albumNav a').forEach(l => l.classList.remove('edit-album-photo-target'));
-    if (!hasDragged) return;
+    if (!hasDragged) {
+      showTrayPreview(unsortedIndex);
+      return;
+    }
 
     let droppedAlbum = null;
     document.querySelectorAll('#albumNav a').forEach(link => {
@@ -2352,6 +2376,27 @@ function startTrayDrag(unsortedIndex, e) {
 
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onUp);
+}
+
+function showTrayPreview(unsortedIndex) {
+  const photo = albums._unsorted[unsortedIndex];
+  if (!photo) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'tray-preview-overlay';
+
+  const img = document.createElement('img');
+  img.src = unsortedPreviews.get(photo.grid) || `photos/${photo.src}`;
+  img.className = 'tray-preview-img';
+  overlay.appendChild(img);
+
+  overlay.addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 200);
+  });
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 }
 
 function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
