@@ -819,24 +819,6 @@ body:not(.inverted) .unsorted-btn.active { border-color: #999; color: #000; back
 
 .unsorted-btn svg { width: 14px; height: 14px; opacity: 0.7; }
 
-.unsorted-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 16px;
-  height: 16px;
-  background: #666;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-  border-radius: 8px;
-  padding: 0 4px;
-}
-
-body:not(.inverted) .unsorted-badge { background: #999; color: #fff; }
-
 /* Unsorted tray */
 .unsorted-tray {
   position: fixed;
