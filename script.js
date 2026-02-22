@@ -2269,6 +2269,9 @@ function renderUnsortedTray() {
       startTrayDrag(i, e);
     });
 
+    thumb.addEventListener('mouseenter', () => showTrayHover(photo, thumb));
+    thumb.addEventListener('mouseleave', hideTrayHover);
+
     strip.appendChild(thumb);
   });
 }
@@ -2315,6 +2318,7 @@ function startTrayDrag(unsortedIndex, e) {
 
     if (!hasDragged) {
       hasDragged = true;
+      hideTrayHover();
       clone = document.createElement('div');
       clone.style.cssText = `
         position: fixed; left: 0; top: 0;
@@ -2330,12 +2334,19 @@ function startTrayDrag(unsortedIndex, e) {
       document.body.appendChild(clone);
     }
 
-    // Shrink clone when near sidebar
-    const sidebarEdge = 280;
+    // Grow clone as it moves away from tray, shrink near sidebar
+    const trayEl = document.getElementById('unsortedTray');
     let scale = 1;
+    if (trayEl) {
+      const trayRect = trayEl.getBoundingClientRect();
+      const distFromTray = Math.max(0, trayRect.top - mouseY);
+      const growT = Math.min(1, distFromTray / 200);
+      scale = 1 + growT * 1.2; // grow up to ~2.2x from thumbnail size
+    }
+    const sidebarEdge = 280;
     if (mouseX < sidebarEdge + 100) {
       const t = Math.max(0, Math.min(1, 1 - (mouseX - sidebarEdge + 50) / 150));
-      scale = 1 - t * 0.65;
+      scale = scale * (1 - t * 0.65);
     }
     clone.style.transform = `translate(${mouseX - 45}px, ${mouseY - 32}px) scale(${scale})`;
 
@@ -2352,10 +2363,7 @@ function startTrayDrag(unsortedIndex, e) {
     document.removeEventListener('mouseup', onUp);
     if (clone) { clone.remove(); }
     document.querySelectorAll('#albumNav a').forEach(l => l.classList.remove('edit-album-photo-target'));
-    if (!hasDragged) {
-      showTrayPreview(unsortedIndex);
-      return;
-    }
+    if (!hasDragged) return;
 
     let droppedAlbum = null;
     document.querySelectorAll('#albumNav a').forEach(link => {
@@ -2384,63 +2392,38 @@ function startTrayDrag(unsortedIndex, e) {
   document.addEventListener('mouseup', onUp);
 }
 
-function showTrayPreview(startIndex) {
-  const unsorted = albums._unsorted;
-  if (!unsorted || unsorted.length === 0) return;
+let trayHoverEl = null;
 
-  let idx = startIndex;
+function showTrayHover(photo, thumbEl) {
+  hideTrayHover();
+  const src = unsortedPreviews.get(photo.grid) || `photos/${photo.src}`;
+  const thumbRect = thumbEl.getBoundingClientRect();
 
-  const overlay = document.createElement('div');
-  overlay.className = 'tray-preview-overlay';
-
+  const preview = document.createElement('div');
+  preview.className = 'tray-hover-preview';
   const img = document.createElement('img');
-  img.className = 'tray-preview-img';
-  overlay.appendChild(img);
+  img.src = src;
+  preview.appendChild(img);
+  document.body.appendChild(preview);
+  trayHoverEl = preview;
 
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'lb-btn lb-close tray-preview-btn';
-  closeBtn.addEventListener('click', close);
-  overlay.appendChild(closeBtn);
-
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'lb-btn lb-prev tray-preview-btn';
-  prevBtn.addEventListener('click', () => go(idx - 1));
-  overlay.appendChild(prevBtn);
-
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'lb-btn lb-next tray-preview-btn';
-  nextBtn.addEventListener('click', () => go(idx + 1));
-  overlay.appendChild(nextBtn);
-
-  function go(i) {
-    if (i < 0 || i >= unsorted.length) return;
-    idx = i;
-    const p = unsorted[idx];
-    img.src = unsortedPreviews.get(p.grid) || `photos/${p.src}`;
-    prevBtn.style.display = idx === 0 ? 'none' : 'block';
-    nextBtn.style.display = idx === unsorted.length - 1 ? 'none' : 'block';
-  }
-
-  function close() {
-    document.removeEventListener('keydown', onKey);
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 200);
-  }
-
-  function onKey(e) {
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowLeft') go(idx - 1);
-    if (e.key === 'ArrowRight') go(idx + 1);
-  }
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
+  // Position above the thumbnail, centered
+  requestAnimationFrame(() => {
+    const pw = preview.offsetWidth;
+    let left = thumbRect.left + thumbRect.width / 2 - pw / 2;
+    left = Math.max(8, Math.min(window.innerWidth - pw - 8, left));
+    preview.style.left = left + 'px';
+    preview.style.bottom = (window.innerHeight - thumbRect.top + 12) + 'px';
+    preview.style.opacity = '1';
+    preview.style.transform = 'translateY(0)';
   });
+}
 
-  document.addEventListener('keydown', onKey);
-  document.body.appendChild(overlay);
-  go(idx);
-  requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+function hideTrayHover() {
+  if (trayHoverEl) {
+    trayHoverEl.remove();
+    trayHoverEl = null;
+  }
 }
 
 function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {

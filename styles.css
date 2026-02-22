@@ -1089,32 +1089,21 @@ body:not(.inverted) .add-album-separator { background: #e0e0e0; }
 body:not(.inverted) .add-album-btn { color: #ccc; }
 body:not(.inverted) .add-album-btn:hover { color: #888; }
 
-.tray-preview-overlay {
+.tray-hover-preview {
   position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
   z-index: 10003;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
-body.inverted .tray-preview-overlay {
-  background: rgba(0, 0, 0, 0.85);
-}
-
-.tray-preview-img {
-  max-width: 90%;
-  max-height: 90vh;
+.tray-hover-preview img {
+  display: block;
+  max-width: 320px;
+  max-height: 240px;
   object-fit: contain;
-  border-radius: 2px;
-}
-
-.tray-preview-btn {
-  z-index: 10004;
 }
