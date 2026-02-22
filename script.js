@@ -1021,11 +1021,6 @@ function setupEditSidebar() {
   const navLinks = Array.from(document.querySelectorAll('#albumNav a'));
   let handlers = [];
 
-  // Create insertion indicator line
-  let indicator = document.createElement('div');
-  indicator.className = 'edit-album-indicator';
-  indicator.style.display = 'none';
-
   navLinks.forEach((link, i) => {
     const albumName = link.dataset.album;
     link.classList.add('edit-album-link');
@@ -1040,16 +1035,63 @@ function setupEditSidebar() {
       let hasDragged = false;
       let clone = null;
       let mouseY = startY;
-      let insertBeforeAlbum = null;
+      let currentHoverIdx = -1;
 
       const rect = link.getBoundingClientRect();
       const offsetY = e.clientY - rect.top;
+      const myIdx = navLinks.indexOf(link);
 
-      // Cache positions at drag start
       const linkRects = navLinks.map(l => {
         const r = l.getBoundingClientRect();
-        return { top: r.top, bottom: r.bottom, cy: r.top + r.height / 2 };
+        return { top: r.top, bottom: r.bottom, cy: r.top + r.height / 2, h: r.height };
       });
+
+      // Pre-set transitions on all other links for smooth pushing
+      navLinks.forEach((l, j) => {
+        if (j !== myIdx) {
+          l.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        }
+      });
+
+      function updatePush() {
+        let hoverIdx = -1;
+
+        // Find which slot the cursor is over
+        for (let j = 0; j < linkRects.length; j++) {
+          if (j === myIdx) continue;
+          if (mouseY >= linkRects[j].top - 5 && mouseY <= linkRects[j].bottom + 5) {
+            hoverIdx = j;
+            break;
+          }
+        }
+
+        if (hoverIdx === currentHoverIdx) return;
+        currentHoverIdx = hoverIdx;
+
+        const itemH = linkRects[myIdx].h + 8; // height + gap
+
+        navLinks.forEach((other, j) => {
+          if (j === myIdx) return;
+
+          if (hoverIdx === -1) {
+            other.style.transform = '';
+          } else if (myIdx < hoverIdx) {
+            // Dragging down: items between myIdx+1 and hoverIdx shift up
+            if (j > myIdx && j <= hoverIdx) {
+              other.style.transform = `translateY(-${itemH}px)`;
+            } else {
+              other.style.transform = '';
+            }
+          } else {
+            // Dragging up: items between hoverIdx and myIdx-1 shift down
+            if (j >= hoverIdx && j < myIdx) {
+              other.style.transform = `translateY(${itemH}px)`;
+            } else {
+              other.style.transform = '';
+            }
+          }
+        });
+      }
 
       function onMove(ev) {
         mouseY = ev.clientY;
@@ -1078,43 +1120,10 @@ function setupEditSidebar() {
           `;
           document.body.appendChild(clone);
           link.classList.add('edit-album-dragging');
-
-          // Add indicator to nav
-          const nav = document.getElementById('albumNav');
-          nav.appendChild(indicator);
         }
 
         clone.style.transform = `translateY(${mouseY - offsetY}px)`;
-
-        // Find insertion point
-        insertBeforeAlbum = null;
-        let showIndicator = false;
-
-        for (let j = 0; j < navLinks.length; j++) {
-          if (navLinks[j].dataset.album === albumName) continue;
-          const r = linkRects[j];
-
-          if (mouseY < r.cy) {
-            insertBeforeAlbum = navLinks[j].dataset.album;
-            indicator.style.display = 'block';
-            // Position indicator above this link
-            navLinks[j].parentNode.insertBefore(indicator, navLinks[j]);
-            showIndicator = true;
-            break;
-          }
-        }
-
-        // If past all items, insert at end
-        if (!showIndicator && mouseY > linkRects[linkRects.length - 1].cy) {
-          const lastAlbum = navLinks[navLinks.length - 1].dataset.album;
-          if (lastAlbum !== albumName) {
-            insertBeforeAlbum = '__end__';
-            indicator.style.display = 'block';
-            navLinks[navLinks.length - 1].parentNode.appendChild(indicator);
-          }
-        } else if (!showIndicator) {
-          indicator.style.display = 'none';
-        }
+        updatePush();
       }
 
       function onUp() {
@@ -1123,19 +1132,16 @@ function setupEditSidebar() {
 
         if (clone) { clone.remove(); clone = null; }
         link.classList.remove('edit-album-dragging');
-        indicator.style.display = 'none';
 
-        if (hasDragged && insertBeforeAlbum) {
+        // Clear all transforms and transitions
+        navLinks.forEach(l => { l.style.transition = ''; l.style.transform = ''; });
+
+        if (hasDragged && currentHoverIdx !== -1 && currentHoverIdx !== myIdx) {
+          // Reorder
           const keys = Object.keys(albums);
-          const fromIdx = keys.indexOf(albumName);
-          keys.splice(fromIdx, 1);
-
-          if (insertBeforeAlbum === '__end__') {
-            keys.push(albumName);
-          } else {
-            const toIdx = keys.indexOf(insertBeforeAlbum);
-            keys.splice(toIdx, 0, albumName);
-          }
+          const name = keys[myIdx];
+          keys.splice(myIdx, 1);
+          keys.splice(currentHoverIdx, 0, name);
 
           const newAlbums = {};
           keys.forEach(k => { newAlbums[k] = albums[k]; });
@@ -1163,7 +1169,6 @@ function setupEditSidebar() {
       link.removeEventListener('mousedown', handler);
       link.classList.remove('edit-album-link');
     });
-    indicator.remove();
   };
 }
 
