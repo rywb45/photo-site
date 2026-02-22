@@ -1440,6 +1440,8 @@ function deleteAlbum(albumName) {
 
   // If we just deleted the current album, switch to first available
   if (currentAlbum === albumName) {
+    currentAlbum = null;
+    currentPhotos = [];
     const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
     if (remaining.length > 0) {
       switchAlbum(remaining[0]);
