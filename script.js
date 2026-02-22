@@ -969,6 +969,7 @@ let preEditPhotos = null;
 let preEditAlbums = null;
 let preEditAlbumOrder = null;
 let pendingMoves = [];
+let pendingDeletes = [];
 
 const REPO_OWNER = 'rywb45';
 const REPO_NAME = 'photo-site';
@@ -1550,6 +1551,7 @@ function exitEditMode(saved) {
   preEditAlbums = null;
   preEditAlbumOrder = null;
   pendingMoves = [];
+  pendingDeletes = [];
 
   // DECORATIVE: typewriter out
   const nameText = document.getElementById('nameText');
@@ -2275,54 +2277,27 @@ function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
 // ============================================
 // Photo Delete
 // ============================================
-async function deletePhoto(photoIndex) {
+function deletePhoto(photoIndex) {
   const photo = currentPhotos[photoIndex];
-  const filename = photo.full.replace('photos/', '').split('/').pop();
 
+  // Queue for deletion on save
+  pendingDeletes.push({
+    full: `photos/${photo.full.replace('photos/', '')}`,
+    grid: `photos/${photo.grid.replace('photos/', '')}`
+  });
 
-  const token = localStorage.getItem('gh_token');
-  if (!token) {
-    alert('No token found. Please log in again.');
-    return;
-  }
+  // Remove from local state
+  currentPhotos.splice(photoIndex, 1);
 
-  const bar = document.getElementById('editBar');
-  const label = bar.querySelector('.edit-bar-label');
-  label.textContent = 'DELETING...';
+  albums[currentAlbum] = currentPhotos.map(p => ({
+    src: p.full.replace('photos/', ''),
+    grid: p.grid.replace('photos/', ''),
+    w: p.width,
+    h: p.height
+  }));
 
-  try {
-    const fullPath = `photos/${photo.full.replace('photos/', '')}`;
-    const gridPath = `photos/${photo.grid.replace('photos/', '')}`;
-
-    // Delete full-res from GitHub
-    await deleteFileFromGitHub(fullPath, token);
-    // Delete grid thumbnail from GitHub
-    await deleteFileFromGitHub(gridPath, token);
-
-    // Remove from current album
-    currentPhotos.splice(photoIndex, 1);
-
-    // Sync back to albums
-    albums[currentAlbum] = currentPhotos.map(p => ({
-      src: p.full.replace('photos/', ''),
-      grid: p.grid.replace('photos/', ''),
-      w: p.width,
-      h: p.height
-    }));
-
-    // Save updated photos.json
-    await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
-
-    // Re-render
-    carouselBuiltForAlbum = null;
-    renderEditGrid();
-
-    label.textContent = 'EDIT MODE';
-  } catch (err) {
-    console.error('Delete failed:', err);
-    alert('Delete failed: ' + err.message);
-    label.textContent = 'EDIT MODE';
-  }
+  carouselBuiltForAlbum = null;
+  renderEditGrid();
 }
 
 async function deleteFileFromGitHub(path, token) {
@@ -2569,6 +2544,13 @@ async function saveOrder() {
       await saveFileToGitHub('moves.json', JSON.stringify(pendingMoves, null, 2), token);
       pendingMoves = [];
     }
+
+    // Process pending deletes
+    for (const del of pendingDeletes) {
+      await deleteFileFromGitHub(del.full, token);
+      await deleteFileFromGitHub(del.grid, token);
+    }
+    pendingDeletes = [];
 
     carouselBuiltForAlbum = null;
 
