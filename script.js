@@ -1021,6 +1021,11 @@ function setupEditSidebar() {
   const navLinks = Array.from(document.querySelectorAll('#albumNav a'));
   let handlers = [];
 
+  // Create insertion indicator line
+  let indicator = document.createElement('div');
+  indicator.className = 'edit-album-indicator';
+  indicator.style.display = 'none';
+
   navLinks.forEach((link, i) => {
     const albumName = link.dataset.album;
     link.classList.add('edit-album-link');
@@ -1031,67 +1036,85 @@ function setupEditSidebar() {
       e.stopPropagation();
 
       const startY = e.clientY;
+      const startX = e.clientX;
       let hasDragged = false;
       let clone = null;
       let mouseY = startY;
-
-      const linkRects = navLinks.map(l => {
-        const rect = l.getBoundingClientRect();
-        return { cy: rect.top + rect.height / 2, h: rect.height, top: rect.top, left: rect.left, width: rect.width };
-      });
+      let insertBeforeAlbum = null;
 
       const rect = link.getBoundingClientRect();
       const offsetY = e.clientY - rect.top;
 
+      // Cache positions at drag start
+      const linkRects = navLinks.map(l => {
+        const r = l.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, cy: r.top + r.height / 2 };
+      });
+
       function onMove(ev) {
         mouseY = ev.clientY;
-        const moved = Math.abs(mouseY - startY);
+        const dist = Math.sqrt(Math.pow(ev.clientX - startX, 2) + Math.pow(mouseY - startY, 2));
 
-        // Require 8px of movement before starting drag
-        if (!hasDragged && moved < 8) return;
+        if (!hasDragged && dist < 8) return;
 
         if (!hasDragged) {
           hasDragged = true;
-          clone = link.cloneNode(true);
+          clone = document.createElement('div');
+          clone.textContent = link.textContent;
           clone.style.cssText = `
             position: fixed;
             left: ${rect.left}px;
-            top: ${rect.top}px;
-            width: ${rect.width}px;
+            top: 0;
             pointer-events: none;
             z-index: 10001;
-            opacity: 0.85;
+            opacity: 0.7;
             font-size: ${getComputedStyle(link).fontSize};
             font-weight: ${getComputedStyle(link).fontWeight};
             letter-spacing: ${getComputedStyle(link).letterSpacing};
             text-transform: uppercase;
             color: ${getComputedStyle(link).color};
-            will-change: top;
+            will-change: transform;
+            white-space: nowrap;
           `;
           document.body.appendChild(clone);
           link.classList.add('edit-album-dragging');
+
+          // Add indicator to nav
+          const nav = document.getElementById('albumNav');
+          nav.appendChild(indicator);
         }
 
-        clone.style.top = (mouseY - offsetY) + 'px';
+        clone.style.transform = `translateY(${mouseY - offsetY}px)`;
 
-        // Push other links
-        navLinks.forEach((other, j) => {
-          if (other.dataset.album === albumName) return;
+        // Find insertion point
+        insertBeforeAlbum = null;
+        let showIndicator = false;
+
+        for (let j = 0; j < navLinks.length; j++) {
+          if (navLinks[j].dataset.album === albumName) continue;
           const r = linkRects[j];
-          const dy = r.cy - mouseY;
-          const dist = Math.abs(dy);
 
-          if (dist < 50) {
-            const push = (1 - dist / 50) * 16 * Math.sign(dy);
-            other.style.transition = 'none';
-            other.style.transform = `translateY(${push}px)`;
-          } else {
-            if (other.style.transform) {
-              other.style.transition = 'transform 0.3s cubic-bezier(0.25, 1.5, 0.4, 1)';
-              other.style.transform = '';
-            }
+          if (mouseY < r.cy) {
+            insertBeforeAlbum = navLinks[j].dataset.album;
+            indicator.style.display = 'block';
+            // Position indicator above this link
+            navLinks[j].parentNode.insertBefore(indicator, navLinks[j]);
+            showIndicator = true;
+            break;
           }
-        });
+        }
+
+        // If past all items, insert at end
+        if (!showIndicator && mouseY > linkRects[linkRects.length - 1].cy) {
+          const lastAlbum = navLinks[navLinks.length - 1].dataset.album;
+          if (lastAlbum !== albumName) {
+            insertBeforeAlbum = '__end__';
+            indicator.style.display = 'block';
+            navLinks[navLinks.length - 1].parentNode.appendChild(indicator);
+          }
+        } else if (!showIndicator) {
+          indicator.style.display = 'none';
+        }
       }
 
       function onUp() {
@@ -1100,26 +1123,27 @@ function setupEditSidebar() {
 
         if (clone) { clone.remove(); clone = null; }
         link.classList.remove('edit-album-dragging');
-        navLinks.forEach(l => { l.style.transition = ''; l.style.transform = ''; });
+        indicator.style.display = 'none';
 
-        // Only swap if we actually dragged
-        if (hasDragged) {
-          let closest = null;
-          let closestDist = Infinity;
-          navLinks.forEach((other, j) => {
-            if (other.dataset.album === albumName) return;
-            const dist = Math.abs(linkRects[j].cy - mouseY);
-            if (dist < closestDist && dist < 40) {
-              closestDist = dist;
-              closest = other.dataset.album;
-            }
-          });
+        if (hasDragged && insertBeforeAlbum) {
+          const keys = Object.keys(albums);
+          const fromIdx = keys.indexOf(albumName);
+          keys.splice(fromIdx, 1);
 
-          if (closest) {
-            reorderAlbums(albumName, closest);
+          if (insertBeforeAlbum === '__end__') {
+            keys.push(albumName);
+          } else {
+            const toIdx = keys.indexOf(insertBeforeAlbum);
+            keys.splice(toIdx, 0, albumName);
           }
-        } else {
-          // It was just a click — switch album normally
+
+          const newAlbums = {};
+          keys.forEach(k => { newAlbums[k] = albums[k]; });
+          albums = newAlbums;
+
+          rebuildAlbumNav();
+          setupEditSidebar();
+        } else if (!hasDragged) {
           switchAlbum(albumName);
           if (editMode) setupEditSidebar();
         }
@@ -1133,34 +1157,14 @@ function setupEditSidebar() {
     handlers.push({ link, handler });
   });
 
-  // Store cleanup
   const nav = document.getElementById('albumNav');
   nav._editCleanup = () => {
     handlers.forEach(({ link, handler }) => {
       link.removeEventListener('mousedown', handler);
       link.classList.remove('edit-album-link');
     });
+    indicator.remove();
   };
-}
-
-function reorderAlbums(fromName, toName) {
-  const keys = Object.keys(albums);
-  const fromIdx = keys.indexOf(fromName);
-  const toIdx = keys.indexOf(toName);
-  if (fromIdx === -1 || toIdx === -1) return;
-
-  // Reorder keys
-  keys.splice(fromIdx, 1);
-  keys.splice(toIdx, 0, fromName);
-
-  // Rebuild albums object in new order
-  const newAlbums = {};
-  keys.forEach(k => { newAlbums[k] = albums[k]; });
-  albums = newAlbums;
-
-  // Rebuild nav
-  rebuildAlbumNav();
-  setupEditSidebar();
 }
 
 function movePhotoToAlbum(photoIndex, targetAlbum) {
@@ -1455,8 +1459,13 @@ function renderEditGrid() {
 
     // Move clone with cursor
     if (clone) {
-      clone.style.left = (mouseX - clone._offsetX) + 'px';
-      clone.style.top = (mouseY - clone._offsetY) + 'px';
+      const cx = mouseX - clone._offsetX;
+      const cy = mouseY - clone._offsetY;
+      clone.style.transform = `translate(${cx}px, ${cy}px)`;
+      if (!clone._shown) {
+        clone._shown = true;
+        clone.style.visibility = 'visible';
+      }
     }
 
     rafId = requestAnimationFrame(animationLoop);
@@ -1515,32 +1524,39 @@ function renderEditGrid() {
       dragSrcIndex = i;
       startX = e.clientX;
       startY = e.clientY;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
 
       const rect = item.getBoundingClientRect();
+      const imgEl = item.querySelector('img');
+      const imgSrc = imgEl ? imgEl.src : '';
 
-      // Create floating clone
-      clone = item.cloneNode(true);
+      clone = document.createElement('div');
+      clone._startLeft = rect.left;
+      clone._startTop = rect.top;
+      clone._offsetX = e.clientX - rect.left;
+      clone._offsetY = e.clientY - rect.top;
+      clone._shown = false;
       clone.style.cssText = `
         position: fixed;
-        left: ${rect.left}px;
-        top: ${rect.top}px;
+        left: 0;
+        top: 0;
         width: ${rect.width}px;
         height: ${rect.height}px;
         z-index: 10000;
         pointer-events: none;
-        opacity: 0;
+        visibility: hidden;
+        opacity: 0.85;
         box-shadow: 0 12px 40px rgba(0,0,0,0.4);
         border-radius: 4px;
         overflow: hidden;
-        transition: none;
-        will-change: left, top;
-        animation: none !important;
+        will-change: transform;
+        background-image: url('${imgSrc}');
+        background-size: cover;
+        background-position: center;
+        transform: translate(${rect.left}px, ${rect.top}px);
       `;
-      clone._offsetX = e.clientX - rect.left;
-      clone._offsetY = e.clientY - rect.top;
       document.body.appendChild(clone);
-      // Show after a frame to avoid flash
-      requestAnimationFrame(() => { if (clone) clone.style.opacity = '0.85'; });
 
       item.classList.add('edit-dragging');
       isDragging = true;
