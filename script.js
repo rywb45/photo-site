@@ -1914,19 +1914,31 @@ function exitEditMode(saved) {
 
     // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
     if (wasCancelled) {
-      const uploadedPhotos = {};
+      // Collect photos that were actually uploaded this session (tracked by unsortedPreviews)
+      const uploadedSrcs = new Set();
       for (const [albumName, photos] of Object.entries(albums)) {
-        const prePhotos = savedPreEditAlbums[albumName] || [];
-        const preSrcs = new Set(prePhotos.map(p => p.src));
-        const newPhotos = photos.filter(p => !preSrcs.has(p.src));
-        if (newPhotos.length > 0) {
-          uploadedPhotos[albumName] = newPhotos;
+        for (const p of photos) {
+          if (unsortedPreviews.has(p.grid)) {
+            uploadedSrcs.add(p.src);
+          }
+        }
+      }
+
+      // Find uploaded photos wherever they ended up (may have been moved from _unsorted to an album)
+      const uploadedByAlbum = {};
+      if (uploadedSrcs.size > 0) {
+        for (const [albumName, photos] of Object.entries(albums)) {
+          const uploaded = photos.filter(p => uploadedSrcs.has(p.src));
+          if (uploaded.length > 0) {
+            uploadedByAlbum[albumName] = uploaded;
+          }
         }
       }
 
       albums = savedPreEditAlbums;
 
-      for (const [albumName, photos] of Object.entries(uploadedPhotos)) {
+      // Re-add only genuinely uploaded photos
+      for (const [albumName, photos] of Object.entries(uploadedByAlbum)) {
         if (!albums[albumName]) albums[albumName] = [];
         albums[albumName].push(...photos);
       }
