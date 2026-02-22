@@ -1425,83 +1425,34 @@ function renameAlbum(oldName) {
 }
 
 function deleteAlbum(albumName) {
-  const nav = document.getElementById('albumNav');
-  const link = nav.querySelector(`a[data-album="${albumName}"]`);
-  if (!link) return;
-
-  const nameSpan = link.querySelector('span:first-child');
-  const actions = link.querySelector('.album-actions');
-  if (actions) actions.style.display = 'none';
-
   const photos = albums[albumName] || [];
 
-  const wrapper = document.createElement('span');
-  wrapper.className = 'inline-rename-col';
+  // Move photos to _unsorted
+  if (photos.length > 0) {
+    albums._unsorted = albums._unsorted || [];
+    photos.forEach(p => {
+      albums._unsorted.push({...p});
+    });
+  }
 
-  const msg = document.createElement('span');
-  msg.className = 'inline-delete-msg';
-  msg.textContent = photos.length > 0 ? `DELETE? (${photos.length} → unsorted)` : 'DELETE?';
+  // Remove album
+  delete albums[albumName];
 
-  const hint = document.createElement('span');
-  hint.className = 'inline-rename-hint';
-  hint.textContent = 'enter · esc';
-
-  wrapper.appendChild(msg);
-  wrapper.appendChild(hint);
-  nameSpan.replaceWith(wrapper);
-
-  // Focus the link so keyboard works
-  link.setAttribute('tabindex', '0');
-  link.focus();
-
-  function doDelete() {
-    if (photos.length > 0) {
-      albums._unsorted = albums._unsorted || [];
-      // Deep copy each photo to unsorted
-      photos.forEach(p => {
-        albums._unsorted.push({...p});
-      });
+  // If we just deleted the current album, switch to first available
+  if (currentAlbum === albumName) {
+    const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
+    if (remaining.length > 0) {
+      switchAlbum(remaining[0]);
+    } else {
+      currentAlbum = null;
+      currentPhotos = [];
+      document.getElementById('grid').innerHTML = '';
     }
-
-    delete albums[albumName];
-
-    if (currentAlbum === albumName) {
-      const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
-      if (remaining.length > 0) {
-        switchAlbum(remaining[0]);
-      } else {
-        currentAlbum = null;
-        currentPhotos = [];
-        document.getElementById('grid').innerHTML = '';
-      }
-    }
-
-    rebuildAlbumNav();
-    setupEditSidebar();
-    renderUnsortedTray();
   }
 
-  function revert() {
-    wrapper.replaceWith(nameSpan);
-    if (actions) actions.style.display = '';
-    link.removeAttribute('tabindex');
-  }
-
-  function onKey(e) {
-    if (e.key === 'Enter') { e.preventDefault(); doDelete(); link.removeEventListener('keydown', onKey); }
-    if (e.key === 'Escape') { e.preventDefault(); revert(); link.removeEventListener('keydown', onKey); }
-  }
-
-  link.addEventListener('keydown', onKey);
-
-  link.addEventListener('click', (e) => {
-    if (wrapper.isConnected) e.preventDefault();
-  }, { capture: true });
-
-  // Cancel on blur
-  link.addEventListener('blur', () => {
-    setTimeout(() => { if (wrapper.isConnected) revert(); }, 200);
-  }, { once: true });
+  rebuildAlbumNav();
+  setupEditSidebar();
+  renderUnsortedTray();
 }
 
 function exitEditMode(saved) {
@@ -2042,7 +1993,6 @@ function showEditBar() {
   bar.className = 'edit-bar';
 
   const unsortedCount = (albums._unsorted || []).length;
-  const badgeDisplay = unsortedCount > 0 ? '' : 'display:none';
 
   bar.innerHTML = `
     <div class="edit-bar-left">
@@ -2053,7 +2003,6 @@ function showEditBar() {
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <path d="M21 15l-5-5L5 21"/>
         </svg>
-        <span class="unsorted-badge" id="unsortedBadge" style="${badgeDisplay}">${unsortedCount}</span>
       </button>
     </div>
     <div class="edit-bar-actions">
@@ -2149,16 +2098,6 @@ function renderUnsortedTray() {
 
     strip.appendChild(thumb);
   });
-
-  updateUnsortedBadge();
-}
-
-function updateUnsortedBadge() {
-  const badge = document.getElementById('unsortedBadge');
-  if (!badge) return;
-  const count = (albums._unsorted || []).length;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? '' : 'none';
 }
 
 async function deleteUnsortedPhoto(index) {
