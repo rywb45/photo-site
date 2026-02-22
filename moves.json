@@ -1,7 +1,17 @@
 [
   {
+    "file": "003.webp",
+    "from": "unsorted",
+    "to": "01-people"
+  },
+  {
+    "file": "002.webp",
+    "from": "unsorted",
+    "to": "01-people"
+  },
+  {
     "file": "001.webp",
-    "from": "01-people",
-    "to": "test"
+    "from": "unsorted",
+    "to": "01-people"
   }
 ]
