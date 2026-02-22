@@ -1019,62 +1019,64 @@ function enterEditMode() {
 
 function setupEditSidebar() {
   const navLinks = Array.from(document.querySelectorAll('#albumNav a'));
-  let dragSrcAlbum = null;
-  let isDragging = false;
-  let clone = null;
-  let mouseY = 0;
-  let linkRects = [];
-
-  function cacheLinkPositions() {
-    linkRects = navLinks.map(link => {
-      const rect = link.getBoundingClientRect();
-      return { cy: rect.top + rect.height / 2, h: rect.height, top: rect.top, left: rect.left, width: rect.width };
-    });
-  }
+  let handlers = [];
 
   navLinks.forEach((link, i) => {
     const albumName = link.dataset.album;
     link.classList.add('edit-album-link');
 
-    link.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
+    const handler = (e) => {
+      if (e.button !== 0 || !editMode) return;
       e.preventDefault();
       e.stopPropagation();
 
-      dragSrcAlbum = albumName;
-      isDragging = true;
-      cacheLinkPositions();
+      const startY = e.clientY;
+      let hasDragged = false;
+      let clone = null;
+      let mouseY = startY;
+
+      const linkRects = navLinks.map(l => {
+        const rect = l.getBoundingClientRect();
+        return { cy: rect.top + rect.height / 2, h: rect.height, top: rect.top, left: rect.left, width: rect.width };
+      });
 
       const rect = link.getBoundingClientRect();
-      clone = link.cloneNode(true);
-      clone.style.cssText = `
-        position: fixed;
-        left: ${rect.left}px;
-        top: ${rect.top}px;
-        width: ${rect.width}px;
-        pointer-events: none;
-        z-index: 10001;
-        opacity: 0.85;
-        font-size: ${getComputedStyle(link).fontSize};
-        font-weight: ${getComputedStyle(link).fontWeight};
-        letter-spacing: ${getComputedStyle(link).letterSpacing};
-        text-transform: uppercase;
-        color: ${getComputedStyle(link).color};
-        will-change: top;
-      `;
-      clone._offsetY = e.clientY - rect.top;
-      document.body.appendChild(clone);
-
-      link.classList.add('edit-album-dragging');
-      mouseY = e.clientY;
+      const offsetY = e.clientY - rect.top;
 
       function onMove(ev) {
         mouseY = ev.clientY;
-        clone.style.top = (mouseY - clone._offsetY) + 'px';
+        const moved = Math.abs(mouseY - startY);
+
+        // Require 8px of movement before starting drag
+        if (!hasDragged && moved < 8) return;
+
+        if (!hasDragged) {
+          hasDragged = true;
+          clone = link.cloneNode(true);
+          clone.style.cssText = `
+            position: fixed;
+            left: ${rect.left}px;
+            top: ${rect.top}px;
+            width: ${rect.width}px;
+            pointer-events: none;
+            z-index: 10001;
+            opacity: 0.85;
+            font-size: ${getComputedStyle(link).fontSize};
+            font-weight: ${getComputedStyle(link).fontWeight};
+            letter-spacing: ${getComputedStyle(link).letterSpacing};
+            text-transform: uppercase;
+            color: ${getComputedStyle(link).color};
+            will-change: top;
+          `;
+          document.body.appendChild(clone);
+          link.classList.add('edit-album-dragging');
+        }
+
+        clone.style.top = (mouseY - offsetY) + 'px';
 
         // Push other links
         navLinks.forEach((other, j) => {
-          if (other.dataset.album === dragSrcAlbum) return;
+          if (other.dataset.album === albumName) return;
           const r = linkRects[j];
           const dy = r.cy - mouseY;
           const dist = Math.abs(dy);
@@ -1095,34 +1097,50 @@ function setupEditSidebar() {
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        isDragging = false;
 
         if (clone) { clone.remove(); clone = null; }
         link.classList.remove('edit-album-dragging');
         navLinks.forEach(l => { l.style.transition = ''; l.style.transform = ''; });
 
-        // Find drop target
-        let closest = null;
-        let closestDist = Infinity;
-        navLinks.forEach((other, j) => {
-          if (other.dataset.album === dragSrcAlbum) return;
-          const dist = Math.abs(linkRects[j].cy - mouseY);
-          if (dist < closestDist && dist < 60) {
-            closestDist = dist;
-            closest = other.dataset.album;
-          }
-        });
+        // Only swap if we actually dragged
+        if (hasDragged) {
+          let closest = null;
+          let closestDist = Infinity;
+          navLinks.forEach((other, j) => {
+            if (other.dataset.album === albumName) return;
+            const dist = Math.abs(linkRects[j].cy - mouseY);
+            if (dist < closestDist && dist < 40) {
+              closestDist = dist;
+              closest = other.dataset.album;
+            }
+          });
 
-        if (closest) {
-          reorderAlbums(dragSrcAlbum, closest);
+          if (closest) {
+            reorderAlbums(albumName, closest);
+          }
+        } else {
+          // It was just a click — switch album normally
+          switchAlbum(albumName);
+          if (editMode) setupEditSidebar();
         }
-        dragSrcAlbum = null;
       }
 
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
-    });
+    };
+
+    link.addEventListener('mousedown', handler);
+    handlers.push({ link, handler });
   });
+
+  // Store cleanup
+  const nav = document.getElementById('albumNav');
+  nav._editCleanup = () => {
+    handlers.forEach(({ link, handler }) => {
+      link.removeEventListener('mousedown', handler);
+      link.classList.remove('edit-album-link');
+    });
+  };
 }
 
 function reorderAlbums(fromName, toName) {
@@ -1221,6 +1239,13 @@ function exitEditMode(saved) {
   if (grid._editCleanup) {
     grid._editCleanup();
     grid._editCleanup = null;
+  }
+
+  // Clean up sidebar drag handlers
+  const nav = document.getElementById('albumNav');
+  if (nav._editCleanup) {
+    nav._editCleanup();
+    nav._editCleanup = null;
   }
 
   if (sortableInstance) {
@@ -1503,16 +1528,19 @@ function renderEditGrid() {
         height: ${rect.height}px;
         z-index: 10000;
         pointer-events: none;
-        opacity: 0.85;
+        opacity: 0;
         box-shadow: 0 12px 40px rgba(0,0,0,0.4);
         border-radius: 4px;
         overflow: hidden;
         transition: none;
         will-change: left, top;
+        animation: none !important;
       `;
       clone._offsetX = e.clientX - rect.left;
       clone._offsetY = e.clientY - rect.top;
       document.body.appendChild(clone);
+      // Show after a frame to avoid flash
+      requestAnimationFrame(() => { if (clone) clone.style.opacity = '0.85'; });
 
       item.classList.add('edit-dragging');
       isDragging = true;
