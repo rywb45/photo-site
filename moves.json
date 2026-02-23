@@ -1,7 +1,32 @@
 [
   {
-    "file": "010.webp",
+    "file": "011.webp",
     "from": "unsorted",
-    "to": "01-people"
+    "to": "blizzard"
+  },
+  {
+    "file": "012.webp",
+    "from": "unsorted",
+    "to": "unsorted"
+  },
+  {
+    "file": "014.webp",
+    "from": "unsorted",
+    "to": "unsorted"
+  },
+  {
+    "file": "013.webp",
+    "from": "unsorted",
+    "to": "unsorted"
+  },
+  {
+    "file": "016.webp",
+    "from": "unsorted",
+    "to": "unsorted"
+  },
+  {
+    "file": "015.webp",
+    "from": "unsorted",
+    "to": "unsorted"
   }
 ]
