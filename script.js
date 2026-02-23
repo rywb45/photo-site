@@ -1262,12 +1262,27 @@ let mainDir = null;
 let mainTouchMoved = false;
 let mainStartTime = 0;
 
-function closeAlbumView() {
-  mainEl.classList.remove('active');
+function closeAlbumView(skipAnimation) {
   document.querySelectorAll('#albumNav a').forEach(link => link.classList.remove('active'));
-  mainEl.style.transform = '';
-  mainEl.style.transition = '';
-  mainEl.style.opacity = '';
+
+  if (skipAnimation) {
+    mainEl.classList.remove('active');
+    mainEl.style.transform = '';
+    mainEl.style.transition = '';
+    mainEl.style.opacity = '';
+    return;
+  }
+
+  // Animate slide-out to the right, then hide
+  mainEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  mainEl.style.transform = 'translateX(100%)';
+
+  setTimeout(() => {
+    mainEl.classList.remove('active');
+    mainEl.style.transform = '';
+    mainEl.style.transition = '';
+    mainEl.style.opacity = '';
+  }, 310);
 }
 
 mainEl.addEventListener('touchstart', (e) => {
@@ -1323,7 +1338,7 @@ mainEl.addEventListener('touchend', (e) => {
   if (shouldClose) {
     mainEl.style.transform = `translateX(${window.innerWidth}px)`;
     mainEl.style.opacity = '0';
-    setTimeout(closeAlbumView, 300);
+    setTimeout(() => closeAlbumView(true), 300);
   } else if (mainDir === 'h') {
     mainEl.style.transform = 'translateX(0)';
     mainEl.style.opacity = '1';
