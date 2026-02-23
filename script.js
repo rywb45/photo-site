@@ -544,22 +544,27 @@ function openLightbox(index, sourceImg) {
       }
     };
 
-    // Wait for both the morph animation (320ms) and the full-res image to load
+    // Wait for both the morph animation (320ms) and the full-res image to be decoded
     const morphDone = new Promise(r => setTimeout(r, 320));
-    const imgLoaded = new Promise(r => {
-      if (fullImg && fullImg.complete && fullImg.naturalWidth > 0) {
-        r();
-      } else if (fullImg) {
-        fullImg.onload = r;
-        fullImg.onerror = r;
-        // Safety timeout — don't wait forever
-        setTimeout(r, 3000);
+    const imgReady = new Promise(r => {
+      if (!fullImg) { r(); return; }
+      const decodeAndResolve = () => {
+        if (typeof fullImg.decode === 'function') {
+          fullImg.decode().then(r).catch(r);
+        } else {
+          r();
+        }
+      };
+      if (fullImg.complete && fullImg.naturalWidth > 0) {
+        decodeAndResolve();
       } else {
-        r();
+        fullImg.onload = decodeAndResolve;
+        fullImg.onerror = r;
+        setTimeout(r, 3000);
       }
     });
 
-    Promise.all([morphDone, imgLoaded]).then(revealLightbox);
+    Promise.all([morphDone, imgReady]).then(revealLightbox);
 
   } else {
     // No source — instant open (e.g. keyboard or programmatic)
