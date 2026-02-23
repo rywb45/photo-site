@@ -55,6 +55,7 @@
       "h": 2048
     }
   ],
+  "snowday": [],
   "buildings": [
     {
       "src": "02-buildings/002.webp",
@@ -219,5 +220,12 @@
       "h": 3940
     }
   ],
-  "_unsorted": []
+  "_unsorted": [
+    {
+      "src": "unsorted/023.webp",
+      "grid": "unsorted/grid/023.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ]
 }
