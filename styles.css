@@ -237,15 +237,15 @@ body.inverted {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
-  z-index: 1000;
+  z-index: -1;
   overflow: hidden;
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
+  transform: translateZ(0);
 }
 
 .lightbox.active {
-  visibility: visible;
+  z-index: 1000;
   pointer-events: auto;
   touch-action: none;
 }

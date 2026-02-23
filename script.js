@@ -154,8 +154,6 @@ function switchAlbum(albumName, clickedElement = null) {
     renderEditGrid();
   } else {
     renderGrid();
-    // Prebuild carousel so first photo click has no DOM work / flicker
-    buildCarousel();
   }
 }
 
@@ -477,8 +475,10 @@ function openLightbox(index, sourceImg) {
     // Hide the source in the grid
     morphSource.style.opacity = '0';
 
-    // Hide lightbox before making it visible to prevent flash
+    // Hide lightbox and disable backdrop-filter before making visible
     lightbox.style.opacity = '0';
+    lightbox.style.backdropFilter = 'none';
+    lightbox.style.webkitBackdropFilter = 'none';
     lbTrack.style.opacity = '0';
     lightbox.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -515,6 +515,8 @@ function openLightbox(index, sourceImg) {
       morphClone.style.width = targetW + 'px';
       morphClone.style.height = targetH + 'px';
 
+      lightbox.style.backdropFilter = '';
+      lightbox.style.webkitBackdropFilter = '';
       lightbox.style.transition = 'opacity 0.2s ease';
       lightbox.style.opacity = '1';
     });
@@ -621,6 +623,9 @@ function closeLightbox() {
     document.body.style.overflow = '';
     lightbox.style.background = '';
     lightbox.style.opacity = '';
+    lightbox.style.transition = '';
+    lightbox.style.backdropFilter = '';
+    lightbox.style.webkitBackdropFilter = '';
     lbTrack.style.opacity = '';
 
     // Get fresh grid position (might have scrolled)
@@ -650,6 +655,9 @@ function closeLightbox() {
     document.body.style.overflow = '';
     lightbox.style.background = '';
     lightbox.style.opacity = '';
+    lightbox.style.transition = '';
+    lightbox.style.backdropFilter = '';
+    lightbox.style.webkitBackdropFilter = '';
     lbTrack.style.opacity = '';
     morphSource = null;
     morphRect = null;
@@ -820,6 +828,8 @@ lightbox.addEventListener('wheel', (e) => {
           lightbox.style.background = '';
           lightbox.style.opacity = '';
           lightbox.style.transition = '';
+          lightbox.style.backdropFilter = '';
+          lightbox.style.webkitBackdropFilter = '';
           lbTrack.style.opacity = '';
           lbTrack.style.transition = 'none';
           lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
