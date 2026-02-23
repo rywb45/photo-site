@@ -1308,12 +1308,9 @@ if (mobileClose) {
 // ============================================
 let editMode = false;
 let mobilePreview = false;
-let sortableInstance = null;
 let nameClickCount = 0;
 let nameClickTimer = null;
-let preEditPhotos = null;
 let preEditAlbums = null;
-let preEditAlbumOrder = null;
 let pendingMoves = [];
 let pendingDeletes = [];
 
@@ -1407,10 +1404,11 @@ function enterEditMode() {
   editMode = true;
   document.body.classList.add('edit-mode');
 
+  // Clear stale upload previews from any previous session
+  unsortedPreviews.clear();
+
   // Snapshot current state for cancel
-  preEditPhotos = [...currentPhotos];
   preEditAlbums = JSON.parse(JSON.stringify(albums));
-  preEditAlbumOrder = Object.keys(albums);
 
   // INSTANT: activate edit mode
   rebuildAlbumNav();
@@ -1881,11 +1879,6 @@ function exitEditMode(saved) {
     nav._editCleanup = null;
   }
 
-  if (sortableInstance) {
-    sortableInstance.destroy();
-    sortableInstance = null;
-  }
-
   // Animate bar out
   const bar = document.getElementById('editBar');
   if (bar) {
@@ -1960,9 +1953,7 @@ function exitEditMode(saved) {
     renderGrid();
   }, 400);
 
-  preEditPhotos = null;
   preEditAlbums = null;
-  preEditAlbumOrder = null;
   pendingMoves = [];
   pendingDeletes = [];
 
@@ -2760,33 +2751,22 @@ function renderUnsortedTray() {
   });
 }
 
-async function deleteUnsortedPhoto(index) {
-  const token = localStorage.getItem('gh_token');
-  if (!token) { alert('No token found.'); return; }
-
+function deleteUnsortedPhoto(index) {
   const photo = albums._unsorted[index];
-  const bar = document.getElementById('editBar');
-  const label = bar.querySelector('.edit-bar-label');
-  label.textContent = 'DELETING...';
 
-  try {
-    await deleteFileFromGitHub(`photos/${photo.src}`, token);
-    await deleteFileFromGitHub(`photos/${photo.grid}`, token);
-    albums._unsorted.splice(index, 1);
-    syncCurrentAlbum();
-    await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
-    renderUnsortedTray();
-    label.textContent = 'EDIT MODE';
-  } catch (err) {
-    console.error('Delete unsorted failed:', err);
-    alert('Delete failed: ' + err.message);
-    label.textContent = 'EDIT MODE';
-  }
+  // Queue for deletion on save (same as deletePhoto)
+  pendingDeletes.push({
+    full: `photos/${photo.src}`,
+    grid: `photos/${photo.grid}`
+  });
+
+  albums._unsorted.splice(index, 1);
+  renderUnsortedTray();
 }
 
 function startTrayDrag(unsortedIndex, initX, initY) {
   const photo = albums._unsorted[unsortedIndex];
-  const imgSrc = `photos/${photo.grid}`;
+  const imgSrc = unsortedPreviews.get(photo.grid) || `photos/${photo.grid}`;
   const thumb = document.querySelectorAll('.unsorted-thumb')[unsortedIndex];
 
   let mx = initX;
@@ -2959,6 +2939,10 @@ function deletePhoto(photoIndex) {
     grid: `photos/${photo.grid.replace('photos/', '')}`
   });
 
+  // Remove any pending move for this file (no point moving a deleted file)
+  const filename = photo.full.split('/').pop();
+  pendingMoves = pendingMoves.filter(m => m.file !== filename);
+
   // Remove from local state
   currentPhotos.splice(photoIndex, 1);
   syncCurrentAlbum();
@@ -3130,10 +3114,9 @@ async function uploadSinglePhoto(file, token) {
   // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
   unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
-  // Sync current album state before saving (so in-progress reorders are included)
-  syncCurrentAlbum();
-
-  // Save updated photos.json
+  // Save updated photos.json (persist _unsorted entry so files aren't orphaned)
+  // NOTE: intentionally not calling syncCurrentAlbum() here — reorder state
+  // should only be committed when the user clicks Save
   await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
 
   // Re-render tray
