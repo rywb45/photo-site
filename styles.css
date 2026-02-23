@@ -1384,7 +1384,9 @@ body:not(.inverted) .add-album-btn:hover { color: #888; }
 @media (max-width: 768px) {
   body.sidebar-intro .sidebar h1,
   body.sidebar-intro .sidebar nav a,
+  body.sidebar-intro .sidebar .social,
   body.sidebar-intro .sidebar .signature,
+  body.sidebar-intro .sidebar .theme-toggle,
   body.sidebar-intro .sidebar .copyright {
     opacity: 0;
     filter: blur(8px);
