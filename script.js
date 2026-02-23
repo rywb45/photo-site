@@ -53,7 +53,7 @@ async function loadAlbums() {
       switchAlbum(albumNames[0]);
     }
 
-    // Mobile sidebar entrance animation — staggered fade-in
+    // Mobile sidebar entrance animation — staggered fade + slide
     if (_mobileIntro) {
       const sidebar = document.querySelector('.sidebar');
       const introEls = [];
@@ -71,18 +71,31 @@ async function loadAlbums() {
         if (el) { introEls.push({ el, delay: d, dur: 500 }); d += 100; }
       });
 
-      // Stagger reveal with CSS transitions (GPU-friendly, no filter conflicts)
-      introEls.forEach(({ el, delay, dur }) => {
+      // Set initial state and register transitions before any reveals
+      introEls.forEach(({ el, dur }) => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.transition = `opacity ${dur}ms ease, transform ${dur}ms ease`;
+      });
+
+      // Force reflow so browser commits initial state before transitions fire
+      sidebar.offsetHeight;
+
+      // Stagger reveals — only change values, transitions already registered
+      introEls.forEach(({ el, delay }) => {
         setTimeout(() => {
-          el.style.transition = `opacity ${dur}ms ease`;
           el.style.opacity = '';
+          el.style.transform = '';
         }, delay);
       });
 
-      // Clean up inline transitions after all animations complete
+      // Clean up inline styles after all animations complete
       const last = introEls[introEls.length - 1];
       setTimeout(() => {
-        introEls.forEach(({ el }) => { el.style.transition = ''; });
+        introEls.forEach(({ el }) => {
+          el.style.transition = '';
+          el.style.transform = '';
+        });
       }, last.delay + last.dur + 100);
     }
 
