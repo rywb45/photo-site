@@ -472,7 +472,10 @@ function openLightbox(index, sourceImg) {
     morphClone.appendChild(cloneImg);
     document.body.appendChild(morphClone);
 
-    // Hide the source in the grid
+    // Force clone to be painted BEFORE hiding source to prevent flicker
+    morphClone.offsetHeight;
+
+    // Now safe to hide the source — clone is visually covering it
     morphSource.style.opacity = '0';
 
     // Hide lightbox and disable backdrop-filter before making visible
@@ -486,9 +489,6 @@ function openLightbox(index, sourceImg) {
     // Set up the slide position now while hidden
     goToSlide(index, false);
     lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
-
-    // Force reflow
-    morphClone.offsetHeight;
 
     // Calculate target position
     const ar = currentPhotos[index].width / currentPhotos[index].height;
