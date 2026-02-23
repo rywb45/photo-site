@@ -52,35 +52,35 @@ async function loadAlbums() {
       switchAlbum(albumNames[0]);
     }
 
-    // Mobile sidebar entrance animation
+    // Mobile sidebar entrance animation (Web Animations API)
     if (window.innerWidth <= 768) {
-      document.body.classList.add('sidebar-intro');
-      const introEls = [];
+      const introItems = [];
+      const sidebar = document.querySelector('.sidebar');
 
-      const h1 = document.querySelector('.sidebar h1');
-      const links = document.querySelectorAll('.sidebar nav a');
-      const social = document.querySelector('.sidebar .social');
-      const sig = document.querySelector('.sidebar .signature');
-      const toggle = document.querySelector('.sidebar .theme-toggle');
-      const copy = document.querySelector('.sidebar .copyright');
+      const h1 = sidebar.querySelector('h1');
+      if (h1) introItems.push({ el: h1, delay: 200, duration: 700 });
 
-      if (h1) { h1.style.animation = 'blurIn 0.7s ease 0.2s forwards'; introEls.push(h1); }
-      links.forEach((link, i) => {
-        link.style.animation = `blurIn 0.5s ease ${0.45 + i * 0.1}s forwards`;
-        introEls.push(link);
+      sidebar.querySelectorAll('nav a').forEach((link, i) => {
+        introItems.push({ el: link, delay: 450 + i * 100, duration: 500 });
       });
-      let delay = 0.45 + links.length * 0.1;
-      if (social) { social.style.animation = `blurIn 0.5s ease ${delay}s forwards`; introEls.push(social); delay += 0.1; }
-      if (sig) { sig.style.animation = `blurIn 0.5s ease ${delay}s forwards`; introEls.push(sig); delay += 0.1; }
-      if (toggle) { toggle.style.animation = `blurIn 0.5s ease ${delay}s forwards`; introEls.push(toggle); delay += 0.1; }
-      if (copy) { copy.style.animation = `blurIn 0.5s ease ${delay}s forwards`; introEls.push(copy); delay += 0.1; }
 
-      // Clean up after all animations finish
-      const totalTime = (delay + 0.5) * 1000 + 100;
-      setTimeout(() => {
-        document.body.classList.remove('sidebar-intro');
-        introEls.forEach(el => el.style.animation = '');
-      }, totalTime);
+      let d = 450 + sidebar.querySelectorAll('nav a').length * 100;
+      ['.social', '.signature', '.theme-toggle', '.copyright'].forEach(sel => {
+        const el = sidebar.querySelector(sel);
+        if (el) { introItems.push({ el, delay: d, duration: 500 }); d += 100; }
+      });
+
+      introItems.forEach(({ el, delay, duration }) => {
+        // Preserve existing filters (e.g. invert(1) on signature in dark mode)
+        const base = getComputedStyle(el).filter;
+        const prefix = base === 'none' ? '' : base + ' ';
+        el.style.opacity = '0';
+        const anim = el.animate([
+          { opacity: 0, filter: prefix + 'blur(8px)' },
+          { opacity: 1, filter: prefix + 'blur(0px)' }
+        ], { duration, delay, easing: 'ease', fill: 'forwards' });
+        anim.onfinish = () => { el.style.opacity = ''; anim.cancel(); };
+      });
     }
 
   } catch (error) {
