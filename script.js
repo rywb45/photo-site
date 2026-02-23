@@ -1308,6 +1308,8 @@ if (mobileClose) {
 // ============================================
 let editMode = false;
 let mobilePreview = false;
+let isUploading = false;
+let exitTimer = null;
 let nameClickCount = 0;
 let nameClickTimer = null;
 let preEditAlbums = null;
@@ -1401,6 +1403,9 @@ function attemptLogin() {
 }
 
 function enterEditMode() {
+  // Cancel any pending exit cleanup from a previous session
+  if (exitTimer) { clearTimeout(exitTimer); exitTimer = null; }
+
   editMode = true;
   document.body.classList.add('edit-mode');
 
@@ -1424,6 +1429,10 @@ function enterEditMode() {
 }
 
 function setupEditSidebar() {
+  // Clean up previous handlers before adding new ones
+  const nav = document.getElementById('albumNav');
+  if (nav._editCleanup) { nav._editCleanup(); nav._editCleanup = null; }
+
   const navLinks = Array.from(document.querySelectorAll('#albumNav a'));
   let handlers = [];
 
@@ -1571,7 +1580,6 @@ function setupEditSidebar() {
     handlers.push({ link, handler });
   });
 
-  const nav = document.getElementById('albumNav');
   nav._editCleanup = () => {
     handlers.forEach(({ link, handler }) => {
       link.removeEventListener('mousedown', handler);
@@ -1615,6 +1623,7 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
   syncCurrentAlbum();
 
   // Add to target album (with original paths)
+  if (!albums[targetAlbum]) albums[targetAlbum] = [];
   albums[targetAlbum].push(newPhotoData);
 
   renderEditGrid();
@@ -1908,7 +1917,8 @@ function exitEditMode(saved) {
   const savedPreEditAlbums = preEditAlbums;
 
   // Delay rebuild to let animations finish, THEN remove edit-mode class
-  setTimeout(() => {
+  exitTimer = setTimeout(() => {
+    exitTimer = null;
     document.body.classList.remove('edit-mode');
 
     // If cancelled, restore original order (but keep any uploads since they're already on GitHub)
@@ -1959,6 +1969,7 @@ function exitEditMode(saved) {
   preEditAlbums = null;
   pendingMoves = [];
   pendingDeletes = [];
+  unsortedPreviews.clear();
 
   // DECORATIVE: typewriter out
   const nameText = document.getElementById('nameText');
@@ -2915,6 +2926,7 @@ function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
   recordMove(filename, srcFolder, targetFolderPrefix);
 
   albums._unsorted.splice(unsortedIndex, 1);
+  if (!albums[targetAlbum]) albums[targetAlbum] = [];
   albums[targetAlbum].push(photo);
 
   if (targetAlbum === currentAlbum) {
@@ -3030,7 +3042,10 @@ async function handlePhotoUpload(e) {
   const files = validFiles;
   if (!files.length) return;
 
-  // Show progress
+  // Show progress and block Save during upload
+  isUploading = true;
+  const saveBtn = document.querySelector('.edit-save');
+  if (saveBtn) saveBtn.disabled = true;
   const bar = document.getElementById('editBar');
   const label = bar.querySelector('.edit-bar-label');
   const originalLabel = label.textContent;
@@ -3047,6 +3062,8 @@ async function handlePhotoUpload(e) {
     }
   }
 
+  isUploading = false;
+  if (saveBtn) saveBtn.disabled = false;
   label.textContent = originalLabel;
   e.target.value = ''; // Reset file input
 }
@@ -3129,9 +3146,10 @@ async function uploadSinglePhoto(file, token) {
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
   });
 }
 
@@ -3196,6 +3214,7 @@ async function uploadFileToGitHub(path, base64Content, token) {
 }
 
 async function saveOrder() {
+  if (isUploading) return; // Don't save while uploads are in progress
   const token = localStorage.getItem('gh_token');
   if (!token) {
     alert('No token found. Please log in again.');
