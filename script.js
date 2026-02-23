@@ -1376,7 +1376,7 @@ window.addEventListener('resize', () => {
 // Mobile close button
 const mobileClose = document.getElementById('mobileClose');
 if (mobileClose) {
-  mobileClose.addEventListener('click', closeAlbumView);
+  mobileClose.addEventListener('click', () => closeAlbumView());
 }
 
 // ============================================
