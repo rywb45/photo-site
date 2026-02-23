@@ -53,7 +53,7 @@ async function loadAlbums() {
       switchAlbum(albumNames[0]);
     }
 
-    // Mobile sidebar entrance animation — staggered fade + slide
+    // Mobile sidebar entrance animation — staggered blur reveal
     if (_mobileIntro) {
       const sidebar = document.querySelector('.sidebar');
       const introEls = [];
@@ -66,36 +66,40 @@ async function loadAlbums() {
       });
 
       let d = 450 + sidebar.querySelectorAll('nav a').length * 100;
-      ['.social', '.signature', '.theme-toggle', '.copyright'].forEach(sel => {
+      // Social, toggle, copyright — then signature last with artistic delay
+      ['.social', '.theme-toggle', '.copyright'].forEach(sel => {
         const el = sidebar.querySelector(sel);
         if (el) { introEls.push({ el, delay: d, dur: 500 }); d += 100; }
       });
+      const sig = sidebar.querySelector('.signature');
+      if (sig) introEls.push({ el: sig, delay: d + 250, dur: 900 });
 
-      // Set initial state and register transitions before any reveals
+      // Set initial state: hidden, shifted, blurred (composing with existing filters)
       introEls.forEach(({ el, dur }) => {
+        const baseFilter = getComputedStyle(el).filter;
+        const blur = baseFilter === 'none' ? 'blur(8px)' : baseFilter + ' blur(8px)';
         el.style.opacity = '0';
         el.style.transform = 'translateY(8px)';
-        el.style.transition = `opacity ${dur}ms ease, transform ${dur}ms ease`;
+        el.style.filter = blur;
+        el.style.transition = `opacity ${dur}ms ease, transform ${dur}ms ease, filter ${dur}ms ease`;
       });
 
       // Force reflow so browser commits initial state before transitions fire
       sidebar.offsetHeight;
 
-      // Stagger reveals — only change values, transitions already registered
+      // Stagger reveals — clear inline styles to fall back to CSS values
       introEls.forEach(({ el, delay }) => {
         setTimeout(() => {
           el.style.opacity = '';
           el.style.transform = '';
+          el.style.filter = '';
         }, delay);
       });
 
-      // Clean up inline styles after all animations complete
+      // Clean up inline transition after all animations complete
       const last = introEls[introEls.length - 1];
       setTimeout(() => {
-        introEls.forEach(({ el }) => {
-          el.style.transition = '';
-          el.style.transform = '';
-        });
+        introEls.forEach(({ el }) => { el.style.transition = ''; });
       }, last.delay + last.dur + 100);
     }
 
