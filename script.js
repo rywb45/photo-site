@@ -77,9 +77,9 @@ async function loadAlbums() {
       // Set initial state: hidden, shifted, blurred (composing with existing filters)
       introEls.forEach(({ el, dur }) => {
         const baseFilter = getComputedStyle(el).filter;
-        const blur = baseFilter === 'none' ? 'blur(8px)' : baseFilter + ' blur(8px)';
+        const blur = baseFilter === 'none' ? 'blur(18px)' : baseFilter + ' blur(18px)';
         el.style.opacity = '0';
-        el.style.transform = 'translateY(8px)';
+        el.style.transform = 'translateY(14px)';
         el.style.filter = blur;
         el.style.transition = `opacity ${dur}ms ease, transform ${dur}ms ease, filter ${dur}ms ease`;
       });
