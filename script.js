@@ -72,7 +72,7 @@ async function loadAlbums() {
         if (el) { introEls.push({ el, delay: d, dur: 600 }); d += 110; }
       });
       const sig = sidebar.querySelector('.signature');
-      if (sig) introEls.push({ el: sig, delay: d + 300, dur: 1000 });
+      if (sig) introEls.push({ el: sig, delay: d + 120, dur: 700 });
 
       // Set initial state: hidden, shifted, blurred (composing with existing filters)
       introEls.forEach(({ el, dur }) => {
