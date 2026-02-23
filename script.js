@@ -1835,6 +1835,9 @@ function deleteAlbum(albumName) {
   if (photos.length > 0) {
     albums._unsorted = albums._unsorted || [];
     photos.forEach(p => {
+      const filename = p.src.split('/').pop();
+      const srcFolder = p.src.split('/')[0];
+      recordMove(filename, srcFolder, 'unsorted');
       albums._unsorted.push({...p});
     });
   }
