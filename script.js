@@ -59,20 +59,20 @@ async function loadAlbums() {
       const introEls = [];
 
       const h1 = sidebar.querySelector('h1');
-      if (h1) introEls.push({ el: h1, delay: 300, dur: 900 });
+      if (h1) introEls.push({ el: h1, delay: 250, dur: 800 });
 
       sidebar.querySelectorAll('nav a').forEach((a, i) => {
-        introEls.push({ el: a, delay: 650 + i * 150, dur: 700 });
+        introEls.push({ el: a, delay: 500 + i * 120, dur: 600 });
       });
 
-      let d = 650 + sidebar.querySelectorAll('nav a').length * 150;
+      let d = 500 + sidebar.querySelectorAll('nav a').length * 120;
       // Social, toggle, copyright — then signature last with artistic delay
       ['.social', '.theme-toggle', '.copyright'].forEach(sel => {
         const el = sidebar.querySelector(sel);
-        if (el) { introEls.push({ el, delay: d, dur: 700 }); d += 140; }
+        if (el) { introEls.push({ el, delay: d, dur: 600 }); d += 110; }
       });
       const sig = sidebar.querySelector('.signature');
-      if (sig) introEls.push({ el: sig, delay: d + 350, dur: 1200 });
+      if (sig) introEls.push({ el: sig, delay: d + 300, dur: 1000 });
 
       // Set initial state: hidden, shifted, blurred (composing with existing filters)
       introEls.forEach(({ el, dur }) => {
