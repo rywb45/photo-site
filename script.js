@@ -41,6 +41,7 @@ async function loadAlbums() {
       const link = document.createElement('a');
       link.textContent = albumName.toUpperCase();
       link.dataset.album = albumName;
+      if (_mobileIntro) link.style.opacity = '0';
       link.addEventListener('click', (e) => {
         e.preventDefault();
         switchAlbum(albumName);
@@ -52,35 +53,37 @@ async function loadAlbums() {
       switchAlbum(albumNames[0]);
     }
 
-    // Mobile sidebar entrance animation (Web Animations API)
-    if (window.innerWidth <= 768) {
-      const introItems = [];
+    // Mobile sidebar entrance animation — staggered fade-in
+    if (_mobileIntro) {
       const sidebar = document.querySelector('.sidebar');
+      const introEls = [];
 
       const h1 = sidebar.querySelector('h1');
-      if (h1) introItems.push({ el: h1, delay: 200, duration: 700 });
+      if (h1) introEls.push({ el: h1, delay: 200, dur: 700 });
 
-      sidebar.querySelectorAll('nav a').forEach((link, i) => {
-        introItems.push({ el: link, delay: 450 + i * 100, duration: 500 });
+      sidebar.querySelectorAll('nav a').forEach((a, i) => {
+        introEls.push({ el: a, delay: 450 + i * 100, dur: 500 });
       });
 
       let d = 450 + sidebar.querySelectorAll('nav a').length * 100;
       ['.social', '.signature', '.theme-toggle', '.copyright'].forEach(sel => {
         const el = sidebar.querySelector(sel);
-        if (el) { introItems.push({ el, delay: d, duration: 500 }); d += 100; }
+        if (el) { introEls.push({ el, delay: d, dur: 500 }); d += 100; }
       });
 
-      introItems.forEach(({ el, delay, duration }) => {
-        // Preserve existing filters (e.g. invert(1) on signature in dark mode)
-        const base = getComputedStyle(el).filter;
-        const prefix = base === 'none' ? '' : base + ' ';
-        el.style.opacity = '0';
-        const anim = el.animate([
-          { opacity: 0, filter: prefix + 'blur(8px)' },
-          { opacity: 1, filter: prefix + 'blur(0px)' }
-        ], { duration, delay, easing: 'ease', fill: 'forwards' });
-        anim.onfinish = () => { el.style.opacity = ''; anim.cancel(); };
+      // Stagger reveal with CSS transitions (GPU-friendly, no filter conflicts)
+      introEls.forEach(({ el, delay, dur }) => {
+        setTimeout(() => {
+          el.style.transition = `opacity ${dur}ms ease`;
+          el.style.opacity = '';
+        }, delay);
       });
+
+      // Clean up inline transitions after all animations complete
+      const last = introEls[introEls.length - 1];
+      setTimeout(() => {
+        introEls.forEach(({ el }) => { el.style.transition = ''; });
+      }, last.delay + last.dur + 100);
     }
 
   } catch (error) {
@@ -1314,6 +1317,15 @@ mainEl.addEventListener('touchend', (e) => {
 // ============================================
 // Initialization
 // ============================================
+
+// Pre-hide sidebar elements on mobile before fetch to prevent flash
+const _mobileIntro = window.innerWidth <= 768;
+if (_mobileIntro) {
+  document.querySelectorAll('.sidebar h1, .sidebar .social, .sidebar .signature, .sidebar .theme-toggle, .sidebar .copyright').forEach(el => {
+    el.style.opacity = '0';
+  });
+}
+
 loadAlbums();
 
 // Debounced resize handler
