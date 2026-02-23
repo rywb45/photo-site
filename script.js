@@ -154,6 +154,8 @@ function switchAlbum(albumName, clickedElement = null) {
     renderEditGrid();
   } else {
     renderGrid();
+    // Prebuild carousel so first photo click has no DOM work / flicker
+    buildCarousel();
   }
 }
 
@@ -475,10 +477,10 @@ function openLightbox(index, sourceImg) {
     // Hide the source in the grid
     morphSource.style.opacity = '0';
 
-    // Show lightbox backdrop only (hide the track)
-    lightbox.classList.add('active');
+    // Hide lightbox before making it visible to prevent flash
     lightbox.style.opacity = '0';
     lbTrack.style.opacity = '0';
+    lightbox.classList.add('active');
     document.body.style.overflow = 'hidden';
 
     // Set up the slide position now while hidden
