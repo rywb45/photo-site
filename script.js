@@ -51,6 +51,28 @@ async function loadAlbums() {
     if (albumNames.length > 0 && window.innerWidth > 768) {
       switchAlbum(albumNames[0]);
     }
+
+    // Mobile sidebar entrance animation
+    if (window.innerWidth <= 768) {
+      document.body.classList.add('sidebar-intro');
+      const h1 = document.querySelector('.sidebar h1');
+      const links = document.querySelectorAll('.sidebar nav a');
+      const sig = document.querySelector('.sidebar .signature');
+      const copy = document.querySelector('.sidebar .copyright');
+
+      if (h1) h1.style.animation = 'blurIn 0.7s ease 0.2s forwards';
+      links.forEach((link, i) => {
+        link.style.animation = `blurIn 0.5s ease ${0.45 + i * 0.1}s forwards`;
+      });
+      const afterLinks = 0.45 + links.length * 0.1;
+      if (sig) sig.style.animation = `blurIn 0.5s ease ${afterLinks}s forwards`;
+      if (copy) copy.style.animation = `blurIn 0.5s ease ${afterLinks + 0.1}s forwards`;
+
+      // Clean up after all animations finish
+      const totalTime = (afterLinks + 0.1 + 0.5) * 1000 + 100;
+      setTimeout(() => document.body.classList.remove('sidebar-intro'), totalTime);
+    }
+
   } catch (error) {
     console.error('Failed to load albums:', error);
   }
