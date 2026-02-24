@@ -1205,6 +1205,9 @@ body.edit-mode #albumNav a:hover .album-actions { opacity: 1; }
 .album-action-btn:hover { color: #aaa; }
 .album-action-btn.delete:hover { color: #d44; }
 
+body.edit-mode #albumNav a.hidden-album { opacity: 0.35; }
+body.edit-mode #albumNav a.hidden-album:hover { opacity: 0.6; }
+
 body:not(.inverted) .album-action-btn { color: #bbb; }
 body:not(.inverted) .album-action-btn:hover { color: #555; }
 body:not(.inverted) .album-action-btn.delete:hover { color: #d44; }

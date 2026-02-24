@@ -15,6 +15,11 @@ let carouselBuiltForAlbum = null;
 let virtualSlides = [];
 let isSnapping = false;
 
+// Helper: album keys excluding internal arrays
+function albumKeys() {
+  return Object.keys(albums).filter(n => n !== '_unsorted' && n !== '_hidden');
+}
+
 // DOM elements
 const lightbox = document.getElementById('lightbox');
 const lbTrack = document.getElementById('lbTrack');
@@ -31,11 +36,12 @@ async function loadAlbums() {
     const response = await fetch('photos.json');
     albums = await response.json();
 
-    // Ensure _unsorted exists
+    // Ensure _unsorted and _hidden exist
     if (!albums._unsorted) albums._unsorted = [];
+    if (!albums._hidden) albums._hidden = [];
 
     const nav = document.getElementById('albumNav');
-    const albumNames = Object.keys(albums).filter(n => n !== '_unsorted');
+    const albumNames = albumKeys().filter(n => !albums._hidden.includes(n));
 
     albumNames.forEach((albumName) => {
       const link = document.createElement('a');
@@ -1635,15 +1641,16 @@ function setupEditSidebar() {
 
         if (hasDragged && currentHoverIdx !== -1 && currentHoverIdx !== myIdx) {
           // Reorder - only visible albums
-          const keys = Object.keys(albums).filter(n => n !== '_unsorted');
+          const keys = albumKeys();
           const name = keys[myIdx];
           keys.splice(myIdx, 1);
           keys.splice(currentHoverIdx, 0, name);
 
-          // Rebuild with _unsorted preserved
+          // Rebuild with _unsorted and _hidden preserved
           const newAlbums = {};
           keys.forEach(k => { newAlbums[k] = albums[k]; });
           if (albums._unsorted) newAlbums._unsorted = albums._unsorted;
+          if (albums._hidden) newAlbums._hidden = albums._hidden;
           albums = newAlbums;
 
           rebuildAlbumNav();
@@ -1714,9 +1721,16 @@ function movePhotoToAlbum(photoIndex, targetAlbum) {
 function rebuildAlbumNav() {
   const nav = document.getElementById('albumNav');
   nav.innerHTML = '';
-  Object.keys(albums).filter(n => n !== '_unsorted').forEach((albumName) => {
+  albumKeys().forEach((albumName) => {
     const link = document.createElement('a');
     link.dataset.album = albumName;
+
+    const isHidden = albums._hidden && albums._hidden.includes(albumName);
+
+    // In normal mode, skip hidden albums
+    if (!editMode && isHidden) return;
+
+    if (isHidden) link.classList.add('hidden-album');
 
     const nameSpan = document.createElement('span');
     nameSpan.textContent = albumName.toUpperCase();
@@ -1725,6 +1739,18 @@ function rebuildAlbumNav() {
     if (editMode) {
       const actions = document.createElement('span');
       actions.className = 'album-actions';
+
+      const hideBtn = document.createElement('button');
+      hideBtn.className = 'album-action-btn hide-toggle';
+      hideBtn.innerHTML = isHidden
+        ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.5 6.5a2 2 0 002.8 2.8"/><path d="M3.5 5.3C2.4 6.3 1.5 7.6 1.5 8c0 1 3 5 6.5 5 .9 0 1.8-.2 2.6-.6"/><path d="M10 4.2C9.4 3.8 8.7 3.5 8 3.5 4.5 3.5 1.5 7 1.5 8c0 .2.3.7.8 1.3"/></svg>'
+        : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="8" rx="6.5" ry="4"/><circle cx="8" cy="8" r="2"/></svg>';
+      hideBtn.title = isHidden ? 'Show album' : 'Hide album';
+      hideBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        toggleAlbumVisibility(albumName);
+      });
 
       const renameBtn = document.createElement('button');
       renameBtn.className = 'album-action-btn';
@@ -1744,6 +1770,7 @@ function rebuildAlbumNav() {
         deleteAlbum(albumName);
       });
 
+      actions.appendChild(hideBtn);
       actions.appendChild(renameBtn);
       actions.appendChild(deleteBtn);
       link.appendChild(actions);
@@ -1785,7 +1812,7 @@ function rebuildAlbumNav() {
 // ============================================
 // Album Management: Create, Rename, Delete
 // ============================================
-const RESERVED_ALBUM_NAMES = ['_unsorted', 'photos', 'grid'];
+const RESERVED_ALBUM_NAMES = ['_unsorted', '_hidden', 'photos', 'grid'];
 
 function sanitizeAlbumKey(name) {
   let key = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -1846,6 +1873,18 @@ function createAlbum() {
   });
 }
 
+function toggleAlbumVisibility(albumName) {
+  if (!albums._hidden) albums._hidden = [];
+  const idx = albums._hidden.indexOf(albumName);
+  if (idx === -1) {
+    albums._hidden.push(albumName);
+  } else {
+    albums._hidden.splice(idx, 1);
+  }
+  rebuildAlbumNav();
+  setupEditSidebar();
+}
+
 function renameAlbum(oldName) {
   const nav = document.getElementById('albumNav');
   const link = nav.querySelector(`a[data-album="${oldName}"]`);
@@ -1890,6 +1929,11 @@ function renameAlbum(oldName) {
       } else {
         newAlbums[key] = val;
       }
+    }
+    // Update _hidden array if old name was hidden
+    if (newAlbums._hidden) {
+      const hidIdx = newAlbums._hidden.indexOf(oldName);
+      if (hidIdx !== -1) newAlbums._hidden[hidIdx] = newKey;
     }
     albums = newAlbums;
 
@@ -1936,11 +1980,17 @@ function deleteAlbum(albumName) {
   // Remove album
   delete albums[albumName];
 
+  // Remove from _hidden if present
+  if (albums._hidden) {
+    const hidIdx = albums._hidden.indexOf(albumName);
+    if (hidIdx !== -1) albums._hidden.splice(hidIdx, 1);
+  }
+
   // If we just deleted the current album, switch to first available
   if (currentAlbum === albumName) {
     currentAlbum = null;
     currentPhotos = [];
-    const remaining = Object.keys(albums).filter(n => n !== '_unsorted');
+    const remaining = albumKeys();
     if (remaining.length > 0) {
       switchAlbum(remaining[0]);
     } else {
@@ -3316,6 +3366,7 @@ async function saveOrder() {
     if (pendingDeletes.length > 0) {
       const deletePaths = new Set(pendingDeletes.map(d => d.full.replace('photos/', '')));
       for (const [albumName, photos] of Object.entries(albums)) {
+        if (albumName === '_hidden') continue;
         albums[albumName] = photos.filter(p => !deletePaths.has(p.src));
       }
     }
@@ -3323,6 +3374,7 @@ async function saveOrder() {
     // Build order.json fresh (don't merge with stale remote data)
     const orderData = {};
     for (const [albumName, photos] of Object.entries(albums)) {
+      if (albumName === '_hidden') continue;
       orderData[albumName] = photos.map(p => {
         const parts = p.src.split('/');
         return parts[parts.length - 1].replace('.webp', '');
