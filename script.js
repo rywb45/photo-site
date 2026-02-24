@@ -478,10 +478,7 @@ function openLightbox(index, sourceImg) {
     // Now safe to hide the source — clone is visually covering it
     morphSource.style.opacity = '0';
 
-    // Hide lightbox and disable backdrop-filter before making visible
     lightbox.style.opacity = '0';
-    lightbox.style.backdropFilter = 'none';
-    lightbox.style.webkitBackdropFilter = 'none';
     lbTrack.style.opacity = '0';
     lightbox.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -515,8 +512,6 @@ function openLightbox(index, sourceImg) {
       morphClone.style.width = targetW + 'px';
       morphClone.style.height = targetH + 'px';
 
-      lightbox.style.backdropFilter = '';
-      lightbox.style.webkitBackdropFilter = '';
       lightbox.style.transition = 'opacity 0.2s ease';
       lightbox.style.opacity = '1';
     });
@@ -629,8 +624,6 @@ function closeLightbox() {
     lightbox.style.background = '';
     lightbox.style.opacity = '';
     lightbox.style.transition = '';
-    lightbox.style.backdropFilter = '';
-    lightbox.style.webkitBackdropFilter = '';
     lbTrack.style.opacity = '';
 
     // Get fresh grid position (might have scrolled)
@@ -661,8 +654,6 @@ function closeLightbox() {
     lightbox.style.background = '';
     lightbox.style.opacity = '';
     lightbox.style.transition = '';
-    lightbox.style.backdropFilter = '';
-    lightbox.style.webkitBackdropFilter = '';
     lbTrack.style.opacity = '';
     morphSource = null;
     morphRect = null;
@@ -833,8 +824,6 @@ lightbox.addEventListener('wheel', (e) => {
           lightbox.style.background = '';
           lightbox.style.opacity = '';
           lightbox.style.transition = '';
-          lightbox.style.backdropFilter = '';
-          lightbox.style.webkitBackdropFilter = '';
           lbTrack.style.opacity = '';
           lbTrack.style.transition = 'none';
           lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
