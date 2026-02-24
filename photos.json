@@ -57,8 +57,8 @@
   ],
   "snowday": [
     {
-      "src": "unsorted/023.webp",
-      "grid": "unsorted/grid/023.webp",
+      "src": "unsorted/038.webp",
+      "grid": "unsorted/grid/038.webp",
       "w": 2048,
       "h": 1365
     },
@@ -75,14 +75,14 @@
       "h": 2048
     },
     {
-      "src": "unsorted/033.webp",
-      "grid": "unsorted/grid/033.webp",
+      "src": "unsorted/039.webp",
+      "grid": "unsorted/grid/039.webp",
       "w": 2048,
       "h": 1365
     },
     {
-      "src": "unsorted/027.webp",
-      "grid": "unsorted/grid/027.webp",
+      "src": "unsorted/040.webp",
+      "grid": "unsorted/grid/040.webp",
       "w": 1365,
       "h": 2048
     },
@@ -93,16 +93,16 @@
       "h": 2048
     },
     {
-      "src": "unsorted/029.webp",
-      "grid": "unsorted/grid/029.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
       "src": "unsorted/032.webp",
       "grid": "unsorted/grid/032.webp",
       "w": 1365,
       "h": 2048
+    },
+    {
+      "src": "unsorted/041.webp",
+      "grid": "unsorted/grid/041.webp",
+      "w": 2048,
+      "h": 1365
     }
   ],
   "buildings": [
@@ -291,33 +291,42 @@
       "h": 2048
     },
     {
-      "src": "unsorted/038.webp",
-      "grid": "unsorted/grid/038.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/039.webp",
-      "grid": "unsorted/grid/039.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/040.webp",
-      "grid": "unsorted/grid/040.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/041.webp",
-      "grid": "unsorted/grid/041.webp",
-      "w": 2048,
-      "h": 1365
+      "src": "unsorted/042.webp",
+      "grid": "unsorted/grid/042.webp",
+      "w": 5152,
+      "h": 7728
     }
   ],
   "_hidden": [
     "archive",
     "chinatown",
-    "people"
+    "people",
+    "ogs"
+  ],
+  "ogs": [
+    {
+      "src": "unsorted/023.webp",
+      "grid": "unsorted/grid/023.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/027.webp",
+      "grid": "unsorted/grid/027.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/029.webp",
+      "grid": "unsorted/grid/029.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/033.webp",
+      "grid": "unsorted/grid/033.webp",
+      "w": 2048,
+      "h": 1365
+    }
   ]
 }
