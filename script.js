@@ -2929,6 +2929,7 @@ function deleteUnsortedPhoto(index) {
   });
 
   albums._unsorted.splice(index, 1);
+  hideTrayHover();
   renderUnsortedTray();
 }
 
