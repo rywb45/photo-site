@@ -1398,6 +1398,7 @@ if (mobileClose) {
 let editMode = false;
 let mobilePreview = false;
 let isUploading = false;
+let uploadHighWaterNum = 0;
 let exitTimer = null;
 let nameClickCount = 0;
 let nameClickTimer = null;
@@ -1498,8 +1499,9 @@ function enterEditMode() {
   editMode = true;
   document.body.classList.add('edit-mode');
 
-  // Clear stale upload previews from any previous session
+  // Clear stale upload previews and reset upload counter
   unsortedPreviews.clear();
+  uploadHighWaterNum = 0;
 
   // Snapshot current state for cancel
   preEditAlbums = JSON.parse(JSON.stringify(albums));
@@ -3310,7 +3312,9 @@ async function uploadSinglePhoto(file, token) {
       existingNums.push(num);
     }
   }
-  const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
+  const scanMax = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+  const nextNum = Math.max(scanMax, uploadHighWaterNum) + 1;
+  uploadHighWaterNum = nextNum;
   const paddedNum = String(nextNum).padStart(3, '0');
 
   const folderPrefix = 'unsorted';
