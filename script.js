@@ -1532,8 +1532,8 @@ function setupEditSidebar() {
       if (e.button !== 0 || !editMode) return;
       // Don't start drag or switch album when clicking action buttons
       if (e.target.closest('.album-actions')) return;
-      // Skip drag handler on mobile — no album reordering on touch devices
-      if (window.innerWidth <= 768) return;
+      // Skip drag handler on touch devices — no album reordering
+      if ('ontouchstart' in window) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -2461,8 +2461,7 @@ function renderEditGrid() {
     // Add unsort button (send back to unsorted)
     const unsortBtn = document.createElement('button');
     unsortBtn.className = 'edit-unsort-btn';
-    unsortBtn.style.fontSize = `${btnSize}px`;
-    unsortBtn.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h7a3 3 0 1 1 0 6H8"/><path d="M4 1L1 4l3 3"/></svg>';
+    unsortBtn.innerHTML = `<svg viewBox="0 0 12 12" width="${btnSize}" height="${btnSize}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h7a3 3 0 1 1 0 6H8"/><path d="M4 1L1 4l3 3"/></svg>`;
     unsortBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
