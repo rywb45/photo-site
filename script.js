@@ -1532,6 +1532,8 @@ function setupEditSidebar() {
       if (e.button !== 0 || !editMode) return;
       // Don't start drag or switch album when clicking action buttons
       if (e.target.closest('.album-actions')) return;
+      // Skip drag handler on mobile — no album reordering on touch devices
+      if (window.innerWidth <= 768) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -2460,7 +2462,7 @@ function renderEditGrid() {
     const unsortBtn = document.createElement('button');
     unsortBtn.className = 'edit-unsort-btn';
     unsortBtn.style.fontSize = `${btnSize}px`;
-    unsortBtn.innerHTML = '↩';
+    unsortBtn.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h7a3 3 0 1 1 0 6H8"/><path d="M4 1L1 4l3 3"/></svg>';
     unsortBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -2904,8 +2906,10 @@ function renderUnsortedTray() {
       moveFromUnsortedToAlbum(i, currentAlbum);
     });
 
-    thumb.addEventListener('mouseenter', () => showTrayHover(photo, thumb));
-    thumb.addEventListener('mouseleave', hideTrayHover);
+    if (window.innerWidth > 768) {
+      thumb.addEventListener('mouseenter', () => showTrayHover(photo, thumb));
+      thumb.addEventListener('mouseleave', hideTrayHover);
+    }
 
     strip.appendChild(thumb);
   });
