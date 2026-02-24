@@ -145,12 +145,6 @@
   ],
   "motion": [
     {
-      "src": "unsorted/006.webp",
-      "grid": "unsorted/grid/006.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
       "src": "01-people/001.webp",
       "grid": "01-people/grid/001.webp",
       "w": 2048,
@@ -277,7 +271,14 @@
       "h": 3940
     }
   ],
-  "_unsorted": [],
+  "_unsorted": [
+    {
+      "src": "unsorted/044.webp",
+      "grid": "unsorted/grid/044.webp",
+      "w": 1365,
+      "h": 2048
+    }
+  ],
   "_hidden": [
     "archive",
     "chinatown",
