@@ -2074,6 +2074,7 @@ function exitEditMode(saved) {
       // Collect photos that were actually uploaded this session (tracked by unsortedPreviews)
       const uploadedSrcs = new Set();
       for (const [albumName, photos] of Object.entries(albums)) {
+        if (albumName === '_hidden') continue;
         for (const p of photos) {
           if (unsortedPreviews.has(p.grid)) {
             uploadedSrcs.add(p.src);
@@ -2085,6 +2086,7 @@ function exitEditMode(saved) {
       const uploadedByAlbum = {};
       if (uploadedSrcs.size > 0) {
         for (const [albumName, photos] of Object.entries(albums)) {
+          if (albumName === '_hidden') continue;
           const uploaded = photos.filter(p => uploadedSrcs.has(p.src));
           if (uploaded.length > 0) {
             uploadedByAlbum[albumName] = uploaded;
@@ -3233,7 +3235,8 @@ async function uploadSinglePhoto(file, token) {
   // Determine the next filename number by scanning ALL albums for unsorted/ paths
   // (photos moved to albums keep their unsorted/ paths until server-side move runs)
   const existingNums = [];
-  for (const photos of Object.values(albums)) {
+  for (const [key, photos] of Object.entries(albums)) {
+    if (key === '_hidden') continue;
     for (const p of photos) {
       if (p.src.startsWith('unsorted/')) {
         const num = parseInt(p.src.split('/').pop().replace('.webp', '')) || 0;
