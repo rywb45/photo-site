@@ -229,7 +229,8 @@ function renderGrid() {
 
         const img = document.createElement('img');
         const gridKey = item.grid.replace('photos/', '');
-        img.src = unsortedPreviews.get(gridKey) || (itemWidth > GRID_MAX_WIDTH ? item.full : item.grid);
+        const effectiveWidth = itemWidth * (window.devicePixelRatio || 1);
+        img.src = unsortedPreviews.get(gridKey) || (effectiveWidth > GRID_MAX_WIDTH ? item.full : item.grid);
         img.alt = '';
         img.loading = 'lazy';
         img.width = Math.round(itemWidth);
