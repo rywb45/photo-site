@@ -1883,8 +1883,20 @@ function toggleAlbumVisibility(albumName) {
   } else {
     albums._hidden.splice(idx, 1);
   }
-  rebuildAlbumNav();
-  setupEditSidebar();
+  const nowHidden = albums._hidden.includes(albumName);
+
+  // Update in-place instead of full rebuild to avoid flicker
+  const link = document.querySelector(`#albumNav a[data-album="${albumName}"]`);
+  if (link) {
+    link.classList.toggle('hidden-album', nowHidden);
+    const hideBtn = link.querySelector('.hide-toggle');
+    if (hideBtn) {
+      hideBtn.innerHTML = nowHidden
+        ? '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l10 10"/><path d="M4.3 4.3a1.5 1.5 0 002.1 2.1"/><path d="M2 3.5C1.2 4.3.5 5.2.5 6c0 1.5 2.5 4 5.5 4 .7 0 1.4-.2 2-.4"/><path d="M8.5 7.8c.7-.5 1.3-1.1 1.7-1.8 0 0-2.5-4-5.5-4-.4 0-.9.1-1.3.2"/></svg>'
+        : '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M.5 6c0 0 2.5-4 5.5-4s5.5 4 5.5 4-2.5 4-5.5 4S.5 6 .5 6z"/><circle cx="6" cy="6" r="1.5"/></svg>';
+      hideBtn.title = nowHidden ? 'Show album' : 'Hide album';
+    }
+  }
 }
 
 function renameAlbum(oldName) {
