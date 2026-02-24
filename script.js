@@ -1530,6 +1530,8 @@ function setupEditSidebar() {
 
     const handler = (e) => {
       if (e.button !== 0 || !editMode) return;
+      // Don't start drag or switch album when clicking action buttons
+      if (e.target.closest('.album-actions')) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -1743,8 +1745,8 @@ function rebuildAlbumNav() {
       const hideBtn = document.createElement('button');
       hideBtn.className = 'album-action-btn hide-toggle';
       hideBtn.innerHTML = isHidden
-        ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.5 6.5a2 2 0 002.8 2.8"/><path d="M3.5 5.3C2.4 6.3 1.5 7.6 1.5 8c0 1 3 5 6.5 5 .9 0 1.8-.2 2.6-.6"/><path d="M10 4.2C9.4 3.8 8.7 3.5 8 3.5 4.5 3.5 1.5 7 1.5 8c0 .2.3.7.8 1.3"/></svg>'
-        : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="8" rx="6.5" ry="4"/><circle cx="8" cy="8" r="2"/></svg>';
+        ? '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l10 10"/><path d="M4.3 4.3a1.5 1.5 0 002.1 2.1"/><path d="M2 3.5C1.2 4.3.5 5.2.5 6c0 1.5 2.5 4 5.5 4 .7 0 1.4-.2 2-.4"/><path d="M8.5 7.8c.7-.5 1.3-1.1 1.7-1.8 0 0-2.5-4-5.5-4-.4 0-.9.1-1.3.2"/></svg>'
+        : '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M.5 6c0 0 2.5-4 5.5-4s5.5 4 5.5 4-2.5 4-5.5 4S.5 6 .5 6z"/><circle cx="6" cy="6" r="1.5"/></svg>';
       hideBtn.title = isHidden ? 'Show album' : 'Hide album';
       hideBtn.addEventListener('click', (e) => {
         e.stopPropagation();
