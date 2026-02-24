@@ -3021,7 +3021,30 @@ function startTrayDrag(unsortedIndex, initX, initY) {
     }
 
     if (droppedAlbum && droppedAlbum !== '_unsorted') {
-      moveFromUnsortedToAlbum(unsortedIndex, droppedAlbum);
+      // Find insert position if dropping on the current album's grid
+      let insertAt = null;
+      if (droppedAlbum === currentAlbum) {
+        const gridItems = document.querySelectorAll('#grid .edit-item');
+        let closestIdx = null;
+        let closestDist = Infinity;
+        gridItems.forEach((item, i) => {
+          const r = item.getBoundingClientRect();
+          const cx = r.left + r.width / 2;
+          const cy = r.top + r.height / 2;
+          const dist = Math.sqrt((cx - mx) ** 2 + (cy - my) ** 2);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIdx = i;
+          }
+        });
+        if (closestIdx != null) {
+          // Insert before or after based on cursor position relative to item center
+          const r = gridItems[closestIdx].getBoundingClientRect();
+          const cx = r.left + r.width / 2;
+          insertAt = mx > cx ? closestIdx + 1 : closestIdx;
+        }
+      }
+      moveFromUnsortedToAlbum(unsortedIndex, droppedAlbum, insertAt);
     }
   }
 
@@ -3066,7 +3089,7 @@ function hideTrayHover() {
   }
 }
 
-function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
+function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum, insertIndex) {
   const photo = albums._unsorted[unsortedIndex];
   const filename = photo.src.split('/').pop();
   const srcFolder = photo.src.split('/')[0];
@@ -3083,15 +3106,25 @@ function moveFromUnsortedToAlbum(unsortedIndex, targetAlbum) {
 
   albums._unsorted.splice(unsortedIndex, 1);
   if (!albums[targetAlbum]) albums[targetAlbum] = [];
-  albums[targetAlbum].push(photo);
+
+  const photoData = {
+    full: `photos/${photo.src}`,
+    grid: `photos/${photo.grid}`,
+    width: photo.w,
+    height: photo.h
+  };
+
+  if (insertIndex != null && targetAlbum === currentAlbum) {
+    albums[targetAlbum].splice(insertIndex, 0, photo);
+    currentPhotos.splice(insertIndex, 0, photoData);
+  } else {
+    albums[targetAlbum].push(photo);
+    if (targetAlbum === currentAlbum) {
+      currentPhotos.push(photoData);
+    }
+  }
 
   if (targetAlbum === currentAlbum) {
-    currentPhotos.push({
-      full: `photos/${photo.src}`,
-      grid: `photos/${photo.grid}`,
-      width: photo.w,
-      height: photo.h
-    });
     renderEditGrid();
   }
 
