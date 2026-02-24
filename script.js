@@ -2461,7 +2461,8 @@ function renderEditGrid() {
     // Add unsort button (send back to unsorted)
     const unsortBtn = document.createElement('button');
     unsortBtn.className = 'edit-unsort-btn';
-    unsortBtn.innerHTML = `<svg viewBox="0 0 12 12" width="${btnSize}" height="${btnSize}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h7a3 3 0 1 1 0 6H8"/><path d="M4 1L1 4l3 3"/></svg>`;
+    unsortBtn.style.fontSize = `${btnSize}px`;
+    unsortBtn.innerHTML = '↩\uFE0E';
     unsortBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -2513,6 +2514,7 @@ function renderEditGrid() {
 
       touchLongPressTimer = setTimeout(() => {
         touchDragActive = true;
+        item.style.touchAction = 'none';
         item.classList.remove('touch-lifting');
         if (navigator.vibrate) navigator.vibrate(50);
         startDrag(item, downIndex, downX, downY);
@@ -2738,6 +2740,7 @@ function renderEditGrid() {
     }
     if (touchLongPressItem) {
       touchLongPressItem.classList.remove('touch-lifting');
+      touchLongPressItem.style.touchAction = '';
       touchLongPressItem = null;
     }
 
