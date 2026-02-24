@@ -137,6 +137,34 @@
       "h": 1365
     }
   ],
+  "motion": [
+    {
+      "src": "unsorted/006.webp",
+      "grid": "unsorted/grid/006.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "01-people/001.webp",
+      "grid": "01-people/grid/001.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ],
+  "people": [
+    {
+      "src": "unsorted/004.webp",
+      "grid": "unsorted/grid/004.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/005.webp",
+      "grid": "unsorted/grid/005.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ],
   "chinatown": [
     {
       "src": "01-people/003.webp",
@@ -165,32 +193,6 @@
     {
       "src": "unsorted/007.webp",
       "grid": "unsorted/grid/007.webp",
-      "w": 2048,
-      "h": 1365
-    }
-  ],
-  "mix": [
-    {
-      "src": "01-people/001.webp",
-      "grid": "01-people/grid/001.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/004.webp",
-      "grid": "unsorted/grid/004.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/006.webp",
-      "grid": "unsorted/grid/006.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/005.webp",
-      "grid": "unsorted/grid/005.webp",
       "w": 2048,
       "h": 1365
     }
@@ -271,6 +273,8 @@
   ],
   "_unsorted": [],
   "_hidden": [
-    "archive"
+    "archive",
+    "chinatown",
+    "people"
   ]
 }
