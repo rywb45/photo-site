@@ -169,6 +169,7 @@
       "h": 1365
     }
   ],
+  "street": [],
   "people": [
     {
       "src": "unsorted/004.webp",
@@ -289,13 +290,6 @@
       "h": 3940
     }
   ],
-  "_unsorted": [],
-  "_hidden": [
-    "archive",
-    "chinatown",
-    "people",
-    "ogs"
-  ],
   "ogs": [
     {
       "src": "unsorted/023.webp",
@@ -339,5 +333,19 @@
       "w": 2048,
       "h": 1365
     }
+  ],
+  "_unsorted": [
+    {
+      "src": "unsorted/048.webp",
+      "grid": "unsorted/grid/048.webp",
+      "w": 1310,
+      "h": 2030
+    }
+  ],
+  "_hidden": [
+    "archive",
+    "chinatown",
+    "people",
+    "ogs"
   ]
 }
