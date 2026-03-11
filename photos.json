@@ -187,12 +187,6 @@
       "grid": "unsorted/grid/048.webp",
       "w": 1310,
       "h": 2030
-    },
-    {
-      "src": "unsorted/050.webp",
-      "grid": "unsorted/grid/050.webp",
-      "w": 1365,
-      "h": 2048
     }
   ],
   "people": [
@@ -359,7 +353,14 @@
       "h": 1365
     }
   ],
-  "_unsorted": [],
+  "_unsorted": [
+    {
+      "src": "unsorted/050.webp",
+      "grid": "unsorted/grid/050.webp",
+      "w": 1365,
+      "h": 2048
+    }
+  ],
   "_hidden": [
     "archive",
     "chinatown",
