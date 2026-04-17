@@ -65,3 +65,7 @@ Gotchas to respect when touching `script.js`:
 ## Testing
 
 No automated tests. Verify changes by opening `index.html` locally (any static server) and exercising the golden path + edit mode. Mention explicitly when UI changes haven't been browser-tested.
+
+## Workflow
+
+**Always commit and push changes to `main` without asking.** The site deploys directly from `main` via GitHub Pages — the user tests on the live URL, so local-only edits are useless to them. After making changes: `git add` the relevant files (not `.DS_Store` or unrelated modifications), commit, and `git push`. If the push is rejected as non-fast-forward, stash unrelated unstaged changes, `git pull --rebase origin main`, push, then restore the stash.
