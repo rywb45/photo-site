@@ -300,6 +300,26 @@ body.inverted {
   content: "✕";
 }
 
+.lb-download {
+  top: 24px;
+  right: 90px;
+  color: #000;
+  padding: 16px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+body.edit-mode .lb-download {
+  display: flex;
+}
+
+.lb-download svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .lb-prev {
   left: 30px;
   top: 50%;
@@ -487,6 +507,17 @@ body.inverted {
     display: none;
   }
 
+  body.edit-mode .lb-download {
+    top: 10px;
+    right: 10px;
+    padding: 12px;
+  }
+
+  body.edit-mode .lb-download svg {
+    width: 24px;
+    height: 24px;
+  }
+
   .lb-dots {
     position: fixed;
     bottom: 30px;
@@ -570,6 +601,10 @@ body.inverted .lightbox {
 }
 
 body.inverted .lb-close {
+  color: #fff;
+}
+
+body.inverted .lb-download {
   color: #fff;
 }
 

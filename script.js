@@ -59,6 +59,7 @@ const lbTrack = document.getElementById('lbTrack');
 const lbClose = document.getElementById('lbClose');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
+const lbDownload = document.getElementById('lbDownload');
 const mainEl = document.querySelector('.main');
 
 // ============================================
@@ -730,6 +731,54 @@ lbPrev.addEventListener('click', () => {
 });
 lbNext.addEventListener('click', () => {
   if (currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
+});
+
+async function downloadCurrentPhoto() {
+  if (!document.body.classList.contains('edit-mode')) return;
+  const photo = currentPhotos[currentIndex];
+  if (!photo || !photo.full) return;
+  const src = photo.full;
+  const filename = (src.split('/').pop() || 'photo.jpg').split('?')[0];
+
+  lbDownload.disabled = true;
+  try {
+    const response = await fetch(src, { cache: 'force-cache' });
+    if (!response.ok) throw new Error('fetch failed: ' + response.status);
+    const blob = await response.blob();
+    const type = blob.type || 'image/jpeg';
+    const file = new File([blob], filename, { type });
+
+    // Mobile: open native share sheet so user can tap "Save Image" / "Save to Photos"
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+
+    // Desktop (and mobile fallback): trigger download via anchor
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error('Download failed:', err);
+    window.open(src, '_blank', 'noopener');
+  } finally {
+    lbDownload.disabled = false;
+  }
+}
+
+lbDownload.addEventListener('click', (e) => {
+  e.stopPropagation();
+  downloadCurrentPhoto();
 });
 
 // Click/double-click handling for lightbox
