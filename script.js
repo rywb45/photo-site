@@ -20,6 +20,35 @@ function albumKeys() {
   return Object.keys(albums).filter(n => n !== '_unsorted' && n !== '_hidden');
 }
 
+// URL routing: albums are shareable via `/album-name`. Works for hidden albums too.
+// Relies on 404.html being a duplicate of index.html so GitHub Pages serves the SPA
+// for any path, plus `<base href="/">` so relative assets resolve from root.
+let urlInitialized = false;
+
+function albumFromPath() {
+  const segments = location.pathname.split('/').filter(Boolean);
+  if (segments.length === 0) return null;
+  let name;
+  try { name = decodeURIComponent(segments[0]).toLowerCase(); } catch { return null; }
+  if (!name || name.startsWith('_')) return null;
+  return Array.isArray(albums[name]) ? name : null;
+}
+
+function updateUrlForAlbum(albumName) {
+  const newPath = albumName ? '/' + encodeURIComponent(albumName) : '/';
+  const fullNew = newPath + location.search;
+  if (location.pathname + location.search === fullNew) {
+    urlInitialized = true;
+    return;
+  }
+  // First URL update after load → replaceState so back-button exits cleanly even if
+  // the user landed on `/junk` or `/Blizzard` (normalized to canonical `/blizzard`).
+  // Subsequent switches → pushState so back/forward walks album history.
+  if (urlInitialized) history.pushState(null, '', fullNew);
+  else history.replaceState(null, '', fullNew);
+  urlInitialized = true;
+}
+
 // DOM elements
 const lightbox = document.getElementById('lightbox');
 const lbTrack = document.getElementById('lbTrack');
@@ -55,8 +84,16 @@ async function loadAlbums() {
       nav.appendChild(link);
     });
 
-    if (albumNames.length > 0 && window.innerWidth > 768) {
+    const pathAlbum = albumFromPath();
+    if (pathAlbum) {
+      switchAlbum(pathAlbum);
+    } else if (albumNames.length > 0 && window.innerWidth > 768) {
       switchAlbum(albumNames[0]);
+    } else if (location.pathname !== '/') {
+      // Landed on a junk path on mobile with no default album shown.
+      // Normalize the bar to `/` without reloading.
+      history.replaceState(null, '', '/' + location.search);
+      urlInitialized = true;
     }
 
     // Mobile sidebar entrance animation — staggered blur reveal
@@ -161,6 +198,8 @@ function switchAlbum(albumName, clickedElement = null) {
   } else {
     renderGrid();
   }
+
+  updateUrlForAlbum(albumName);
 }
 
 // ============================================
@@ -1276,6 +1315,8 @@ let mainTouchMoved = false;
 let mainStartTime = 0;
 
 function closeAlbumView(skipAnimation) {
+  updateUrlForAlbum(null);
+  currentAlbum = null;
   document.querySelectorAll('#albumNav a').forEach(link => link.classList.remove('active'));
 
   if (skipAnimation) {
@@ -1391,6 +1432,16 @@ const mobileClose = document.getElementById('mobileClose');
 if (mobileClose) {
   mobileClose.addEventListener('click', () => closeAlbumView());
 }
+
+// Back/forward navigation between albums via the URL path
+window.addEventListener('popstate', () => {
+  const target = albumFromPath();
+  if (target) {
+    if (target !== currentAlbum) switchAlbum(target);
+  } else if (currentAlbum && window.innerWidth <= 768) {
+    closeAlbumView();
+  }
+});
 
 // ============================================
 // Edit Mode: Hidden login + drag reorder + save
