@@ -25,10 +25,15 @@ function displayAlbumName(name) {
   return name.replace(/-/g, ' ').toUpperCase();
 }
 
-// URL routing: albums are shareable via `/album-name`. Works for hidden albums too.
-// Relies on 404.html being a duplicate of index.html so GitHub Pages serves the SPA
-// for any path, plus `<base href="/">` so relative assets resolve from root.
-let urlInitialized = false;
+// URL routing: albums are shareable via `/album-name/`. Works for hidden albums too.
+// Relies on per-album `<album>/index.html` files (see tools/generate-album-pages.js)
+// plus `404.html` as the fallback, and `<base href="/">` so relative assets resolve
+// from root.
+//
+// Initial-load URLs are normalized via replaceState in loadAlbums() — everything
+// after that uses pushState so browser back/forward walks album history. Initial
+// auto-selection of the default album on desktop does NOT push a URL — the URL
+// only starts tracking once the user clicks an album.
 
 function albumFromPath() {
   const segments = location.pathname.split('/').filter(Boolean);
@@ -44,16 +49,8 @@ function updateUrlForAlbum(albumName) {
   // and 301s /<album> → /<album>/). Pushing with the slash avoids a reload-time redirect.
   const newPath = albumName ? '/' + encodeURIComponent(albumName) + '/' : '/';
   const fullNew = newPath + location.search;
-  if (location.pathname + location.search === fullNew) {
-    urlInitialized = true;
-    return;
-  }
-  // First URL update after load → replaceState so back-button exits cleanly even if
-  // the user landed on `/junk` or `/Blizzard` (normalized to canonical `/blizzard`).
-  // Subsequent switches → pushState so back/forward walks album history.
-  if (urlInitialized) history.pushState(null, '', fullNew);
-  else history.replaceState(null, '', fullNew);
-  urlInitialized = true;
+  if (location.pathname + location.search === fullNew) return;
+  history.pushState(null, '', fullNew);
 }
 
 // DOM elements
@@ -91,16 +88,27 @@ async function loadAlbums() {
       nav.appendChild(link);
     });
 
+    // Load-time URL normalization + initial album selection.
+    // - `/<album>/` matches → render that album, normalize URL to canonical form if needed
+    // - junk path → replaceState to `/`, fall through to default selection
+    // - `/` on desktop → show default album WITHOUT changing URL (user's preference)
+    // - `/` on mobile → leave sidebar state (user picks an album manually)
+    // All initial switchAlbum calls pass skipUrl=true so the URL only starts
+    // pushing once the user actively clicks.
     const pathAlbum = albumFromPath();
     if (pathAlbum) {
-      switchAlbum(pathAlbum);
-    } else if (albumNames.length > 0 && window.innerWidth > 768) {
-      switchAlbum(albumNames[0]);
-    } else if (location.pathname !== '/') {
-      // Landed on a junk path on mobile with no default album shown.
-      // Normalize the bar to `/` without reloading.
-      history.replaceState(null, '', '/' + location.search);
-      urlInitialized = true;
+      const canonical = '/' + encodeURIComponent(pathAlbum) + '/';
+      if (location.pathname !== canonical) {
+        history.replaceState(null, '', canonical + location.search);
+      }
+      switchAlbum(pathAlbum, true);
+    } else {
+      if (location.pathname !== '/') {
+        history.replaceState(null, '', '/' + location.search);
+      }
+      if (albumNames.length > 0 && window.innerWidth > 768) {
+        switchAlbum(albumNames[0], true);
+      }
     }
 
     // Mobile sidebar entrance animation — staggered blur reveal
@@ -169,7 +177,7 @@ function syncCurrentAlbum() {
   }
 }
 
-function switchAlbum(albumName, clickedElement = null) {
+function switchAlbum(albumName, skipUrl = false) {
   // If in edit mode, save current album's reorder before switching
   if (editMode && currentAlbum) {
     syncCurrentAlbum();
@@ -206,7 +214,7 @@ function switchAlbum(albumName, clickedElement = null) {
     renderGrid();
   }
 
-  updateUrlForAlbum(albumName);
+  if (!skipUrl) updateUrlForAlbum(albumName);
 }
 
 // ============================================
@@ -1440,13 +1448,23 @@ if (mobileClose) {
   mobileClose.addEventListener('click', () => closeAlbumView());
 }
 
-// Back/forward navigation between albums via the URL path
+// Back/forward navigation between albums via the URL path.
+// URL already matches what the browser is showing, so switchAlbum is called
+// with skipUrl=true — we just update the UI to match the new URL.
 window.addEventListener('popstate', () => {
   const target = albumFromPath();
   if (target) {
-    if (target !== currentAlbum) switchAlbum(target);
-  } else if (currentAlbum && window.innerWidth <= 768) {
-    closeAlbumView();
+    if (target !== currentAlbum) switchAlbum(target, true);
+    return;
+  }
+  // URL is bare `/`. On mobile, close album view. On desktop, fall back to default album.
+  if (window.innerWidth <= 768) {
+    if (currentAlbum) closeAlbumView();
+  } else {
+    const visible = albumKeys().filter(n => !(albums._hidden || []).includes(n));
+    if (visible.length && visible[0] !== currentAlbum) {
+      switchAlbum(visible[0], true);
+    }
   }
 });
 

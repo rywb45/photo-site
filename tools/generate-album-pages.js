@@ -41,7 +41,7 @@ function metaTagsForAlbum(slug, photos) {
   const pageUrl = `${SITE_URL}/${encodeURIComponent(slug)}/`;
   const w = first.w || "";
   const h = first.h || "";
-  return `
+  return `<!-- og-tags-start -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ryan Byrne">
     <meta property="og:url" content="${escapeAttr(pageUrl)}">
@@ -51,17 +51,22 @@ function metaTagsForAlbum(slug, photos) {
     <meta property="og:image:height" content="${h}">` : ""}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${escapeAttr(title)}">
-    <meta name="twitter:image" content="${escapeAttr(imageUrl)}">`;
+    <meta name="twitter:image" content="${escapeAttr(imageUrl)}">
+    <!-- og-tags-end -->`;
 }
 
 function buildAlbumHtml(slug, photos) {
   const tags = metaTagsForAlbum(slug, photos);
   if (!tags) return null;
   const title = `Ryan Byrne — ${displayName(slug)}`;
-  // Replace the original <title>...</title> and inject OG/Twitter tags before </head>.
+  // Replace <title> and swap the OG/Twitter tag block (delimited by markers in index.html).
+  const ogBlockRegex = /<!-- og-tags-start -->[\s\S]*?<!-- og-tags-end -->/;
+  if (!ogBlockRegex.test(indexHtml)) {
+    throw new Error("index.html is missing the <!-- og-tags-start --> ... <!-- og-tags-end --> block");
+  }
   return indexHtml
     .replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(title)}</title>`)
-    .replace("</head>", `${tags}\n  </head>`);
+    .replace(ogBlockRegex, tags);
 }
 
 const generatedSlugs = [];
