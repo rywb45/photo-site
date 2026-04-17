@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <base href="/">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.github.com; frame-ancestors 'none';">
+    <title>Ryan Byrne — Buildings</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ryan Byrne">
+    <meta property="og:url" content="https://ryanbyrne.me/buildings/">
+    <meta property="og:title" content="Ryan Byrne — Buildings">
+    <meta property="og:image" content="https://ryanbyrne.me/photos/unsorted/046.webp">
+    <meta property="og:image:width" content="1365">
+    <meta property="og:image:height" content="2048">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ryan Byrne — Buildings">
+    <meta name="twitter:image" content="https://ryanbyrne.me/photos/unsorted/046.webp">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <h1><span id="nameText">Ryan Byrne</span><span class="edit-cursor" id="editCursor"></span></h1>
+      <nav id="albumNav"></nav>
+      <div class="social">
+        <a href="https://www.instagram.com/ryyyanbyrne/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <img src="instagram.svg" alt="Instagram" width="22" height="22">
+        </a>
+      </div>
+      <img src="photos/signature.png" class="signature" alt="Signature">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
+      <p class="copyright">© <span id="year"></span></p>
+    </aside>
+    <main class="main">
+      <div class="mobile-header">
+        <div class="mobile-header-title" id="mobileHeaderTitle"></div>
+        <button class="mobile-close" id="mobileClose" aria-label="Close"></button>
+      </div>
+      <div id="grid"></div>
+      <footer class="footer"></footer>
+    </main>
+    <div id="lightbox" class="lightbox">
+      <button id="lbClose" class="lb-btn lb-close" aria-label="Close"></button>
+      <button id="lbPrev" class="lb-btn lb-prev" aria-label="Previous"></button>
+      <button id="lbNext" class="lb-btn lb-next" aria-label="Next"></button>
+      <div class="lb-dots" id="lbDots"></div>
+      <div class="lb-track" id="lbTrack"></div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+      // Default dark mode + manual toggle
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('inverted');
+
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) {
+          toggle.addEventListener('click', function() {
+            document.body.classList.toggle('inverted');
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

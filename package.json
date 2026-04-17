@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen": "node tools/generate-photo-json.js"
+    "gen": "node tools/generate-photo-json.js",
+    "gen:albums": "node tools/generate-album-pages.js"
   }
 }

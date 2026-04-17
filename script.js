@@ -20,6 +20,11 @@ function albumKeys() {
   return Object.keys(albums).filter(n => n !== '_unsorted' && n !== '_hidden');
 }
 
+// Album keys are slugified (a-z0-9-), but displayed with spaces and uppercased.
+function displayAlbumName(name) {
+  return name.replace(/-/g, ' ').toUpperCase();
+}
+
 // URL routing: albums are shareable via `/album-name`. Works for hidden albums too.
 // Relies on 404.html being a duplicate of index.html so GitHub Pages serves the SPA
 // for any path, plus `<base href="/">` so relative assets resolve from root.
@@ -35,7 +40,9 @@ function albumFromPath() {
 }
 
 function updateUrlForAlbum(albumName) {
-  const newPath = albumName ? '/' + encodeURIComponent(albumName) : '/';
+  // Trailing slash matches GH Pages canonical form (it serves /<album>/index.html
+  // and 301s /<album> → /<album>/). Pushing with the slash avoids a reload-time redirect.
+  const newPath = albumName ? '/' + encodeURIComponent(albumName) + '/' : '/';
   const fullNew = newPath + location.search;
   if (location.pathname + location.search === fullNew) {
     urlInitialized = true;
@@ -74,7 +81,7 @@ async function loadAlbums() {
 
     albumNames.forEach((albumName) => {
       const link = document.createElement('a');
-      link.textContent = albumName.toUpperCase();
+      link.textContent = displayAlbumName(albumName);
       link.dataset.album = albumName;
       if (_mobileIntro) link.style.opacity = '0';
       link.addEventListener('click', (e) => {
@@ -189,7 +196,7 @@ function switchAlbum(albumName, clickedElement = null) {
   });
 
   if (window.innerWidth <= 768) {
-    document.getElementById('mobileHeaderTitle').textContent = albumName.toUpperCase();
+    document.getElementById('mobileHeaderTitle').textContent = displayAlbumName(albumName);
     animateSlideIn();
   }
 
@@ -1791,7 +1798,7 @@ function rebuildAlbumNav() {
     if (isHidden) link.classList.add('hidden-album');
 
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = albumName.toUpperCase();
+    nameSpan.textContent = displayAlbumName(albumName);
     link.appendChild(nameSpan);
 
     if (editMode) {
@@ -1969,7 +1976,7 @@ function renameAlbum(oldName) {
 
   const input = document.createElement('input');
   input.className = 'inline-rename-input glow';
-  input.value = oldName.toUpperCase();
+  input.value = displayAlbumName(oldName);
 
   const hint = document.createElement('span');
   hint.className = 'inline-rename-hint';
