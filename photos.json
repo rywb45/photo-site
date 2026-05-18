@@ -1,4 +1,96 @@
 {
+  "bermuda": [
+    {
+      "src": "unsorted/062.webp",
+      "grid": "unsorted/grid/062.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/082.webp",
+      "grid": "unsorted/grid/082.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/073.webp",
+      "grid": "unsorted/grid/073.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/064.webp",
+      "grid": "unsorted/grid/064.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/075.webp",
+      "grid": "unsorted/grid/075.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/077.webp",
+      "grid": "unsorted/grid/077.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/069.webp",
+      "grid": "unsorted/grid/069.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/072.webp",
+      "grid": "unsorted/grid/072.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/066.webp",
+      "grid": "unsorted/grid/066.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/068.webp",
+      "grid": "unsorted/grid/068.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/080.webp",
+      "grid": "unsorted/grid/080.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/071.webp",
+      "grid": "unsorted/grid/071.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/070.webp",
+      "grid": "unsorted/grid/070.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/079.webp",
+      "grid": "unsorted/grid/079.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/076.webp",
+      "grid": "unsorted/grid/076.webp",
+      "w": 7260,
+      "h": 4840
+    }
+  ],
   "blizzard": [
     {
       "src": "unsorted/012.webp",
@@ -371,13 +463,6 @@
       "h": 1365
     }
   ],
-  "_unsorted": [],
-  "_hidden": [
-    "archive",
-    "chinatown",
-    "people",
-    "ogs"
-  ],
   "lincoln-square": [
     {
       "src": "unsorted/061.webp",
@@ -404,100 +489,11 @@
       "h": 2048
     }
   ],
-  "bermuda": [
-    {
-      "src": "unsorted/062.webp",
-      "grid": "unsorted/grid/062.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/082.webp",
-      "grid": "unsorted/grid/082.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/073.webp",
-      "grid": "unsorted/grid/073.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/064.webp",
-      "grid": "unsorted/grid/064.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/075.webp",
-      "grid": "unsorted/grid/075.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/077.webp",
-      "grid": "unsorted/grid/077.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/069.webp",
-      "grid": "unsorted/grid/069.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/072.webp",
-      "grid": "unsorted/grid/072.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/066.webp",
-      "grid": "unsorted/grid/066.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/068.webp",
-      "grid": "unsorted/grid/068.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/080.webp",
-      "grid": "unsorted/grid/080.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/071.webp",
-      "grid": "unsorted/grid/071.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/070.webp",
-      "grid": "unsorted/grid/070.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/079.webp",
-      "grid": "unsorted/grid/079.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/076.webp",
-      "grid": "unsorted/grid/076.webp",
-      "w": 7260,
-      "h": 4840
-    }
-  ],
-  "_borders": {
-    "enabled": false,
-    "albums": {}
-  }
+  "_unsorted": [],
+  "_hidden": [
+    "archive",
+    "chinatown",
+    "people",
+    "ogs"
+  ]
 }
