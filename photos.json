@@ -7,12 +7,6 @@
       "h": 1365
     },
     {
-      "src": "unsorted/064.webp",
-      "grid": "unsorted/grid/064.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
       "src": "unsorted/063.webp",
       "grid": "unsorted/grid/063.webp",
       "w": 2048,
@@ -447,6 +441,12 @@
       "grid": "unsorted/grid/069.webp",
       "w": 7260,
       "h": 4840
+    },
+    {
+      "src": "unsorted/070.webp",
+      "grid": "unsorted/grid/070.webp",
+      "w": 2048,
+      "h": 1365
     }
   ],
   "_hidden": [
