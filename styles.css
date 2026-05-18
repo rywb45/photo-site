@@ -233,12 +233,12 @@ body.inverted {
   content: '';
   position: absolute;
   inset: 0;
-  box-shadow: inset 0 0 0 8px #000;
+  box-shadow: inset 0 0 0 5px #000;
   pointer-events: none;
   z-index: 1;
 }
 body.inverted .grid-item.bordered::after {
-  box-shadow: inset 0 0 0 8px #fff;
+  box-shadow: inset 0 0 0 5px #fff;
 }
 
 .footer {
@@ -288,10 +288,10 @@ body.inverted .grid-item.bordered::after {
 }
 
 .lb-slide.bordered img {
-  box-shadow: 0 0 0 10px #000;
+  box-shadow: 0 0 0 6px #000;
 }
 body.inverted .lb-slide.bordered img {
-  box-shadow: 0 0 0 10px #fff;
+  box-shadow: 0 0 0 6px #fff;
 }
 
 .lb-btn {
@@ -568,17 +568,17 @@ body.inverted .lb-slide.bordered img {
   }
 
   .grid-item.bordered::after {
-    box-shadow: inset 0 0 0 5px #000;
+    box-shadow: inset 0 0 0 3px #000;
   }
   body.inverted .grid-item.bordered::after {
-    box-shadow: inset 0 0 0 5px #fff;
+    box-shadow: inset 0 0 0 3px #fff;
   }
 
   .lb-slide.bordered img {
-    box-shadow: 0 0 0 7px #000;
+    box-shadow: 0 0 0 4px #000;
   }
   body.inverted .lb-slide.bordered img {
-    box-shadow: 0 0 0 7px #fff;
+    box-shadow: 0 0 0 4px #fff;
   }
 }
 

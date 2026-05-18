@@ -542,6 +542,14 @@ function openLightbox(index, sourceImg) {
     cloneImg.src = sourceImg.src;
     cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     morphClone.appendChild(cloneImg);
+
+    if (bordersEnabledForAlbum(currentAlbum)) {
+      const borderColor = document.body.classList.contains('inverted') ? '#fff' : '#000';
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `position:absolute;inset:0;box-shadow:inset 0 0 0 5px ${borderColor};pointer-events:none;z-index:1;`;
+      morphClone.appendChild(overlay);
+    }
+
     document.body.appendChild(morphClone);
 
     // Force clone to be painted BEFORE hiding source to prevent flicker
