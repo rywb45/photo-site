@@ -17,7 +17,14 @@ let isSnapping = false;
 
 // Helper: album keys excluding internal arrays
 function albumKeys() {
-  return Object.keys(albums).filter(n => n !== '_unsorted' && n !== '_hidden');
+  return Object.keys(albums).filter(n => !n.startsWith('_'));
+}
+
+function bordersEnabledForAlbum(name) {
+  const b = albums._borders;
+  if (!b) return false;
+  if (name in (b.albums || {})) return b.albums[name];
+  return b.enabled;
 }
 
 // Album keys are slugified (a-z0-9-), but displayed with spaces and uppercased.
@@ -69,9 +76,10 @@ async function loadAlbums() {
     const response = await fetch('photos.json');
     albums = await response.json();
 
-    // Ensure _unsorted and _hidden exist
+    // Ensure _unsorted, _hidden, and _borders exist
     if (!albums._unsorted) albums._unsorted = [];
     if (!albums._hidden) albums._hidden = [];
+    if (!albums._borders) albums._borders = { enabled: true, albums: {} };
 
     const nav = document.getElementById('albumNav');
     const albumNames = albumKeys().filter(n => !albums._hidden.includes(n));
@@ -278,6 +286,7 @@ function renderGrid() {
         const itemWidth = item.aspectRatio * adjustedHeight;
         const itemDiv = document.createElement('div');
         itemDiv.className = 'grid-item';
+        if (bordersEnabledForAlbum(currentAlbum)) itemDiv.classList.add('bordered');
         itemDiv.style.width = `${itemWidth}px`;
         itemDiv.style.height = `${adjustedHeight}px`;
 
@@ -314,9 +323,11 @@ function buildCarousel() {
 
   lbTrack.innerHTML = '';
   virtualSlides = [];
+  const hasBorders = bordersEnabledForAlbum(currentAlbum);
   for (let i = 0; i < 3; i++) {
     const slide = document.createElement('div');
     slide.className = 'lb-slide';
+    if (hasBorders) slide.classList.add('bordered');
     const img = document.createElement('img');
     img.alt = '';
     img.decoding = 'async';
@@ -2030,6 +2041,11 @@ function renameAlbum(oldName) {
       const hidIdx = newAlbums._hidden.indexOf(oldName);
       if (hidIdx !== -1) newAlbums._hidden[hidIdx] = newKey;
     }
+    // Update _borders per-album override if it existed for old name
+    if (newAlbums._borders && newAlbums._borders.albums && oldName in newAlbums._borders.albums) {
+      newAlbums._borders.albums[newKey] = newAlbums._borders.albums[oldName];
+      delete newAlbums._borders.albums[oldName];
+    }
     albums = newAlbums;
 
     if (currentAlbum === oldName) {
@@ -2080,6 +2096,10 @@ function deleteAlbum(albumName) {
     const hidIdx = albums._hidden.indexOf(albumName);
     if (hidIdx !== -1) albums._hidden.splice(hidIdx, 1);
   }
+  // Remove border override if present
+  if (albums._borders && albums._borders.albums) {
+    delete albums._borders.albums[albumName];
+  }
 
   // If we just deleted the current album, switch to first available
   if (currentAlbum === albumName) {
@@ -2125,9 +2145,11 @@ function exitEditMode(saved) {
     setTimeout(() => bar.remove(), 350);
   }
 
-  // Remove tray
+  // Remove tray and settings panel
   const tray = document.getElementById('unsortedTray');
   if (tray) tray.remove();
+  const settingsPanel = document.getElementById('settingsPanel');
+  if (settingsPanel) settingsPanel.remove();
 
   // Animate out the add-album extras (keep edit-mode class so layout stays stable)
   const extras = document.querySelector('.edit-album-extras');
@@ -2153,7 +2175,7 @@ function exitEditMode(saved) {
       // Collect photos that were actually uploaded this session (tracked by unsortedPreviews)
       const uploadedSrcs = new Set();
       for (const [albumName, photos] of Object.entries(albums)) {
-        if (albumName === '_hidden') continue;
+        if (!Array.isArray(photos)) continue;
         for (const p of photos) {
           if (unsortedPreviews.has(p.grid)) {
             uploadedSrcs.add(p.src);
@@ -2165,7 +2187,7 @@ function exitEditMode(saved) {
       const uploadedByAlbum = {};
       if (uploadedSrcs.size > 0) {
         for (const [albumName, photos] of Object.entries(albums)) {
-          if (albumName === '_hidden') continue;
+          if (!Array.isArray(photos)) continue;
           const uploaded = photos.filter(p => uploadedSrcs.has(p.src));
           if (uploaded.length > 0) {
             uploadedByAlbum[albumName] = uploaded;
@@ -2867,6 +2889,12 @@ function showEditBar() {
         </svg>
         <span class="unsorted-badge" id="unsortedBadge"></span>
       </button>
+      <button class="settings-btn" id="settingsBtn" onclick="toggleSettingsPanel()" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </div>
     <div class="edit-bar-actions">
       <button class="edit-bar-btn edit-mobile-btn" id="mobilePreviewBtn" onclick="toggleMobilePreview()" title="Mobile preview">
@@ -2903,12 +2931,20 @@ function showEditBar() {
   document.body.appendChild(tray);
   renderUnsortedTray();
 
+  // Build settings panel
+  const settingsPanel = document.createElement('div');
+  settingsPanel.id = 'settingsPanel';
+  settingsPanel.className = 'settings-panel';
+  document.body.appendChild(settingsPanel);
+  renderSettingsPanel();
+
   bar.offsetHeight;
   bar.classList.add('visible');
 
   // Delay tray visibility so it doesn't flash during edit bar entrance
   setTimeout(() => {
     tray.classList.add('ready');
+    settingsPanel.classList.add('ready');
     // Auto-open tray if there are unsorted photos
     if ((albums._unsorted || []).length > 0) {
       tray.classList.add('open');
@@ -2917,6 +2953,97 @@ function showEditBar() {
   }, 400);
 
   document.getElementById('editUploadInput').addEventListener('change', handlePhotoUpload);
+}
+
+function toggleSettingsPanel() {
+  const panel = document.getElementById('settingsPanel');
+  if (!panel) return;
+  const opening = !panel.classList.contains('open');
+  panel.classList.toggle('open', opening);
+  document.getElementById('settingsBtn').classList.toggle('active', opening);
+  // Close unsorted tray when settings opens
+  if (opening) {
+    const tray = document.getElementById('unsortedTray');
+    if (tray && tray.classList.contains('open')) {
+      tray.classList.remove('open');
+      document.getElementById('unsortedBtn').classList.remove('active');
+    }
+  }
+}
+
+function renderSettingsPanel() {
+  const panel = document.getElementById('settingsPanel');
+  if (!panel) return;
+  const b = albums._borders || { enabled: true, albums: {} };
+  const names = albumKeys();
+
+  let html = `
+    <div class="settings-panel-header">
+      <span class="settings-panel-title">SETTINGS</span>
+      <button class="settings-panel-close" onclick="toggleSettingsPanel()">&times;</button>
+    </div>
+    <div class="settings-panel-body">
+      <div class="settings-row settings-row-global">
+        <span class="settings-label">BORDERS</span>
+        <label class="settings-switch">
+          <input type="checkbox" id="borderGlobalToggle" ${b.enabled ? 'checked' : ''}>
+          <span class="settings-track"></span>
+        </label>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-album-list" id="borderAlbumList">`;
+
+  names.forEach(name => {
+    const effective = bordersEnabledForAlbum(name);
+    html += `
+        <div class="settings-row">
+          <span class="settings-label">${displayAlbumName(name)}</span>
+          <label class="settings-switch">
+            <input type="checkbox" data-album="${name}" ${effective ? 'checked' : ''}>
+            <span class="settings-track"></span>
+          </label>
+        </div>`;
+  });
+
+  html += `
+      </div>
+    </div>`;
+  panel.innerHTML = html;
+
+  // Global toggle handler
+  document.getElementById('borderGlobalToggle').addEventListener('change', function() {
+    albums._borders.enabled = this.checked;
+    // Clear per-album overrides that now match the new default
+    for (const name of Object.keys(albums._borders.albums)) {
+      if (albums._borders.albums[name] === this.checked) {
+        delete albums._borders.albums[name];
+      }
+    }
+    renderSettingsPanel();
+    applyBorderChange();
+  });
+
+  // Per-album toggle handlers
+  panel.querySelectorAll('[data-album]').forEach(input => {
+    input.addEventListener('change', function() {
+      const albumName = this.dataset.album;
+      if (this.checked !== albums._borders.enabled) {
+        albums._borders.albums[albumName] = this.checked;
+      } else {
+        delete albums._borders.albums[albumName];
+      }
+      applyBorderChange();
+    });
+  });
+}
+
+function applyBorderChange() {
+  if (editMode) {
+    renderEditGrid();
+  } else {
+    renderGrid();
+  }
+  carouselBuiltForAlbum = null;
 }
 
 function toggleMobilePreview() {
@@ -2935,8 +3062,17 @@ function toggleUnsortedTray() {
   const tray = document.getElementById('unsortedTray');
   const btn = document.getElementById('unsortedBtn');
   if (!tray) return;
-  tray.classList.toggle('open');
-  btn.classList.toggle('active');
+  const opening = !tray.classList.contains('open');
+  tray.classList.toggle('open', opening);
+  btn.classList.toggle('active', opening);
+  // Close settings panel when tray opens
+  if (opening) {
+    const sp = document.getElementById('settingsPanel');
+    if (sp && sp.classList.contains('open')) {
+      sp.classList.remove('open');
+      document.getElementById('settingsBtn').classList.remove('active');
+    }
+  }
 }
 
 function updateUnsortedBadge() {
@@ -3375,7 +3511,7 @@ async function uploadSinglePhoto(file, token) {
 
   const existingNums = [];
   for (const [key, photos] of Object.entries(scanSource)) {
-    if (key === '_hidden') continue;
+    if (!Array.isArray(photos)) continue;
     for (const p of photos) {
       if (p.src.startsWith('unsorted/')) {
         const num = parseInt(p.src.split('/').pop().replace('.webp', '')) || 0;
@@ -3524,7 +3660,7 @@ async function saveOrder() {
     if (pendingDeletes.length > 0) {
       const deletePaths = new Set(pendingDeletes.map(d => d.full.replace('photos/', '')));
       for (const [albumName, photos] of Object.entries(albums)) {
-        if (albumName === '_hidden') continue;
+        if (!Array.isArray(photos)) continue;
         albums[albumName] = photos.filter(p => !deletePaths.has(p.src));
       }
     }
@@ -3532,7 +3668,7 @@ async function saveOrder() {
     // Build order.json fresh (don't merge with stale remote data)
     const orderData = {};
     for (const [albumName, photos] of Object.entries(albums)) {
-      if (albumName === '_hidden') continue;
+      if (!Array.isArray(photos)) continue;
       orderData[albumName] = photos.map(p => {
         const parts = p.src.split('/');
         return parts[parts.length - 1].replace('.webp', '');
