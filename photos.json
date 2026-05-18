@@ -495,5 +495,9 @@
       "w": 7260,
       "h": 4840
     }
-  ]
+  ],
+  "_borders": {
+    "enabled": false,
+    "albums": {}
+  }
 }
