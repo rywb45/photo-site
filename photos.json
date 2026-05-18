@@ -1,6 +1,12 @@
 {
   "bermuda": [
     {
+      "src": "unsorted/065.webp",
+      "grid": "unsorted/grid/065.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
       "src": "unsorted/062.webp",
       "grid": "unsorted/grid/062.webp",
       "w": 2048,
@@ -413,12 +419,6 @@
   ],
   "_unsorted": [
     {
-      "src": "unsorted/065.webp",
-      "grid": "unsorted/grid/065.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
       "src": "unsorted/066.webp",
       "grid": "unsorted/grid/066.webp",
       "w": 1365,
@@ -447,6 +447,12 @@
       "grid": "unsorted/grid/070.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "unsorted/071.webp",
+      "grid": "unsorted/grid/071.webp",
+      "w": 1365,
+      "h": 2048
     }
   ],
   "_hidden": [
