@@ -377,6 +377,12 @@
       "grid": "unsorted/grid/075.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "unsorted/076.webp",
+      "grid": "unsorted/grid/076.webp",
+      "w": 7260,
+      "h": 4840
     }
   ],
   "_hidden": [
