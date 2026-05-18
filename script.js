@@ -3359,7 +3359,6 @@ async function handlePhotoUpload(e) {
 }
 
 async function uploadSinglePhoto(file, token) {
-  // Load image
   const img = await loadImage(file);
   const origW = img.naturalWidth;
   const origH = img.naturalHeight;
@@ -3368,10 +3367,14 @@ async function uploadSinglePhoto(file, token) {
     throw new Error(`invalid dimensions (${origW}x${origH})`);
   }
 
-  // Determine the next filename number by scanning ALL albums for unsorted/ paths
-  // (photos moved to albums keep their unsorted/ paths until server-side move runs)
+  // Fetch remote photos.json for accurate numbering and atomic _unsorted append.
+  // Local albums may be stale if the page loaded before the latest GH Pages deploy.
+  const remoteFile = await fetchFileFromGitHub('photos.json', token);
+  const remoteAlbums = remoteFile ? JSON.parse(remoteFile.content) : null;
+  const scanSource = remoteAlbums || albums;
+
   const existingNums = [];
-  for (const [key, photos] of Object.entries(albums)) {
+  for (const [key, photos] of Object.entries(scanSource)) {
     if (key === '_hidden') continue;
     for (const p of photos) {
       if (p.src.startsWith('unsorted/')) {
@@ -3380,7 +3383,6 @@ async function uploadSinglePhoto(file, token) {
       }
     }
   }
-  // Also include pending deletes (files still on server until save)
   for (const d of pendingDeletes) {
     const src = d.full.replace('photos/', '');
     if (src.startsWith('unsorted/')) {
@@ -3395,10 +3397,8 @@ async function uploadSinglePhoto(file, token) {
 
   const folderPrefix = 'unsorted';
 
-  // Generate full-res WebP
   const fullWebP = await imageToWebP(img, origW, origH);
 
-  // Generate grid thumbnail WebP
   let gridW = origW;
   let gridH = origH;
   if (origW > GRID_MAX_WIDTH) {
@@ -3407,15 +3407,12 @@ async function uploadSinglePhoto(file, token) {
   }
   const gridWebP = await imageToWebP(img, gridW, gridH);
 
-  // Upload full-res to GitHub
   const fullPath = `photos/${folderPrefix}/${paddedNum}.webp`;
   await uploadFileToGitHub(fullPath, fullWebP, token);
 
-  // Upload grid to GitHub
   const gridPath = `photos/${folderPrefix}/grid/${paddedNum}.webp`;
   await uploadFileToGitHub(gridPath, gridWebP, token);
 
-  // Add to local unsorted tray
   const newPhotoData = {
     src: `${folderPrefix}/${paddedNum}.webp`,
     grid: `${folderPrefix}/grid/${paddedNum}.webp`,
@@ -3424,15 +3421,15 @@ async function uploadSinglePhoto(file, token) {
   };
   albums._unsorted.push(newPhotoData);
 
-  // Cache preview so thumbnail shows instantly (before GitHub Pages deploys)
   unsortedPreviews.set(newPhotoData.grid, `data:image/webp;base64,${gridWebP}`);
 
-  // Save updated photos.json (persist _unsorted entry so files aren't orphaned)
-  // NOTE: intentionally not calling syncCurrentAlbum() here — reorder state
-  // should only be committed when the user clicks Save
-  await saveFileToGitHub('photos.json', JSON.stringify(albums, null, 2), token);
+  // Append to remote _unsorted only — don't write the full local albums state,
+  // which can be stale and overwrite edits saved in a previous session.
+  const saveAlbums = remoteAlbums || JSON.parse(JSON.stringify(albums));
+  if (!saveAlbums._unsorted) saveAlbums._unsorted = [];
+  saveAlbums._unsorted.push(newPhotoData);
+  await saveFileToGitHub('photos.json', JSON.stringify(saveAlbums, null, 2), token);
 
-  // Re-render tray
   renderUnsortedTray();
 }
 
