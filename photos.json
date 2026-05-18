@@ -1,4 +1,5 @@
 {
+  "bermuda": [],
   "blizzard": [
     {
       "src": "unsorted/012.webp",
@@ -371,32 +372,6 @@
       "h": 1365
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/050.webp",
-      "grid": "unsorted/grid/050.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/055.webp",
-      "grid": "unsorted/grid/055.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/060.webp",
-      "grid": "unsorted/grid/060.webp",
-      "w": 1365,
-      "h": 2048
-    }
-  ],
-  "_hidden": [
-    "archive",
-    "chinatown",
-    "people",
-    "ogs"
-  ],
   "lincoln-square": [
     {
       "src": "unsorted/061.webp",
@@ -422,5 +397,19 @@
       "w": 1365,
       "h": 2048
     }
+  ],
+  "_unsorted": [
+    {
+      "src": "unsorted/062.webp",
+      "grid": "unsorted/grid/062.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ],
+  "_hidden": [
+    "archive",
+    "chinatown",
+    "people",
+    "ogs"
   ]
 }
