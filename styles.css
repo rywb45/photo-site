@@ -225,7 +225,7 @@ body.inverted {
   transform: scale(1.02);
 }
 
-/* Photo borders — darkroom-style mat */
+/* Photo borders */
 .grid-item.bordered {
   position: relative;
 }
@@ -233,12 +233,12 @@ body.inverted {
   content: '';
   position: absolute;
   inset: 0;
-  box-shadow:
-    inset 0 0 0 1px #000,
-    inset 0 0 0 3px #fff,
-    inset 0 0 0 11px #000;
+  box-shadow: inset 0 0 0 8px #000;
   pointer-events: none;
   z-index: 1;
+}
+body.inverted .grid-item.bordered::after {
+  box-shadow: inset 0 0 0 8px #fff;
 }
 
 .footer {
@@ -288,10 +288,10 @@ body.inverted {
 }
 
 .lb-slide.bordered img {
-  box-shadow:
-    0 0 0 1.5px #000,
-    0 0 0 3.5px #fff,
-    0 0 0 16px #000;
+  box-shadow: 0 0 0 10px #000;
+}
+body.inverted .lb-slide.bordered img {
+  box-shadow: 0 0 0 10px #fff;
 }
 
 .lb-btn {
@@ -568,17 +568,17 @@ body.inverted {
   }
 
   .grid-item.bordered::after {
-    box-shadow:
-      inset 0 0 0 1px #000,
-      inset 0 0 0 2px #fff,
-      inset 0 0 0 7px #000;
+    box-shadow: inset 0 0 0 5px #000;
+  }
+  body.inverted .grid-item.bordered::after {
+    box-shadow: inset 0 0 0 5px #fff;
   }
 
   .lb-slide.bordered img {
-    box-shadow:
-      0 0 0 1px #000,
-      0 0 0 2.5px #fff,
-      0 0 0 10px #000;
+    box-shadow: 0 0 0 7px #000;
+  }
+  body.inverted .lb-slide.bordered img {
+    box-shadow: 0 0 0 7px #fff;
   }
 }
 
