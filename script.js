@@ -2183,7 +2183,7 @@ function exitEditMode(saved) {
       // Collect photos that were actually uploaded this session (tracked by unsortedPreviews)
       const uploadedSrcs = new Set();
       for (const [albumName, photos] of Object.entries(albums)) {
-        if (!Array.isArray(photos)) continue;
+        if (albumName === '_hidden' || !Array.isArray(photos)) continue;
         for (const p of photos) {
           if (unsortedPreviews.has(p.grid)) {
             uploadedSrcs.add(p.src);
@@ -2195,7 +2195,7 @@ function exitEditMode(saved) {
       const uploadedByAlbum = {};
       if (uploadedSrcs.size > 0) {
         for (const [albumName, photos] of Object.entries(albums)) {
-          if (!Array.isArray(photos)) continue;
+          if (albumName === '_hidden' || !Array.isArray(photos)) continue;
           const uploaded = photos.filter(p => uploadedSrcs.has(p.src));
           if (uploaded.length > 0) {
             uploadedByAlbum[albumName] = uploaded;
@@ -3519,7 +3519,7 @@ async function uploadSinglePhoto(file, token) {
 
   const existingNums = [];
   for (const [key, photos] of Object.entries(scanSource)) {
-    if (!Array.isArray(photos)) continue;
+    if (key === '_hidden' || !Array.isArray(photos)) continue;
     for (const p of photos) {
       if (p.src.startsWith('unsorted/')) {
         const num = parseInt(p.src.split('/').pop().replace('.webp', '')) || 0;
@@ -3668,7 +3668,7 @@ async function saveOrder() {
     if (pendingDeletes.length > 0) {
       const deletePaths = new Set(pendingDeletes.map(d => d.full.replace('photos/', '')));
       for (const [albumName, photos] of Object.entries(albums)) {
-        if (!Array.isArray(photos)) continue;
+        if (albumName === '_hidden' || !Array.isArray(photos)) continue;
         albums[albumName] = photos.filter(p => !deletePaths.has(p.src));
       }
     }
@@ -3676,7 +3676,7 @@ async function saveOrder() {
     // Build order.json fresh (don't merge with stale remote data)
     const orderData = {};
     for (const [albumName, photos] of Object.entries(albums)) {
-      if (!Array.isArray(photos)) continue;
+      if (albumName === '_hidden' || !Array.isArray(photos)) continue;
       orderData[albumName] = photos.map(p => {
         const parts = p.src.split('/');
         return parts[parts.length - 1].replace('.webp', '');
