@@ -1,8 +1,8 @@
 {
   "bermuda": [
     {
-      "src": "unsorted/073.webp",
-      "grid": "unsorted/grid/073.webp",
+      "src": "unsorted/114.webp",
+      "grid": "unsorted/grid/114.webp",
       "w": 2048,
       "h": 1365
     },
@@ -595,14 +595,7 @@
       "h": 1365
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/114.webp",
-      "grid": "unsorted/grid/114.webp",
-      "w": 2048,
-      "h": 1365
-    }
-  ],
+  "_unsorted": [],
   "_hidden": [
     "archive",
     "chinatown",
