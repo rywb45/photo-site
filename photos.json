@@ -1,8 +1,8 @@
 {
   "bermuda": [
     {
-      "src": "unsorted/062.webp",
-      "grid": "unsorted/grid/062.webp",
+      "src": "unsorted/073.webp",
+      "grid": "unsorted/grid/073.webp",
       "w": 2048,
       "h": 1365
     },
@@ -13,32 +13,56 @@
       "h": 1365
     },
     {
-      "src": "unsorted/073.webp",
-      "grid": "unsorted/grid/073.webp",
+      "src": "unsorted/062.webp",
+      "grid": "unsorted/grid/062.webp",
       "w": 2048,
       "h": 1365
+    },
+    {
+      "src": "unsorted/089.webp",
+      "grid": "unsorted/grid/089.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/086.webp",
+      "grid": "unsorted/grid/086.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/084.webp",
+      "grid": "unsorted/grid/084.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/083.webp",
+      "grid": "unsorted/grid/083.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/085.webp",
+      "grid": "unsorted/grid/085.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/087.webp",
+      "grid": "unsorted/grid/087.webp",
+      "w": 1365,
+      "h": 2048
+    },
+    {
+      "src": "unsorted/088.webp",
+      "grid": "unsorted/grid/088.webp",
+      "w": 1365,
+      "h": 2048
     },
     {
       "src": "unsorted/064.webp",
       "grid": "unsorted/grid/064.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/075.webp",
-      "grid": "unsorted/grid/075.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/077.webp",
-      "grid": "unsorted/grid/077.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/069.webp",
-      "grid": "unsorted/grid/069.webp",
       "w": 2048,
       "h": 1365
     },
@@ -49,10 +73,28 @@
       "h": 2048
     },
     {
+      "src": "unsorted/069.webp",
+      "grid": "unsorted/grid/069.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
       "src": "unsorted/066.webp",
       "grid": "unsorted/grid/066.webp",
       "w": 1365,
       "h": 2048
+    },
+    {
+      "src": "unsorted/077.webp",
+      "grid": "unsorted/grid/077.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/075.webp",
+      "grid": "unsorted/grid/075.webp",
+      "w": 2048,
+      "h": 1365
     },
     {
       "src": "unsorted/068.webp",
@@ -489,54 +531,15 @@
       "h": 2048
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/083.webp",
-      "grid": "unsorted/grid/083.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/084.webp",
-      "grid": "unsorted/grid/084.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/085.webp",
-      "grid": "unsorted/grid/085.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/086.webp",
-      "grid": "unsorted/grid/086.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/087.webp",
-      "grid": "unsorted/grid/087.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/088.webp",
-      "grid": "unsorted/grid/088.webp",
-      "w": 1365,
-      "h": 2048
-    },
-    {
-      "src": "unsorted/089.webp",
-      "grid": "unsorted/grid/089.webp",
-      "w": 1365,
-      "h": 2048
-    }
-  ],
+  "_unsorted": [],
   "_hidden": [
     "archive",
     "chinatown",
     "people",
     "ogs"
-  ]
+  ],
+  "_borders": {
+    "enabled": true,
+    "albums": {}
+  }
 }
