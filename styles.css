@@ -980,6 +980,12 @@ body.inverted .edit-bar-label {
   opacity: 0.8;
 }
 
+.edit-bar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
 .edit-cancel {
   background: none;
   color: #666;
@@ -1380,6 +1386,8 @@ body.edit-mode #albumNav a:hover .album-actions { opacity: 1; }
 .album-action-btn svg { width: 12px; height: 12px; }
 .album-action-btn:hover { color: #aaa; }
 .album-action-btn.delete:hover { color: #d44; }
+.album-action-btn.delete.confirming,
+body:not(.inverted) .album-action-btn.delete.confirming { color: #d44; transform: scale(1.25); }
 
 body.edit-mode #albumNav a.hidden-album { opacity: 0.35; }
 body.edit-mode #albumNav a.hidden-album:hover { opacity: 0.6; }

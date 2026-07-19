@@ -1453,6 +1453,18 @@ let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
+    // Lightbox transforms are pixel values based on innerWidth at the time they
+    // were set — re-center after rotation/resize or the image sits offset.
+    if (lightbox.classList.contains('active')) {
+      if (snapTimer) { clearTimeout(snapTimer); snapTimer = null; }
+      isSnapping = false;
+      updateVirtualSlides();
+      lbTrack.style.transition = 'none';
+      lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px)`;
+      // The grid re-render below destroys the morph source element; without it
+      // the close animation targets a detached rect, so fall back to plain close
+      if (morphSource) { morphSource.style.opacity = ''; morphSource = null; morphRect = null; }
+    }
     if (editMode) {
       renderEditGrid();
     } else {
@@ -1804,11 +1816,12 @@ function setupEditSidebar() {
           keys.splice(myIdx, 1);
           keys.splice(currentHoverIdx, 0, name);
 
-          // Rebuild with _unsorted and _hidden preserved
+          // Rebuild with all internal keys (_unsorted, _hidden, _borders, ...) preserved
           const newAlbums = {};
           keys.forEach(k => { newAlbums[k] = albums[k]; });
-          if (albums._unsorted) newAlbums._unsorted = albums._unsorted;
-          if (albums._hidden) newAlbums._hidden = albums._hidden;
+          Object.keys(albums).forEach(k => {
+            if (k.startsWith('_')) newAlbums[k] = albums[k];
+          });
           albums = newAlbums;
 
           rebuildAlbumNav();
@@ -1925,7 +1938,14 @@ function rebuildAlbumNav() {
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        deleteAlbum(albumName);
+        // First click arms, second click within the window deletes
+        if (deleteBtn.classList.contains('confirming')) {
+          deleteAlbum(albumName);
+          return;
+        }
+        deleteBtn.classList.add('confirming');
+        deleteBtn.title = 'Click again to delete album';
+        setTimeout(() => deleteBtn.classList.remove('confirming'), 2500);
       });
 
       actions.appendChild(hideBtn);
@@ -2083,10 +2103,12 @@ function renameAlbum(oldName) {
 
   function commit() {
     const newName = input.value.trim();
-    if (!newName || newName.toLowerCase() === oldName) { revert(); return; }
+    if (!newName) { revert(); return; }
 
+    // Compare as slugs — the input holds the display name ("lincoln square")
+    // but album keys are slugs ("lincoln-square")
     const newKey = sanitizeAlbumKey(newName);
-    if (!newKey) { revert(); return; }
+    if (!newKey || newKey === oldName) { revert(); return; }
     if (albums[newKey]) {
       input.style.borderColor = '#d44';
       return;
@@ -2114,6 +2136,10 @@ function renameAlbum(oldName) {
 
     if (currentAlbum === oldName) {
       currentAlbum = newKey;
+      // Keep the address bar in sync without adding a history entry
+      if (location.pathname === '/' + encodeURIComponent(oldName) + '/') {
+        history.replaceState(null, '', '/' + encodeURIComponent(newKey) + '/' + location.search);
+      }
     }
 
     rebuildAlbumNav();
@@ -2185,6 +2211,7 @@ function deleteAlbum(albumName) {
 }
 
 function exitEditMode(saved) {
+  if (isUploading) return; // Tearing down mid-upload desyncs local state from GitHub
   editMode = false;
   mobilePreview = false;
   document.body.classList.remove('mobile-preview');
@@ -2279,12 +2306,14 @@ function exitEditMode(saved) {
 
     rebuildAlbumNav();
     renderGrid();
+    // Clear previews only after the restore above has used them to identify
+    // this session's uploads, and after renderGrid has consumed the data URLs
+    unsortedPreviews.clear();
   }, 400);
 
   preEditAlbums = null;
   pendingMoves = [];
   pendingDeletes = [];
-  unsortedPreviews.clear();
 
   // DECORATIVE: typewriter out
   const nameText = document.getElementById('nameText');
@@ -3501,6 +3530,7 @@ const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_DIMENSION = 20000;
 
 async function handlePhotoUpload(e) {
+  if (isUploading) return; // One batch at a time — parallel batches race on photos.json
   const allFiles = Array.from(e.target.files);
   if (!allFiles.length) return;
 
@@ -3532,10 +3562,12 @@ async function handlePhotoUpload(e) {
   const files = validFiles;
   if (!files.length) return;
 
-  // Show progress and block Save during upload
+  // Show progress and block Save/Cancel during upload
   isUploading = true;
   const saveBtn = document.querySelector('.edit-save');
   if (saveBtn) saveBtn.disabled = true;
+  const cancelBtn = document.querySelector('.edit-cancel');
+  if (cancelBtn) cancelBtn.disabled = true;
   const bar = document.getElementById('editBar');
   const label = bar.querySelector('.edit-bar-label');
   const originalLabel = label.textContent;
@@ -3559,6 +3591,7 @@ async function handlePhotoUpload(e) {
 
   isUploading = false;
   if (saveBtn) saveBtn.disabled = false;
+  if (cancelBtn) cancelBtn.disabled = false;
   label.textContent = originalLabel;
   e.target.value = ''; // Reset file input
 }
@@ -3649,7 +3682,7 @@ function loadImage(file) {
 }
 
 function imageToWebP(img, targetW, targetH) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     canvas.width = targetW;
     canvas.height = targetH;
@@ -3659,6 +3692,11 @@ function imageToWebP(img, targetW, targetH) {
     ctx.drawImage(img, 0, 0, targetW, targetH);
 
     canvas.toBlob((blob) => {
+      // toBlob yields null when the canvas is too large for the browser
+      if (!blob) {
+        reject(new Error(`WebP conversion failed (${targetW}x${targetH} may exceed browser canvas limits)`));
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         // Return base64 without the data:... prefix

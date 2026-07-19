@@ -55,14 +55,17 @@
     </div>
     <script src="script.js"></script>
     <script>
-      // Default dark mode + manual toggle
+      // Default dark mode + manual toggle, persisted across visits
       document.addEventListener('DOMContentLoaded', function() {
-        document.body.classList.add('inverted');
+        var stored = null;
+        try { stored = localStorage.getItem('theme'); } catch (e) {}
+        if (stored !== 'light') document.body.classList.add('inverted');
 
         const toggle = document.getElementById('themeToggle');
         if (toggle) {
           toggle.addEventListener('click', function() {
-            document.body.classList.toggle('inverted');
+            const dark = document.body.classList.toggle('inverted');
+            try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
           });
         }
       });
