@@ -664,5 +664,9 @@
     "chinatown",
     "people",
     "ogs"
-  ]
+  ],
+  "_borders": {
+    "enabled": true,
+    "albums": {}
+  }
 }
