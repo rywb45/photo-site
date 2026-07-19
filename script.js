@@ -3492,6 +3492,11 @@ async function handlePhotoUpload(e) {
       await uploadSinglePhoto(file, token);
     } catch (err) {
       console.error('Upload failed for', file.name, err);
+      if (err.message && err.message.includes('401')) {
+        localStorage.removeItem('gh_token');
+        alert('GitHub token expired or invalid. Double-click your name to log in with a new token.');
+        break;
+      }
       alert(`Failed to upload ${file.name}: ${err.message}`);
     }
   }
