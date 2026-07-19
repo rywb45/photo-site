@@ -1569,9 +1569,33 @@ function attemptLogin() {
     backdrop.remove();
   }
 
-  function submit() {
+  async function submit() {
     const val = input.value.trim();
     if (!val) return;
+
+    // Verify against the API before storing — a mispaste or autofilled
+    // password saved here would otherwise cause 401s on every edit action.
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'CHECKING...';
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
+        headers: { 'Authorization': `token ${val}` }
+      });
+      if (!res.ok) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'SUBMIT';
+        alert(res.status === 401
+          ? 'GitHub rejected that value — it isn\'t a valid token. Tokens start with ghp_ or github_pat_.'
+          : `GitHub returned ${res.status} — check that the token has access to ${REPO_OWNER}/${REPO_NAME}.`);
+        return;
+      }
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'SUBMIT';
+      alert('Could not reach GitHub to verify the token. Check your connection and try again.');
+      return;
+    }
+
     localStorage.setItem('gh_token', val);
     dismiss();
     enterEditMode();
