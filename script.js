@@ -623,6 +623,9 @@ function openLightbox(index, sourceImg) {
         lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
         lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
       }
+
+      // Photo is fully revealed — safe to demo the dismiss gesture
+      demoTimers.push(setTimeout(maybePlayDismissDemo, 550));
     };
 
     // Wait for both the morph animation (320ms) and the full-res image to be decoded
@@ -659,11 +662,58 @@ function openLightbox(index, sourceImg) {
       lbPrev.style.display = currentIndex === 0 ? 'none' : 'block';
       lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
     }
+
+    demoTimers.push(setTimeout(maybePlayDismissDemo, 800));
   }
+}
+
+// ============================================
+// Swipe-down-to-close demo (mobile onboarding)
+// ============================================
+// On a visitor's first few lightbox opens, the photo dips down and springs
+// back once — a wordless preview of the swipe-down dismiss gesture, animating
+// the same translateY the real gesture drives. Retired permanently once they
+// actually swipe-dismiss.
+const DISMISS_DEMO_MAX_SHOWS = 3;
+let demoTimers = [];
+
+function maybePlayDismissDemo() {
+  if (!('ontouchstart' in window)) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!lightbox.classList.contains('active') || isSnapping || isDragging || zoomScale > 1) return;
+  let shown = 0;
+  try { shown = parseInt(localStorage.getItem('lb_demo_count'), 10) || 0; } catch (e) {}
+  if (shown >= DISMISS_DEMO_MAX_SHOWS) return;
+  try { localStorage.setItem('lb_demo_count', String(shown + 1)); } catch (e) {}
+
+  const x = -1 * window.innerWidth;
+  lbTrack.style.transition = 'transform 0.4s cubic-bezier(0.33, 0, 0.2, 1)';
+  lbTrack.style.transform = `translateX(${x}px) translateY(16px)`;
+  demoTimers.push(setTimeout(() => {
+    lbTrack.style.transition = 'transform 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    lbTrack.style.transform = `translateX(${x}px) translateY(0)`;
+    demoTimers.push(setTimeout(() => {
+      lbTrack.style.transition = 'none';
+      demoTimers = [];
+    }, 560));
+  }, 410));
+}
+
+function cancelDismissDemo() {
+  if (!demoTimers.length) return;
+  demoTimers.forEach(clearTimeout);
+  demoTimers = [];
+  lbTrack.style.transition = 'none';
+  lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(0)`;
+}
+
+function markDismissDemoLearned() {
+  try { localStorage.setItem('lb_demo_count', String(DISMISS_DEMO_MAX_SHOWS)); } catch (e) {}
 }
 
 function closeLightbox() {
   resetZoom();
+  cancelDismissDemo();
 
   // Clean up any leftover morph clone from open animation
   if (morphClone && morphClone.parentNode) {
@@ -841,6 +891,7 @@ let lastWheelTime = 0;
 lightbox.addEventListener('wheel', (e) => {
   if (!lightbox.classList.contains('active')) return;
   e.preventDefault();
+  cancelDismissDemo();
 
   // Trackpad pinch-to-zoom (ctrlKey is set for pinch gestures on Mac)
   if (e.ctrlKey) {
@@ -1104,6 +1155,7 @@ function setPinchCooldown() {
 }
 
 lightbox.addEventListener('touchstart', (e) => {
+  cancelDismissDemo(); // user is interacting — never fight their fingers
   if (e.target.closest('.lb-btn')) return;
 
   // Two-finger pinch start
@@ -1342,6 +1394,7 @@ lightbox.addEventListener('touchend', (e) => {
     const shouldDismiss = deltaY > 150 || velocity > 0.5;
 
     if (shouldDismiss) {
+      markDismissDemoLearned();
       lbTrack.style.transition = 'transform 0.3s ease-out';
       lightbox.style.transition = 'background 0.3s ease-out';
       lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(${window.innerHeight}px)`;
@@ -1487,6 +1540,7 @@ window.addEventListener('resize', () => {
     // Lightbox transforms are pixel values based on innerWidth at the time they
     // were set — re-center after rotation/resize or the image sits offset.
     if (lightbox.classList.contains('active')) {
+      cancelDismissDemo();
       if (snapTimer) { clearTimeout(snapTimer); snapTimer = null; }
       isSnapping = false;
       updateVirtualSlides();
