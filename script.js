@@ -11,6 +11,11 @@ const unsortedPreviews = new Map();
 // Performance: Track which album carousel is built for
 let carouselBuiltForAlbum = null;
 
+// Layout width the grid was last built for. iOS Safari fires resize events for
+// visual-viewport changes (pinch zoom, URL bar collapse) where layout width is
+// unchanged — rebuilding the grid then is pure jank. See the resize handler.
+let gridBuiltWidth = -1;
+
 // Virtual carousel: only 3 slides in DOM [prev, current, next]
 let virtualSlides = [];
 let isSnapping = false;
@@ -252,6 +257,7 @@ function animateSlideIn() {
 function renderGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
+  gridBuiltWidth = grid.clientWidth;
 
   const targetRowHeight = 320;
   const computedStyle = getComputedStyle(grid);
@@ -795,6 +801,23 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft' && currentIndex > 0) goToSlide(currentIndex - 1);
   if (e.key === 'ArrowRight' && currentIndex < currentPhotos.length - 1) goToSlide(currentIndex + 1);
 });
+
+// Pinching a grid photo opens it in the lightbox, where pinch-zoom actually
+// works. Page pinch-zoom is disabled via touch-action (styles.css), so this
+// turns the instinctive gesture into the intended action instead of a dead end.
+document.getElementById('grid').addEventListener('touchstart', (e) => {
+  if (editMode || e.touches.length !== 2 || lightbox.classList.contains('active')) return;
+  const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+  const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  const el = document.elementFromPoint(midX, midY);
+  const item = el && el.closest('.grid-item');
+  const img = item && item.querySelector('img');
+  if (!img) return;
+  const index = Array.from(document.querySelectorAll('#grid .grid-item')).indexOf(item);
+  if (index === -1) return;
+  e.preventDefault();
+  openLightbox(index, img);
+}, { passive: false });
 
 // ============================================
 // Trackpad/wheel gesture handling for lightbox
@@ -1465,6 +1488,10 @@ window.addEventListener('resize', () => {
       // the close animation targets a detached rect, so fall back to plain close
       if (morphSource) { morphSource.style.opacity = ''; morphSource = null; morphRect = null; }
     }
+    // Only rebuild the grid when the layout width actually changed — pinch zoom
+    // and URL-bar resizes leave it intact, and rebuilding then is what caused
+    // the mobile pinch lag.
+    if (document.getElementById('grid').clientWidth === gridBuiltWidth) return;
     if (editMode) {
       renderEditGrid();
     } else {

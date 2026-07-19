@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+html, body {
+  /* Disable browser pinch-zoom of the page — photos zoom inside the lightbox.
+     Pinching a grid photo opens it in the lightbox instead (see script.js). */
+  touch-action: pan-x pan-y;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   background: #fff;
