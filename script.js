@@ -807,6 +807,8 @@ document.addEventListener('keydown', (e) => {
 // turns the instinctive gesture into the intended action instead of a dead end.
 document.getElementById('grid').addEventListener('touchstart', (e) => {
   if (editMode || e.touches.length !== 2 || lightbox.classList.contains('active')) return;
+  // Eat the pinch even when it lands between photos, so the page never zooms
+  e.preventDefault();
   const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
   const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
   const el = document.elementFromPoint(midX, midY);
@@ -815,9 +817,15 @@ document.getElementById('grid').addEventListener('touchstart', (e) => {
   if (!img) return;
   const index = Array.from(document.querySelectorAll('#grid .grid-item')).indexOf(item);
   if (index === -1) return;
-  e.preventDefault();
   openLightbox(index, img);
 }, { passive: false });
+
+// Safari (iOS and macOS) fires proprietary gesture events for native pinch-zoom
+// and can let it through even where touch-action says otherwise. Preventing
+// them is the reliable kill switch; the lightbox's own pinch is driven by touch
+// events, not gesture events, so it is unaffected.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('gesturechange', (e) => e.preventDefault());
 
 // ============================================
 // Trackpad/wheel gesture handling for lightbox

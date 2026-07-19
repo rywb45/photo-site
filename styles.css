@@ -4,10 +4,17 @@
   box-sizing: border-box;
 }
 
-html, body {
-  /* Disable browser pinch-zoom of the page — photos zoom inside the lightbox.
-     Pinching a grid photo opens it in the lightbox instead (see script.js). */
+/* Disable browser pinch-zoom of the page — photos zoom inside the lightbox,
+   and pinching a grid photo opens it there (see script.js). touch-action is
+   NOT inherited: iOS honors it on the element the fingers land on, so it must
+   cover everything or pinches in gaps/padding still zoom the page. */
+* {
   touch-action: pan-x pan-y;
+}
+
+/* The lightbox implements all of its gestures (swipe/pinch/pan) in JS */
+.lightbox, .lightbox * {
+  touch-action: none;
 }
 
 body {
