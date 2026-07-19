@@ -1,4 +1,30 @@
 {
+  "central-park": [
+    {
+      "src": "unsorted/133.webp",
+      "grid": "unsorted/grid/133.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/135.webp",
+      "grid": "unsorted/grid/135.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/134.webp",
+      "grid": "unsorted/grid/134.webp",
+      "w": 2048,
+      "h": 1365
+    },
+    {
+      "src": "unsorted/054.webp",
+      "grid": "unsorted/grid/054.webp",
+      "w": 2048,
+      "h": 1365
+    }
+  ],
   "bermuda": [
     {
       "src": "unsorted/114.webp",
@@ -413,12 +439,6 @@
   ],
   "street": [
     {
-      "src": "unsorted/054.webp",
-      "grid": "unsorted/grid/054.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
       "src": "unsorted/052.webp",
       "grid": "unsorted/grid/052.webp",
       "w": 2048,
@@ -625,36 +645,11 @@
       "h": 1365
     }
   ],
-  "_unsorted": [
-    {
-      "src": "unsorted/134.webp",
-      "grid": "unsorted/grid/134.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/135.webp",
-      "grid": "unsorted/grid/135.webp",
-      "w": 2048,
-      "h": 1365
-    }
-  ],
+  "_unsorted": [],
   "_hidden": [
     "archive",
     "chinatown",
     "people",
     "ogs"
-  ],
-  "_borders": {
-    "enabled": true,
-    "albums": {}
-  },
-  "central-park": [
-    {
-      "src": "unsorted/133.webp",
-      "grid": "unsorted/grid/133.webp",
-      "w": 2048,
-      "h": 1365
-    }
   ]
 }
