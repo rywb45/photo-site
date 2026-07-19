@@ -1540,6 +1540,7 @@ function attemptLogin() {
 
   if (token) {
     enterEditMode();
+    checkTokenHealth(token);
     return;
   }
 
@@ -1585,6 +1586,37 @@ function attemptLogin() {
     if (e.key === 'Enter') submit();
     if (e.key === 'Escape') dismiss();
   });
+}
+
+// Validate the stored token as soon as edit mode opens, so a dead or
+// nearly-expired token surfaces immediately instead of mid-upload.
+async function checkTokenHealth(token) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
+      headers: { 'Authorization': `token ${token}` }
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('gh_token');
+      exitEditMode(true);
+      alert('Your GitHub token has expired or been revoked. Enter a new one to edit.');
+      attemptLogin();
+      return;
+    }
+
+    // GitHub reports PAT expiry in this header, e.g. "2026-08-17 12:00:00 UTC"
+    const exp = res.headers.get('github-authentication-token-expiration');
+    if (exp) {
+      const expDate = new Date(exp.replace(' UTC', 'Z').replace(' ', 'T'));
+      const daysLeft = Math.floor((expDate.getTime() - Date.now()) / 86400000);
+      if (!isNaN(daysLeft) && daysLeft <= 7) {
+        alert(`Heads up: your GitHub token expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Generate a new one at github.com/settings/personal-access-tokens before it dies.`);
+      }
+    }
+  } catch (err) {
+    // Network hiccup — don't block edit mode over it
+    console.warn('Token health check failed:', err);
+  }
 }
 
 function enterEditMode() {
