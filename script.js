@@ -660,55 +660,10 @@ function openLightbox(index, sourceImg) {
       lbNext.style.display = currentIndex === currentPhotos.length - 1 ? 'none' : 'block';
     }
   }
-
-  // Nudge first-time mobile visitors toward the swipe-down dismiss gesture
-  setTimeout(maybeShowSwipeHint, 700);
-}
-
-// ============================================
-// Swipe-down-to-close hint (mobile onboarding)
-// ============================================
-// Shown on a visitor's first few lightbox opens, retired for good once they
-// actually use the gesture.
-const SWIPE_HINT_MAX_SHOWS = 3;
-let swipeHintEl = null;
-let swipeHintTimer = null;
-
-function maybeShowSwipeHint() {
-  if (!('ontouchstart' in window) || editMode) return;
-  if (!lightbox.classList.contains('active')) return;
-  let shown = 0;
-  try { shown = parseInt(localStorage.getItem('lb_hint_count'), 10) || 0; } catch (e) {}
-  if (shown >= SWIPE_HINT_MAX_SHOWS) return;
-  try { localStorage.setItem('lb_hint_count', String(shown + 1)); } catch (e) {}
-
-  hideSwipeHint(true);
-  const hint = document.createElement('div');
-  hint.className = 'lb-swipe-hint';
-  hint.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><span>SWIPE DOWN TO CLOSE</span>';
-  lightbox.appendChild(hint);
-  swipeHintEl = hint;
-  requestAnimationFrame(() => hint.classList.add('visible'));
-  swipeHintTimer = setTimeout(() => hideSwipeHint(), 3500);
-}
-
-function hideSwipeHint(immediate) {
-  if (swipeHintTimer) { clearTimeout(swipeHintTimer); swipeHintTimer = null; }
-  const el = swipeHintEl;
-  if (!el) return;
-  swipeHintEl = null;
-  if (immediate) { el.remove(); return; }
-  el.classList.remove('visible');
-  setTimeout(() => el.remove(), 500);
-}
-
-function markSwipeHintLearned() {
-  try { localStorage.setItem('lb_hint_count', String(SWIPE_HINT_MAX_SHOWS)); } catch (e) {}
 }
 
 function closeLightbox() {
   resetZoom();
-  hideSwipeHint(true);
 
   // Clean up any leftover morph clone from open animation
   if (morphClone && morphClone.parentNode) {
@@ -975,7 +930,6 @@ lightbox.addEventListener('wheel', (e) => {
         setTimeout(() => {
           // Direct teardown — no closeLightbox to avoid pop-back
           resetZoom();
-          hideSwipeHint(true);
           lightbox.classList.remove('active');
           document.body.style.overflow = '';
           lightbox.style.background = '';
@@ -1151,7 +1105,6 @@ function setPinchCooldown() {
 
 lightbox.addEventListener('touchstart', (e) => {
   if (e.target.closest('.lb-btn')) return;
-  hideSwipeHint();
 
   // Two-finger pinch start
   if (e.touches.length === 2) {
@@ -1389,7 +1342,6 @@ lightbox.addEventListener('touchend', (e) => {
     const shouldDismiss = deltaY > 150 || velocity > 0.5;
 
     if (shouldDismiss) {
-      markSwipeHintLearned();
       lbTrack.style.transition = 'transform 0.3s ease-out';
       lightbox.style.transition = 'background 0.3s ease-out';
       lbTrack.style.transform = `translateX(${-1 * window.innerWidth}px) translateY(${window.innerHeight}px)`;
