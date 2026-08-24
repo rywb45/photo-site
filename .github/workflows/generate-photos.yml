@@ -7,6 +7,9 @@ on:
         description: "Also regenerate photos.json from filesystem (destructive; edit mode is the source of truth)"
         type: boolean
         default: false
+  # Weekly safety net: regenerates pages even if a push trigger was missed
+  schedule:
+    - cron: "0 6 * * 1"
   push:
     branches: ["main"]
     paths:
@@ -37,27 +40,40 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Regenerate photos.json (manual only)
-        if: ${{ inputs.regen_photos_json == true }}
-        run: npm run gen
-
-      - name: Generate album preview pages
-        run: npm run gen:albums
-
-      - name: Commit changes if any
+      # Edit mode pushes many commits in quick succession, so a push from this
+      # job can be rejected as non-fast-forward. Instead of failing (which is
+      # what got this workflow disabled), redo the whole fetch -> generate ->
+      # push cycle against the newest main until it lands.
+      - name: Generate and push (with retry)
+        env:
+          REGEN: ${{ inputs.regen_photos_json == true }}
         run: |
-          git add -A
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Auto-update site artifacts (album pages)"
 
-          # Rebase onto latest main (avoids "fetch first" / non-fast-forward)
-          git pull --rebase origin main
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
 
-          git push
+            if [ "$REGEN" = "true" ]; then
+              npm run gen
+            fi
+            npm run gen:albums
+
+            git add -A
+            if git diff --cached --quiet; then
+              echo "No changes to commit"
+              exit 0
+            fi
+
+            git commit -m "Auto-update site artifacts (album pages)"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            echo "Push rejected (attempt $attempt); re-syncing with main and retrying"
+            sleep $((attempt * 3))
+          done
+
+          echo "Push still rejected after 5 attempts"
+          exit 1
