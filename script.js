@@ -32,6 +32,16 @@ function bordersEnabledForAlbum(name) {
   return b.enabled;
 }
 
+// Border widths must mirror styles.css (.grid-item.bordered::after and
+// .lb-slide.bordered img, plus their max-width:768px overrides) so the morph
+// clone's border matches both endpoints of the animation
+function gridBorderWidth() {
+  return window.matchMedia('(max-width: 768px)').matches ? 3 : 5;
+}
+function lightboxBorderWidth() {
+  return window.matchMedia('(max-width: 768px)').matches ? 4 : 6;
+}
+
 // Album keys are slugified (a-z0-9-), but displayed with spaces and uppercased.
 function displayAlbumName(name) {
   return name.replace(/-/g, ' ').toUpperCase();
@@ -535,6 +545,8 @@ function openLightbox(index, sourceImg) {
     // Create clone at grid position using grid image (already loaded/cached)
     morphClone = document.createElement('div');
     morphClone.className = 'morph-clone';
+    // No overflow:hidden — the border overlay animates outside the image box
+    // (grid borders are inset, lightbox borders are outset)
     morphClone.style.cssText = `
       position: fixed;
       left: ${morphRect.left}px;
@@ -542,7 +554,6 @@ function openLightbox(index, sourceImg) {
       width: ${morphRect.width}px;
       height: ${morphRect.height}px;
       z-index: 1002;
-      overflow: hidden;
       will-change: transform;
     `;
 
@@ -551,11 +562,12 @@ function openLightbox(index, sourceImg) {
     cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     morphClone.appendChild(cloneImg);
 
+    let borderOverlay = null;
     if (bordersEnabledForAlbum(currentAlbum)) {
       const borderColor = document.body.classList.contains('inverted') ? '#fff' : '#000';
-      const overlay = document.createElement('div');
-      overlay.style.cssText = `position:absolute;inset:0;box-shadow:inset 0 0 0 5px ${borderColor};pointer-events:none;z-index:1;`;
-      morphClone.appendChild(overlay);
+      borderOverlay = document.createElement('div');
+      borderOverlay.style.cssText = `position:absolute;inset:0;box-shadow:inset 0 0 0 ${gridBorderWidth()}px ${borderColor};pointer-events:none;z-index:1;`;
+      morphClone.appendChild(borderOverlay);
     }
 
     document.body.appendChild(morphClone);
@@ -599,6 +611,17 @@ function openLightbox(index, sourceImg) {
       morphClone.style.top = targetT + 'px';
       morphClone.style.width = targetW + 'px';
       morphClone.style.height = targetH + 'px';
+
+      if (borderOverlay) {
+        // Morph from the grid's inset border to the lightbox's outset border:
+        // growing the overlay past the image while keeping the shadow inset
+        // renders as a ring outside the image, matching .lb-slide.bordered img
+        const lbW = lightboxBorderWidth();
+        const borderColor = document.body.classList.contains('inverted') ? '#fff' : '#000';
+        borderOverlay.style.transition = 'inset 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1)';
+        borderOverlay.style.inset = `-${lbW}px`;
+        borderOverlay.style.boxShadow = `inset 0 0 0 ${lbW}px ${borderColor}`;
+      }
 
       lightbox.style.transition = 'opacity 0.2s ease';
       lightbox.style.opacity = '1';
@@ -746,7 +769,6 @@ function closeLightbox() {
       width: ${startRect.width}px;
       height: ${startRect.height}px;
       z-index: 1002;
-      overflow: hidden;
       will-change: transform;
     `;
 
@@ -754,6 +776,15 @@ function closeLightbox() {
     cloneImg.src = morphSource.src || currentPhotos[currentIndex].grid;
     cloneImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
     morphClone.appendChild(cloneImg);
+
+    let borderOverlay = null;
+    if (bordersEnabledForAlbum(currentAlbum)) {
+      const borderColor = document.body.classList.contains('inverted') ? '#fff' : '#000';
+      const lbW = lightboxBorderWidth();
+      borderOverlay = document.createElement('div');
+      borderOverlay.style.cssText = `position:absolute;inset:-${lbW}px;box-shadow:inset 0 0 0 ${lbW}px ${borderColor};pointer-events:none;z-index:1;`;
+      morphClone.appendChild(borderOverlay);
+    }
     document.body.appendChild(morphClone);
 
     // Hide lightbox immediately
@@ -774,6 +805,13 @@ function closeLightbox() {
       morphClone.style.top = freshRect.top + 'px';
       morphClone.style.width = freshRect.width + 'px';
       morphClone.style.height = freshRect.height + 'px';
+
+      if (borderOverlay) {
+        const borderColor = document.body.classList.contains('inverted') ? '#fff' : '#000';
+        borderOverlay.style.transition = 'inset 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)';
+        borderOverlay.style.inset = '0px';
+        borderOverlay.style.boxShadow = `inset 0 0 0 ${gridBorderWidth()}px ${borderColor}`;
+      }
     });
 
     setTimeout(() => {
