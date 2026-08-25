@@ -78,7 +78,9 @@ const mainEl = document.querySelector('.main');
 // ============================================
 async function loadAlbums() {
   try {
-    const response = await fetch('photos.json');
+    // no-cache forces revalidation against GH Pages' ETag — iOS Safari otherwise
+    // serves a stale cached copy for far longer than the nominal max-age=600
+    const response = await fetch('photos.json', { cache: 'no-cache' });
     albums = await response.json();
 
     // Ensure _unsorted, _hidden, and _borders exist
