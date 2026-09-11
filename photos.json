@@ -802,5 +802,8 @@
   "_borders": {
     "enabled": true,
     "albums": {}
+  },
+  "_social": {
+    "instagram": false
   }
 }
