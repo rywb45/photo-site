@@ -32,6 +32,12 @@ function bordersEnabledForAlbum(name) {
   return b.enabled;
 }
 
+// Show/hide the sidebar social links (Instagram) per photos.json `_social`
+function applySocialVisibility() {
+  const s = albums._social || {};
+  document.body.classList.toggle('hide-instagram', s.instagram === false);
+}
+
 // Border widths must mirror styles.css (.grid-item.bordered::after and
 // .lb-slide.bordered img, plus their max-width:768px overrides) so the morph
 // clone's border matches both endpoints of the animation
@@ -93,10 +99,12 @@ async function loadAlbums() {
     const response = await fetch('photos.json', { cache: 'no-cache' });
     albums = await response.json();
 
-    // Ensure _unsorted, _hidden, and _borders exist
+    // Ensure _unsorted, _hidden, _borders, and _social exist
     if (!albums._unsorted) albums._unsorted = [];
     if (!albums._hidden) albums._hidden = [];
     if (!albums._borders) albums._borders = { enabled: true, albums: {} };
+    if (!albums._social) albums._social = { instagram: true };
+    applySocialVisibility();
 
     const nav = document.getElementById('albumNav');
     const albumNames = albumKeys().filter(n => !albums._hidden.includes(n));
@@ -2434,6 +2442,7 @@ function exitEditMode(saved) {
     }
 
     rebuildAlbumNav();
+    applySocialVisibility();
     renderGrid();
     // Clear previews only after the restore above has used them to identify
     // this session's uploads, and after renderGrid has consumed the data URLs
@@ -3206,6 +3215,14 @@ function renderSettingsPanel() {
     </div>
     <div class="settings-panel-body">
       <div class="settings-row settings-row-global">
+        <span class="settings-label">INSTAGRAM</span>
+        <label class="settings-switch">
+          <input type="checkbox" id="instagramToggle" ${albums._social.instagram !== false ? 'checked' : ''}>
+          <span class="settings-track"></span>
+        </label>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-row settings-row-global">
         <span class="settings-label">BORDERS</span>
         <label class="settings-switch">
           <input type="checkbox" id="borderGlobalToggle" ${b.enabled ? 'checked' : ''}>
@@ -3231,6 +3248,12 @@ function renderSettingsPanel() {
       </div>
     </div>`;
   panel.innerHTML = html;
+
+  // Instagram link toggle
+  document.getElementById('instagramToggle').addEventListener('change', function() {
+    albums._social.instagram = this.checked;
+    applySocialVisibility();
+  });
 
   // Global toggle handler
   document.getElementById('borderGlobalToggle').addEventListener('change', function() {

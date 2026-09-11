@@ -119,6 +119,10 @@ body.inverted .sidebar .social a {
   height: 22px;
 }
 
+body.hide-instagram .sidebar .social {
+  display: none;
+}
+
 .sidebar .signature {
   margin-top: 40px;
   max-width: 140px;
