@@ -161,8 +161,8 @@
       "h": 2048
     },
     {
-      "src": "unsorted/179.webp",
-      "grid": "unsorted/grid/179.webp",
+      "src": "unsorted/186.webp",
+      "grid": "unsorted/grid/186.webp",
       "w": 2048,
       "h": 1365
     },
@@ -841,18 +841,6 @@
       "grid": "unsorted/grid/160.webp",
       "w": 1365,
       "h": 2048
-    },
-    {
-      "src": "unsorted/186.webp",
-      "grid": "unsorted/grid/186.webp",
-      "w": 2048,
-      "h": 1365
-    },
-    {
-      "src": "unsorted/187.webp",
-      "grid": "unsorted/grid/187.webp",
-      "w": 2048,
-      "h": 1365
     }
   ],
   "_hidden": [
